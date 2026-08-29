@@ -16,7 +16,6 @@ class WakeWordService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        isRunning = true
         createChannel()
         val open = PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         val stop = PendingIntent.getService(this, 2, Intent(this, WakeWordService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
@@ -29,9 +28,18 @@ class WakeWordService : Service() {
             .addAction(0, "Stop", stop)
             .build()
         startForeground(NOTIFICATION_ID, notification)
-        engine.start(::onWakeDetected).onFailure {
-            updateNotification("Wake model not installed — open ICARUS to finish setup")
-        }
+        engine.start(::onWakeDetected).fold(
+            onSuccess = {
+                isRunning = true
+                publishState("Listening for Hey ICARUS.")
+            },
+            onFailure = {
+                val message = it.message ?: "The wake listener could not start."
+                publishState(message)
+                updateNotification(message)
+                stopSelf()
+            }
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -75,6 +83,14 @@ class WakeWordService : Service() {
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, n)
     }
 
+    private fun publishState(text: String) {
+        sendBroadcast(
+            Intent(ACTION_STATE_CHANGED)
+                .setPackage(packageName)
+                .putExtra(EXTRA_STATE, text)
+        )
+    }
+
     private fun createChannel() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(
             NotificationChannel(CHANNEL, "ICARUS background listening", NotificationManager.IMPORTANCE_LOW)
@@ -87,7 +103,9 @@ class WakeWordService : Service() {
     companion object {
         const val ACTION_STOP = "com.icarusalmighty.app.STOP_LISTENING"
         const val ACTION_COMMAND_READY = "com.icarusalmighty.app.COMMAND_READY"
+        const val ACTION_STATE_CHANGED = "com.icarusalmighty.bridge.STATE_CHANGED"
         const val EXTRA_COMMAND = "command"
+        const val EXTRA_STATE = "listener_state"
         private const val CHANNEL = "icarus_wake"
         private const val NOTIFICATION_ID = 1107
         @Volatile var isRunning = false
