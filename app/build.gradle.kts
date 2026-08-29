@@ -22,14 +22,6 @@ android {
         versionName = "0.3.3"
         buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty("BASE44_URL", "")}\"")
     }
-    signingConfigs {
-        getByName("debug") {
-            storeFile = rootProject.file("debug/icarus-debug.jks")
-            storePassword = "android"
-            keyAlias = "icarusdebug"
-            keyPassword = "android"
-        }
-    }
     buildFeatures { buildConfig = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
