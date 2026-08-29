@@ -18,9 +18,17 @@ android {
         applicationId = "com.icarusalmighty.bridge"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.3.2"
+        versionCode = 6
+        versionName = "0.3.3"
         buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty("BASE44_URL", "")}\"")
+    }
+    signingConfigs {
+        getByName("debug") {
+            storeFile = rootProject.file("debug/icarus-debug.jks")
+            storePassword = "android"
+            keyAlias = "icarusdebug"
+            keyPassword = "android"
+        }
     }
     buildFeatures { buildConfig = true }
     compileOptions {
