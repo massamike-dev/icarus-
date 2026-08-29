@@ -18,8 +18,9 @@ android {
         applicationId = "com.icarusalmighty.bridge"
         minSdk = 26
         targetSdk = 35
-        versionCode = 6
-        versionName = "0.3.3"
+        versionCode = 7
+        versionName = "0.4.0"
+        ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty("BASE44_URL", "")}\"")
     }
     buildFeatures { buildConfig = true }
@@ -28,6 +29,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    sourceSets["main"].java.srcDir(layout.buildDirectory.dir("generated/sherpa/kotlin"))
 }
 
 dependencies {
