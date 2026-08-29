@@ -80,7 +80,7 @@ class MontageActivity : AppCompatActivity() {
         export.isEnabled = false
         status.text = "Creating montage… Keep ICARUS open until export finishes."
         val items = selected.map { EditedMediaItem.Builder(MediaItem.fromUri(it)).build() }
-        val sequence = EditedMediaItemSequence.withAudioAndVideoFrom(items)
+        val sequence = EditedMediaItemSequence.Builder(items).build()
         val composition = Composition.Builder(sequence).build()
         val temp = File(externalCacheDir ?: cacheDir, "icarus-montage-${System.currentTimeMillis()}.mp4")
         transformer = Transformer.Builder(this)
