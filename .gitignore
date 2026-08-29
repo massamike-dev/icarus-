@@ -5,5 +5,7 @@ local.properties
 keystore.properties
 app/build/
 build/
+app/src/main/assets/sherpa-onnx-*/
+app/src/main/jniLibs/
 *.jks
 *.keystore
