@@ -30,6 +30,7 @@ import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
@@ -166,6 +167,8 @@ class IcarusNativeBridge(
 ) {
     private val context: Context get() = activity
     private val obd = ObdManager(context)
+    private var tts: TextToSpeech? = null
+    private var pendingSpeech: Triple<String, Float, Float>? = null
 
     @JavascriptInterface
     fun getStatus(): String = statusJson(context)
@@ -198,6 +201,8 @@ class IcarusNativeBridge(
                 "find_videos", "compose_video_montage" -> openMontage(requestId, args)
                 "list_bluetooth", "bluetooth_status" -> listBluetooth(requestId)
                 "wake_word" -> wakeWord(requestId, args)
+                "speak_text" -> speakText(requestId, args)
+                "stop_speaking" -> stopSpeaking(requestId)
                 "obd_list" -> listBluetooth(requestId, obdOnly = true)
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
@@ -361,6 +366,40 @@ class IcarusNativeBridge(
         return ok(requestId, JSONObject().put("enabled", enabled))
     }
 
+    private fun speakText(requestId: String?, args: JSONObject): String {
+        val text = firstString(args, "text", "content").trim()
+        if (text.isBlank()) return error(requestId, "missing_text")
+        val rate = args.optDouble("rate", 1.0).toFloat().coerceIn(0.5f, 1.5f)
+        val pitch = args.optDouble("pitch", 1.0).toFloat().coerceIn(0.5f, 1.5f)
+        pendingSpeech = Triple(text.take(12000), rate, pitch)
+        activity.runOnUiThread {
+            val existing = tts
+            if (existing != null) {
+                existing.setSpeechRate(rate)
+                existing.setPitch(pitch)
+                existing.speak(text, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
+            } else {
+                tts = TextToSpeech(context) { status ->
+                    if (status == TextToSpeech.SUCCESS) {
+                        pendingSpeech?.let { (queuedText, queuedRate, queuedPitch) ->
+                            tts?.setSpeechRate(queuedRate)
+                            tts?.setPitch(queuedPitch)
+                            tts?.speak(queuedText, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
+                        }
+                    }
+                    pendingSpeech = null
+                }
+            }
+        }
+        return ok(requestId, JSONObject().put("speaking", true).put("engine", "android_tts"))
+    }
+
+    private fun stopSpeaking(requestId: String?): String {
+        activity.runOnUiThread { tts?.stop() }
+        pendingSpeech = null
+        return ok(requestId, JSONObject().put("speaking", false))
+    }
+
     private fun obdConnect(requestId: String?, args: JSONObject): String {
         if (Build.VERSION.SDK_INT >= 31) {
             requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
@@ -435,7 +474,7 @@ class IcarusNativeBridge(
             "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "find_videos", "compose_video_montage"
+            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking"
         )
 
         fun statusJson(context: Context): String = JSONObject()
