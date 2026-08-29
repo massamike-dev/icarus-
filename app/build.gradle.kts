@@ -15,11 +15,11 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.icarusalmighty.app"
+        applicationId = "com.icarusalmighty.bridge"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.3.1"
         buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty("BASE44_URL", "")}\"")
     }
     buildFeatures { buildConfig = true }
