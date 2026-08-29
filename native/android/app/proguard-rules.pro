@@ -1,0 +1,1 @@
+# ICARUS native host currently ships without code shrinking.
