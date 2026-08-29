@@ -13,7 +13,7 @@ import com.icarusalmighty.app.MainActivity
 import com.icarusalmighty.app.R
 
 class WakeWordService : Service() {
-    private val engine: WakeWordEngine by lazy { EnrolledWakeWordEngine(this) }
+    private val engine: WakeWordEngine by lazy { SherpaWakeWordEngine(this) }
     private val commandCapture: SpeechCommandCapture by lazy { SpeechCommandCapture(this) }
 
     override fun onCreate() {
