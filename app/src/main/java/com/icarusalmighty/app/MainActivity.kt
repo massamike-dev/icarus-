@@ -1,7 +1,10 @@
 package com.icarusalmighty.app
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
@@ -20,11 +23,32 @@ import kotlin.concurrent.thread
 class MainActivity : ComponentActivity() {
     private lateinit var status: TextView
     private var enrollAfterPermission = false
+    private val listenerStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.getStringExtra(WakeWordService.EXTRA_STATE)?.let(::renderStatus)
+        }
+    }
     private val permissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             if (enrollAfterPermission) { enrollAfterPermission = false; enrollWakePhrase() } else startListener()
         }
         else renderStatus("Microphone permission is required for Hey ICARUS.")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ContextCompat.registerReceiver(
+            this,
+            listenerStateReceiver,
+            IntentFilter(WakeWordService.ACTION_STATE_CHANGED),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+        renderStatus(if (WakeWordService.isRunning) "Listening for Hey ICARUS." else "Off until you enable it after this restart.")
+    }
+
+    override fun onStop() {
+        unregisterReceiver(listenerStateReceiver)
+        super.onStop()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,6 +109,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startListener() {
+        if (!WakeTemplateStore(this).isEnrolled()) {
+            renderStatus("Hey ICARUS is not enrolled. Tap Enroll Hey ICARUS first.")
+            return
+        }
         ContextCompat.startForegroundService(this, Intent(this, WakeWordService::class.java))
         renderStatus("Starting background listener…")
     }
