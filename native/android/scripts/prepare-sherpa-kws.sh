@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SHERPA_VERSION="v1.13.6"
+MODEL_NAME="sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01"
+ANDROID_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+WORK_DIR="${RUNNER_TEMP:-/tmp}/icarus-sherpa"
+GENERATED_KOTLIN="${ANDROID_ROOT}/app/build/generated/sherpa/kotlin"
+JNI_DIR="${ANDROID_ROOT}/app/src/main/jniLibs"
+ASSET_DIR="${ANDROID_ROOT}/app/src/main/assets/${MODEL_NAME}"
+rm -rf "${WORK_DIR}" "${GENERATED_KOTLIN}" "${JNI_DIR}" "${ASSET_DIR}"
+mkdir -p "${WORK_DIR}" "${GENERATED_KOTLIN}" "${JNI_DIR}" "${ASSET_DIR}"
+git clone --depth 1 --branch "${SHERPA_VERSION}" https://github.com/k2-fsa/sherpa-onnx.git "${WORK_DIR}/source"
+for file in FeatureConfig.kt HomophoneReplacerConfig.kt KeywordSpotter.kt OnlineRecognizer.kt OnlineStream.kt QnnConfig.kt; do
+  cp "${WORK_DIR}/source/sherpa-onnx/kotlin-api/${file}" "${GENERATED_KOTLIN}/${file}"
+done
+wget -q "https://github.com/k2-fsa/sherpa-onnx/releases/download/${SHERPA_VERSION}/sherpa-onnx-${SHERPA_VERSION}-android.tar.bz2" -O "${WORK_DIR}/android.tar.bz2"
+tar --no-same-owner -xjf "${WORK_DIR}/android.tar.bz2" -C "${WORK_DIR}"
+cp -R "${WORK_DIR}/jniLibs/arm64-v8a" "${JNI_DIR}/"
+wget -q "https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/${MODEL_NAME}.tar.bz2" -O "${WORK_DIR}/model.tar.bz2"
+tar --no-same-owner -xjf "${WORK_DIR}/model.tar.bz2" -C "${WORK_DIR}"
+MODEL_SOURCE="${WORK_DIR}/${MODEL_NAME}"
+cp "${MODEL_SOURCE}/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx" "${ASSET_DIR}/"
+cp "${MODEL_SOURCE}/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx" "${ASSET_DIR}/"
+cp "${MODEL_SOURCE}/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx" "${ASSET_DIR}/"
+cp "${MODEL_SOURCE}/tokens.txt" "${ASSET_DIR}/"
+printf '%s\n' '▁HE Y ▁I C AR US :1.8 #0.30 @HEY_ICARUS' > "${ASSET_DIR}/keywords.txt"
