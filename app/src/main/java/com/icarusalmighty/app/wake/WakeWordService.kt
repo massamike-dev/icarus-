@@ -6,6 +6,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import com.icarusalmighty.app.MainActivity
 import com.icarusalmighty.app.R
@@ -53,7 +55,10 @@ class WakeWordService : Service() {
         commandCapture.listen { command ->
             if (!command.isNullOrBlank()) postCommandReview(command)
             else updateNotification("I didn't catch that. Say Hey ICARUS and try again.")
-            engine.start(::onWakeDetected)
+            Handler(Looper.getMainLooper()).postDelayed(
+                { engine.start(::onWakeDetected) },
+                1500L
+            )
         }
     }
 
