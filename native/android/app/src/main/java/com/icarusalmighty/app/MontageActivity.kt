@@ -14,7 +14,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
@@ -81,9 +80,7 @@ class MontageActivity : AppCompatActivity() {
         export.isEnabled = false
         status.text = "Creating montage… Keep ICARUS open until export finishes."
         val items = selected.map { EditedMediaItem.Builder(MediaItem.fromUri(it)).build() }
-        val sequence = EditedMediaItemSequence.Builder(setOf(C.TRACK_TYPE_AUDIO, C.TRACK_TYPE_VIDEO))
-            .addItems(items)
-            .build()
+        val sequence = EditedMediaItemSequence.Builder(items).build()
         val composition = Composition.Builder(sequence).build()
         val temp = File(externalCacheDir ?: cacheDir, "icarus-montage-${System.currentTimeMillis()}.mp4")
         transformer = Transformer.Builder(this)
