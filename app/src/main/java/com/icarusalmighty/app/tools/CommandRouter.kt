@@ -30,15 +30,15 @@ object CommandRouter {
         if ("flashlight" in lower) return PhoneCommand.Flashlight
         Regex("volume (?:to )?(\\d+)").find(lower)?.let { return PhoneCommand.Volume(it.groupValues[1].toInt().coerceIn(0, 100)) }
         Regex("brightness (?:to )?(\\d+)").find(lower)?.let { return PhoneCommand.Brightness(it.groupValues[1].toInt().coerceIn(0, 100)) }
-        Regex("navigate to (.+)").find(text, RegexOption.IGNORE_CASE)?.let { return PhoneCommand.Navigate(it.groupValues[1]) }
-        Regex("(?:call|dial) (.+)").find(text, RegexOption.IGNORE_CASE)?.let { return PhoneCommand.Dial(it.groupValues[1]) }
-        Regex("(?:text|message) ([^:]+?)(?: saying|:)(.+)").find(text, RegexOption.IGNORE_CASE)?.let { return PhoneCommand.Sms(it.groupValues[1].trim(), it.groupValues[2].trim()) }
+        Regex("navigate to (.+)", RegexOption.IGNORE_CASE).find(text)?.let { return PhoneCommand.Navigate(it.groupValues[1]) }
+        Regex("(?:call|dial) (.+)", RegexOption.IGNORE_CASE).find(text)?.let { return PhoneCommand.Dial(it.groupValues[1]) }
+        Regex("(?:text|message) ([^:]+?)(?: saying|:)(.+)", RegexOption.IGNORE_CASE).find(text)?.let { return PhoneCommand.Sms(it.groupValues[1].trim(), it.groupValues[2].trim()) }
         if ("battery" in lower) return PhoneCommand.Battery
         if (lower.contains("conversation mode") || lower.contains("let's talk") || lower.contains("lets talk") || lower.contains("talk face to face")) return PhoneCommand.ConversationMode
         if (lower.startsWith("open camera") || lower == "take a picture") return PhoneCommand.Camera
         if ("montage" in lower && "video" in lower) return PhoneCommand.Montage(text)
         if (("find" in lower || "show" in lower) && "video" in lower) return PhoneCommand.FindVideos(text)
-        Regex("open (.+)").find(text, RegexOption.IGNORE_CASE)?.let { return PhoneCommand.OpenApp(it.groupValues[1]) }
+        Regex("open (.+)", RegexOption.IGNORE_CASE).find(text)?.let { return PhoneCommand.OpenApp(it.groupValues[1]) }
         return PhoneCommand.Unsupported(text)
     }
 
