@@ -30,3 +30,5 @@ The foreground service is designed to remain alive after the app is opened, incl
 
 ## Vehicle safety
 The OBD implementation is read-only. It sends standard diagnostic PID queries and adapter setup commands only. It contains no ECU write/reflash/control commands.
+
+Published Base44 host: https://icarus-wise-guide.base44.app
