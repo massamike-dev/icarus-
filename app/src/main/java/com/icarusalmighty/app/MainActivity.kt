@@ -18,6 +18,7 @@ import com.icarusalmighty.app.wake.WakeWordService
 import com.icarusalmighty.app.wake.WakeEnrollment
 import com.icarusalmighty.app.wake.WakeTemplateStore
 import com.icarusalmighty.app.conversation.ConversationActivity
+import com.icarusalmighty.app.update.PlayUpdateManager
 import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
@@ -89,11 +90,16 @@ class MainActivity : ComponentActivity() {
             }
         })
         root.addView(Button(this).apply {
+            text = "Check for updates"
+            setOnClickListener { PlayUpdateManager.check(this@MainActivity, silent = false) }
+        })
+        root.addView(Button(this).apply {
             text = "Battery settings"
             setOnClickListener { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
         })
         setContentView(root)
         renderStatus(if (WakeWordService.isRunning) "Listening for Hey ICARUS." else "Off until you enable it after this restart.")
+        PlayUpdateManager.checkOnLaunch(this)
         if (intent?.action == WakeWordService.ACTION_COMMAND_READY) {
             intent.getStringExtra(WakeWordService.EXTRA_COMMAND)?.let { CommandReviewActivity.launch(this, it) }
         }
