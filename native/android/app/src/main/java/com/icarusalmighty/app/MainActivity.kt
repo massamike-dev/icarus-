@@ -60,6 +60,7 @@ class MainActivity : AppCompatActivity() {
         pendingWake = intent.getBooleanExtra(EXTRA_WAKE_WORD, false)
 
         webView = WebView(this)
+        webView.clearCache(true)
         setContentView(webView)
         configureWebView()
         requestWakePermissionIfNeeded()
@@ -81,6 +82,7 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             mediaPlaybackRequiresUserGesture = false
+            cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
             allowFileAccess = false
             allowContentAccess = false
             userAgentString = "$userAgentString ICARUSNative/${BuildConfig.VERSION_NAME}"
