@@ -4,6 +4,10 @@ plugins {
 }
 
 val webUrl = providers.gradleProperty("ICARUS_WEB_URL").orNull ?: ""
+val uploadKeystore = providers.environmentVariable("ICARUS_KEYSTORE_FILE").orNull?.let(::file)
+val uploadStorePassword = providers.environmentVariable("ICARUS_KEYSTORE_PASSWORD").orNull
+val uploadKeyAlias = providers.environmentVariable("ICARUS_KEY_ALIAS").orNull
+val uploadKeyPassword = providers.environmentVariable("ICARUS_KEY_PASSWORD").orNull
 
 android {
     namespace = "com.icarusalmighty.app"
@@ -22,8 +26,24 @@ android {
 
     buildFeatures { buildConfig = true }
 
+    signingConfigs {
+        if (uploadKeystore?.exists() == true &&
+            !uploadStorePassword.isNullOrBlank() &&
+            !uploadKeyAlias.isNullOrBlank() &&
+            !uploadKeyPassword.isNullOrBlank()
+        ) {
+            create("playUpload") {
+                storeFile = uploadKeystore
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("playUpload")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
