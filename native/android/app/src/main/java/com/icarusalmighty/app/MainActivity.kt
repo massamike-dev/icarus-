@@ -174,6 +174,32 @@ class IcarusNativeBridge(
     private var tts: TextToSpeech? = null
     private var pendingSpeech: Triple<String, Float, Float>? = null
 
+    private fun configureIcarusVoice(engine: TextToSpeech, requestedRate: Float, requestedPitch: Float) {
+        val maleMarkers = listOf(
+            "male", "masculine", "david", "james", "john", "george", "ryan",
+            "arthur", "daniel", "mark", "alex", "tom", "oliver", "fred", "iom", "iob"
+        )
+        val femaleMarkers = listOf(
+            "female", "samantha", "victoria", "zira", "susan", "karen", "moira",
+            "tessa", "fiona", "serena", "allison", "ava", "catherine"
+        )
+        val preferred = engine.voices.orEmpty()
+            .filter { it.locale.language.equals("en", ignoreCase = true) }
+            .maxByOrNull { voice ->
+                val name = voice.name.lowercase(Locale.US)
+                val features = voice.features.orEmpty().joinToString(" ").lowercase(Locale.US)
+                var score = 0
+                if (voice.locale.country.equals("US", ignoreCase = true)) score += 40
+                if (!voice.isNetworkConnectionRequired) score += 20
+                if (maleMarkers.any { name.contains(it) || features.contains(it) }) score += 1000
+                if (femaleMarkers.any { name.contains(it) || features.contains(it) }) score -= 1000
+                score
+            }
+        if (preferred != null) engine.voice = preferred
+        engine.setSpeechRate(requestedRate.coerceIn(0.75f, 0.95f))
+        engine.setPitch(requestedPitch.coerceIn(0.68f, 0.84f))
+    }
+
     @JavascriptInterface
     fun getStatus(): String = statusJson(context)
 
@@ -380,23 +406,29 @@ class IcarusNativeBridge(
         activity.runOnUiThread {
             val existing = tts
             if (existing != null) {
-                existing.setSpeechRate(rate)
-                existing.setPitch(pitch)
+                configureIcarusVoice(existing, rate, pitch)
                 existing.speak(text, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
             } else {
                 tts = TextToSpeech(context) { status ->
                     if (status == TextToSpeech.SUCCESS) {
                         pendingSpeech?.let { (queuedText, queuedRate, queuedPitch) ->
-                            tts?.setSpeechRate(queuedRate)
-                            tts?.setPitch(queuedPitch)
-                            tts?.speak(queuedText, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
+                            tts?.let { engine ->
+                                configureIcarusVoice(engine, queuedRate, queuedPitch)
+                                engine.speak(queuedText, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
+                            }
                         }
                     }
                     pendingSpeech = null
                 }
             }
         }
-        return ok(requestId, JSONObject().put("speaking", true).put("engine", "android_tts"))
+        return ok(
+            requestId,
+            JSONObject()
+                .put("speaking", true)
+                .put("engine", "android_tts")
+                .put("profile", "icarus_deep_male")
+        )
     }
 
     private fun checkUpdate(requestId: String?): String {
