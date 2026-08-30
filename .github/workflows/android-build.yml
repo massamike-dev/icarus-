@@ -61,8 +61,19 @@ jobs:
           name: ICARUS-1.2.0-play-aab
           path: native/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
-      - name: Publish permanent APK release
+      - name: Check for existing immutable release
+        id: release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.2.0 >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish permanent APK release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.release.outputs.exists != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.2.0
