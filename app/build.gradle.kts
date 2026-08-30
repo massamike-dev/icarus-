@@ -21,8 +21,8 @@ android {
         versionCode = 12
         versionName = "1.2.0"
         ndk { abiFilters += "arm64-v8a" }
-        buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty(\"BASE44_URL\", \"\")}\"")
-        buildConfigField("String", "UPDATE_MANIFEST_URL", "\"https://icarusassistant.com/android-update.json\"")
+        buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty("BASE44_URL", "")}\"")
+        buildConfigField("String", "UPDATE_NOTES_URL", "\"https://icarusassistant.com/android-update.json\"")
     }
     buildFeatures { buildConfig = true }
     compileOptions {
@@ -42,4 +42,5 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
     implementation("androidx.media3:media3-transformer:1.6.1")
     implementation("androidx.media3:media3-effect:1.6.1")
+    implementation("com.google.android.play:app-update-ktx:2.1.0")
 }
