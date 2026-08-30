@@ -29,7 +29,7 @@ jobs:
       - name: Build debug APK
         working-directory: native/android
         env:
-          ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarus-wise-guide.base44.app' }}
+          ICARUS_WEB_URL: https://icarusassistant.com
         run: gradle :app:assembleDebug -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
       - uses: actions/upload-artifact@v4
         with:
@@ -40,8 +40,8 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.2
-          name: ICARUS 1.1.2
+          tag_name: v1.1.3
+          name: ICARUS 1.1.3
           body: Native Android bridge build with refreshed Base44 frontend and voice controls.
           files: native/android/app/build/outputs/apk/debug/app-debug.apk
           fail_on_unmatched_files: true
