@@ -18,10 +18,11 @@ android {
         applicationId = "com.icarusalmighty.bridge"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.4.0"
+        versionCode = 12
+        versionName = "1.2.0"
         ndk { abiFilters += "arm64-v8a" }
-        buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty("BASE44_URL", "")}\"")
+        buildConfigField("String", "BASE44_URL", "\"${localProperties.getProperty(\"BASE44_URL\", \"\")}\"")
+        buildConfigField("String", "UPDATE_MANIFEST_URL", "\"https://icarusassistant.com/android-update.json\"")
     }
     buildFeatures { buildConfig = true }
     compileOptions {
