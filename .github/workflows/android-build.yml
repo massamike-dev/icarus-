@@ -14,6 +14,11 @@ permissions:
 jobs:
   debug-apk:
     runs-on: ubuntu-latest
+    env:
+      ICARUS_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ICARUS_UPLOAD_KEYSTORE_BASE64 }}
+      ICARUS_KEYSTORE_PASSWORD: ${{ secrets.ICARUS_KEYSTORE_PASSWORD }}
+      ICARUS_KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
+      ICARUS_KEY_PASSWORD: ${{ secrets.ICARUS_KEY_PASSWORD }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +40,26 @@ jobs:
         with:
           name: ICARUS-debug-apk
           path: native/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Decode permanent Play upload key
+        if: env.ICARUS_UPLOAD_KEYSTORE_BASE64 != ''
+        shell: bash
+        run: |
+          printf '%s' "$ICARUS_UPLOAD_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/icarus-upload.jks"
+          chmod 600 "$RUNNER_TEMP/icarus-upload.jks"
+      - name: Build signed Google Play bundle
+        if: env.ICARUS_UPLOAD_KEYSTORE_BASE64 != ''
+        working-directory: native/android
+        env:
+          ICARUS_KEYSTORE_FILE: ${{ runner.temp }}/icarus-upload.jks
+          ICARUS_WEB_URL: https://icarusassistant.com
+        run: gradle :app:bundleRelease -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
+      - name: Upload Google Play internal-test bundle
+        if: env.ICARUS_UPLOAD_KEYSTORE_BASE64 != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-1.2.0-play-aab
+          path: native/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
       - name: Publish permanent APK release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
