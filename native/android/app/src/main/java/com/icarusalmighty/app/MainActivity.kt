@@ -39,6 +39,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.icarusalmighty.app.update.PlayUpdateManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedInputStream
@@ -65,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         configureWebView()
         requestWakePermissionIfNeeded()
         loadIcarus()
+        PlayUpdateManager.checkOnLaunch(this)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -205,6 +207,7 @@ class IcarusNativeBridge(
                 "wake_word" -> wakeWord(requestId, args)
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
+                "check_update" -> checkUpdate(requestId)
                 "obd_list" -> listBluetooth(requestId, obdOnly = true)
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
@@ -396,6 +399,11 @@ class IcarusNativeBridge(
         return ok(requestId, JSONObject().put("speaking", true).put("engine", "android_tts"))
     }
 
+    private fun checkUpdate(requestId: String?): String {
+        activity.runOnUiThread { PlayUpdateManager.check(activity, silent = false) }
+        return ok(requestId, JSONObject().put("checking", true).put("source", "google_play"))
+    }
+
     private fun stopSpeaking(requestId: String?): String {
         activity.runOnUiThread { tts?.stop() }
         pendingSpeech = null
@@ -476,7 +484,7 @@ class IcarusNativeBridge(
             "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking"
+            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update"
         )
 
         fun statusJson(context: Context): String = JSONObject()
