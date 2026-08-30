@@ -40,8 +40,8 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.3
-          name: ICARUS 1.1.3
-          body: Native Android bridge build with refreshed Base44 frontend and voice controls.
+          tag_name: v1.2.0
+          name: ICARUS 1.2.0
+          body: ICARUS 1.2.0 test build with voice-loop fixes, unlimited testing access, startup update checks, and versioned patch notes.
           files: native/android/app/build/outputs/apk/debug/app-debug.apk
           fail_on_unmatched_files: true
