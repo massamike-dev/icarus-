@@ -58,7 +58,7 @@ jobs:
         if: env.ICARUS_UPLOAD_KEYSTORE_BASE64 != ''
         uses: actions/upload-artifact@v4
         with:
-          name: ICARUS-1.2.0-play-aab
+          name: ICARUS-1.2.1-play-aab
           path: native/android/app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
       - name: Check for existing immutable release
@@ -67,7 +67,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v1.2.0 >/dev/null 2>&1; then
+          if gh release view v1.2.1 >/dev/null 2>&1; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -76,8 +76,8 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.release.outputs.exists != 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2.0
-          name: ICARUS 1.2.0
-          body: ICARUS 1.2.0 test build with voice-loop fixes, unlimited testing access, startup update checks, and versioned patch notes.
+          tag_name: v1.2.1
+          name: ICARUS 1.2.1
+          body: ICARUS 1.2.1 test patch routes speech through Android native TTS, prefers a deep English male voice, removes the testing message cap, and retains startup update checks.
           files: native/android/app/build/outputs/apk/debug/app-debug.apk
           fail_on_unmatched_files: true
