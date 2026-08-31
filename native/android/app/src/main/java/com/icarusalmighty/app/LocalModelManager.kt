@@ -57,7 +57,7 @@ class LocalModelManager(private val context: Context) {
     fun startDownload(wifiOnly: Boolean): JSONObject {
         modelDir.mkdirs()
         status().let { if (it.optString("state") in listOf("ready", "downloading")) return it }
-        prefs.getLong(KEY_ID, -1L).takeIf { it > 0 }?.let(downloads::remove)
+        prefs.getLong(KEY_ID, -1L).takeIf { it > 0 }?.let { downloads.remove(it) }
         closeRuntime(); modelFile.delete(); prefs.edit().remove(KEY_SHA).apply()
         val request = DownloadManager.Request(Uri.parse(MODEL_URL))
             .setTitle("ICARUS local intelligence")
@@ -72,7 +72,7 @@ class LocalModelManager(private val context: Context) {
     }
 
     fun deleteModel(): JSONObject {
-        prefs.getLong(KEY_ID, -1L).takeIf { it > 0 }?.let(downloads::remove)
+        prefs.getLong(KEY_ID, -1L).takeIf { it > 0 }?.let { downloads.remove(it) }
         closeRuntime(); modelFile.delete(); prefs.edit().clear().apply()
         return JSONObject().put("state", "not_downloaded").put("deleted", true)
     }
