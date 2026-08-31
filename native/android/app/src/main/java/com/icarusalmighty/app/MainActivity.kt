@@ -1,6 +1,7 @@
 package com.icarusalmighty.app
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -218,6 +219,20 @@ class IcarusNativeBridge(
     private val localModel = LocalModelManager(context)
     private var tts: TextToSpeech? = null
     private var pendingSpeech: Triple<String, Float, Float>? = null
+    private var billingManager: PlayBillingManager? = null
+
+    private fun billing(requestId: String?, data: JSONObject): String {
+        if (billingManager == null) {
+            billingManager = PlayBillingManager(activity) { reqId, result ->
+                val payload = JSONObject()
+                    .put("ok", true)
+                    .put("requestId", reqId ?: JSONObject.NULL)
+                    .put("data", result)
+                dispatchNativeResult(payload.toString())
+            }
+        }
+        return ok(requestId, data)
+    }
 
     private fun configureIcarusVoice(engine: TextToSpeech, requestedRate: Float, requestedPitch: Float) {
         val maleMarkers = listOf(
@@ -290,6 +305,28 @@ class IcarusNativeBridge(
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
+                "subscribe" -> {
+                    val sku = firstString(args, "sku")
+                    if (sku.isBlank()) return error(requestId, "missing_sku")
+                    billingManager?.launchBillingFlow(sku, requestId) ?: run {
+                        billingManager = PlayBillingManager(activity) { reqId, result ->
+                            val payload = JSONObject().put("ok", true).put("requestId", reqId ?: JSONObject.NULL).put("data", result)
+                            dispatchNativeResult(payload.toString())
+                        }
+                        billingManager?.launchBillingFlow(sku, requestId)
+                    }
+                    ok(requestId, JSONObject().put("launched", true))
+                }
+                "check_subscription" -> {
+                    if (billingManager == null) {
+                        billingManager = PlayBillingManager(activity) { reqId, result ->
+                            val payload = JSONObject().put("ok", true).put("requestId", reqId ?: JSONObject.NULL).put("data", result)
+                            dispatchNativeResult(payload.toString())
+                        }
+                    }
+                    billingManager?.checkSubscription(requestId)
+                    ""
+                }
                 else -> error(requestId, "unsupported_action")
             }
         } catch (e: SecurityException) {
@@ -437,6 +474,7 @@ class IcarusNativeBridge(
         return ok(requestId, JSONObject().put("number", number).put("composerOpened", true))
     }
 
+    @SuppressLint("MissingPermission")
     private fun listBluetooth(requestId: String?, obdOnly: Boolean = false): String {
         if (Build.VERSION.SDK_INT >= 31) requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
         val adapter = context.getSystemService(BluetoothManager::class.java).adapter
@@ -583,7 +621,8 @@ class IcarusNativeBridge(
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
-            "local_model_status", "download_local_model", "delete_local_model", "local_chat"
+            "local_model_status", "download_local_model", "delete_local_model", "local_chat",
+            "subscribe", "check_subscription"
         )
 
         fun statusJson(context: Context): String = JSONObject()
@@ -601,6 +640,7 @@ class ObdManager(private val context: Context) {
     private var input: BufferedInputStream? = null
     private var output: BufferedOutputStream? = null
 
+    @SuppressLint("MissingPermission")
     @Synchronized
     fun connect(address: String) {
         disconnect()
