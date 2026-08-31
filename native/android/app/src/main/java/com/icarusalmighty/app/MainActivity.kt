@@ -69,8 +69,9 @@ class MainActivity : AppCompatActivity() {
         rootView = FrameLayout(this)
         webView = WebView(this)
         splashView = ImageView(this).apply {
-            setImageResource(R.drawable.icarus_splash)
-            scaleType = ImageView.ScaleType.CENTER_CROP
+            setImageResource(R.drawable.ic_launcher)
+            setBackgroundColor(android.graphics.Color.rgb(2, 8, 23))
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
             contentDescription = getString(R.string.app_name)
         }
         webView.clearCache(true)
