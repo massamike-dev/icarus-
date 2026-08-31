@@ -171,6 +171,7 @@ class IcarusNativeBridge(
 ) {
     private val context: Context get() = activity
     private val obd = ObdManager(context)
+    private val localModel = LocalModelManager(context)
     private var tts: TextToSpeech? = null
     private var pendingSpeech: Triple<String, Float, Float>? = null
 
@@ -234,6 +235,13 @@ class IcarusNativeBridge(
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
                 "check_update" -> checkUpdate(requestId)
+                "local_model_status" -> ok(requestId, localModel.status())
+                "download_local_model" -> ok(requestId, localModel.startDownload(args.optBoolean("wifiOnly", true)))
+                "delete_local_model" -> ok(requestId, localModel.deleteModel())
+                "local_chat" -> {
+                    localModel.generate(requestId, firstString(args, "prompt", "message", "text"), ::dispatchNativeResult)
+                    ""
+                }
                 "obd_list" -> listBluetooth(requestId, obdOnly = true)
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
@@ -244,6 +252,15 @@ class IcarusNativeBridge(
             error(requestId, "permission_required", e.message)
         } catch (e: Exception) {
             error(requestId, "native_action_failed", e.message)
+        }
+    }
+
+    private fun dispatchNativeResult(payload: String) {
+        webView.post {
+            webView.evaluateJavascript(
+                "window.ICARUS_NATIVE_RESULT && window.ICARUS_NATIVE_RESULT(" + JSONObject.quote(payload) + ");",
+                null
+            )
         }
     }
 
@@ -516,7 +533,8 @@ class IcarusNativeBridge(
             "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update"
+            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
+            "local_model_status", "download_local_model", "delete_local_model", "local_chat"
         )
 
         fun statusJson(context: Context): String = JSONObject()
