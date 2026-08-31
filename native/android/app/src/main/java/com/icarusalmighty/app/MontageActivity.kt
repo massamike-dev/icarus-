@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
@@ -23,6 +24,7 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
 import java.io.File
 
+@OptIn(UnstableApi::class)
 class MontageActivity : AppCompatActivity() {
     private val selected = mutableListOf<Uri>()
     private lateinit var status: TextView
