@@ -35,6 +35,8 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
+import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
@@ -49,24 +51,52 @@ import java.util.UUID
 import kotlin.math.roundToInt
 
 class MainActivity : AppCompatActivity() {
+    private lateinit var rootView: FrameLayout
     private lateinit var webView: WebView
+    private lateinit var splashView: ImageView
     private var pendingWake = false
 
-    private val microphonePermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) startWakeWordService()
+    private val wakePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startWakeWordService()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         pendingWake = intent.getBooleanExtra(EXTRA_WAKE_WORD, false)
 
+        rootView = FrameLayout(this)
         webView = WebView(this)
+        splashView = ImageView(this).apply {
+            setImageResource(R.drawable.icarus_splash)
+            scaleType = ImageView.ScaleType.CENTER_CROP
+            contentDescription = getString(R.string.app_name)
+        }
         webView.clearCache(true)
-        setContentView(webView)
+        rootView.addView(
+            webView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+        rootView.addView(
+            splashView,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        )
+        setContentView(rootView)
         configureWebView()
-        requestWakePermissionIfNeeded()
         loadIcarus()
         PlayUpdateManager.checkOnLaunch(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        PlayUpdateManager.resumeIfNeeded(this)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -93,6 +123,13 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                if (splashView.parent != null) {
+                    splashView.animate()
+                        .alpha(0f)
+                        .setDuration(320L)
+                        .withEndAction { rootView.removeView(splashView) }
+                        .start()
+                }
                 notifyNativeStatus()
                 if (pendingWake) {
                     pendingWake = false
@@ -125,12 +162,18 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun requestWakePermissionIfNeeded() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            startWakeWordService()
-        } else {
-            microphonePermission.launch(Manifest.permission.RECORD_AUDIO)
+    fun requestWakePermissionFromDisclosure() {
+        val missing = buildList {
+            if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                add(Manifest.permission.RECORD_AUDIO)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                add(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
+        if (missing.isEmpty()) startWakeWordService() else wakePermissions.launch(missing.toTypedArray())
     }
 
     private fun startWakeWordService() {
@@ -410,8 +453,13 @@ class IcarusNativeBridge(
     private fun wakeWord(requestId: String?, args: JSONObject): String {
         val enabled = !args.has("enabled") || args.optBoolean("enabled")
         val intent = Intent(context, WakeWordService::class.java)
-        if (enabled) ContextCompat.startForegroundService(context, intent) else context.stopService(intent)
-        return ok(requestId, JSONObject().put("enabled", enabled))
+        if (enabled) {
+            val host = activity as? MainActivity ?: return error(requestId, "native_host_unavailable")
+            host.requestWakePermissionFromDisclosure()
+        } else {
+            context.stopService(intent)
+        }
+        return ok(requestId, JSONObject().put("enabled", enabled).put("permissionRequested", enabled))
     }
 
     private fun speakText(requestId: String?, args: JSONObject): String {
