@@ -219,21 +219,6 @@ class IcarusNativeBridge(
     private val localModel = LocalModelManager(context)
     private var tts: TextToSpeech? = null
     private var pendingSpeech: Triple<String, Float, Float>? = null
-    private var billingManager: PlayBillingManager? = null
-
-    private fun billing(requestId: String?, data: JSONObject): String {
-        if (billingManager == null) {
-            billingManager = PlayBillingManager(activity) { reqId, result ->
-                val payload = JSONObject()
-                    .put("ok", true)
-                    .put("requestId", reqId ?: JSONObject.NULL)
-                    .put("data", result)
-                dispatchNativeResult(payload.toString())
-            }
-        }
-        return ok(requestId, data)
-    }
-
     private fun configureIcarusVoice(engine: TextToSpeech, requestedRate: Float, requestedPitch: Float) {
         val maleMarkers = listOf(
             "male", "masculine", "david", "james", "john", "george", "ryan",
@@ -305,28 +290,6 @@ class IcarusNativeBridge(
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
-                "subscribe" -> {
-                    val sku = firstString(args, "sku")
-                    if (sku.isBlank()) return error(requestId, "missing_sku")
-                    billingManager?.launchBillingFlow(sku, requestId) ?: run {
-                        billingManager = PlayBillingManager(activity) { reqId, result ->
-                            val payload = JSONObject().put("ok", true).put("requestId", reqId ?: JSONObject.NULL).put("data", result)
-                            dispatchNativeResult(payload.toString())
-                        }
-                        billingManager?.launchBillingFlow(sku, requestId)
-                    }
-                    ok(requestId, JSONObject().put("launched", true))
-                }
-                "check_subscription" -> {
-                    if (billingManager == null) {
-                        billingManager = PlayBillingManager(activity) { reqId, result ->
-                            val payload = JSONObject().put("ok", true).put("requestId", reqId ?: JSONObject.NULL).put("data", result)
-                            dispatchNativeResult(payload.toString())
-                        }
-                    }
-                    billingManager?.checkSubscription(requestId)
-                    ""
-                }
                 else -> error(requestId, "unsupported_action")
             }
         } catch (e: SecurityException) {
@@ -621,8 +584,7 @@ class IcarusNativeBridge(
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
-            "local_model_status", "download_local_model", "delete_local_model", "local_chat",
-            "subscribe", "check_subscription"
+            "local_model_status", "download_local_model", "delete_local_model", "local_chat"
         )
 
         fun statusJson(context: Context): String = JSONObject()
