@@ -17,8 +17,8 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.2.1"
+        versionCode = 8
+        versionName = "1.3.0"
         ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "ICARUS_WEB_URL", "\"${webUrl.replace("\"", "\\\"")}\"")
         buildConfigField("String", "UPDATE_NOTES_URL", "\"https://icarusassistant.com/android-update.json\"")
@@ -64,4 +64,6 @@ dependencies {
     implementation("androidx.media3:media3-transformer:1.6.1")
     implementation("androidx.media3:media3-effect:1.6.1")
     implementation("com.google.android.play:app-update-ktx:2.1.0")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.16.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 }
