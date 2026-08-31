@@ -1,0 +1,16 @@
+{
+  "versionCode": 9,
+  "versionName": "1.3.1",
+  "releaseDate": "2026-09-01",
+  "patchNotes": [
+    "Google Play in-app updates now check automatically when ICARUS opens and resume interrupted installations.",
+    "Gemma 4 E2B is now the free, private, on-device default intelligence.",
+    "The APK stays small; the 2.58 GB model downloads separately over Wi-Fi from the official LiteRT community repository.",
+    "ICARUS verifies the model size and SHA-256 checksum before running it.",
+    "Local chat works without internet and has no per-message provider charge.",
+    "GPU acceleration falls back safely to CPU when the device GPU is incompatible.",
+    "DeepSeek remains available only when Cloud Intelligence is selected explicitly.",
+    "Web search remains an explicit cloud action because current information requires internet access.",
+    "Conversation titles are now generated locally without an extra AI request."
+  ]
+}
