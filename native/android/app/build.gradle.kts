@@ -11,14 +11,14 @@ val uploadKeyPassword = providers.environmentVariable("ICARUS_KEY_PASSWORD").orN
 
 android {
     namespace = "com.icarusalmighty.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.icarusalmighty.app"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 8
-        versionName = "1.3.0"
+        targetSdk = 36
+        versionCode = 9
+        versionName = "1.3.1"
         ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "ICARUS_WEB_URL", "\"${webUrl.replace("\"", "\\\"")}\"")
         buildConfigField("String", "UPDATE_NOTES_URL", "\"https://icarusassistant.com/android-update.json\"")
@@ -53,13 +53,8 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    kotlinOptions { jvmTarget = "17" }
     sourceSets["main"].java.srcDir(layout.buildDirectory.dir("generated/sherpa/kotlin"))
-}
-
-kotlin {
-    compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    }
 }
 
 dependencies {
