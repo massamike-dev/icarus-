@@ -5,3 +5,5 @@ Temporary pull-request marker used to run the Android compile check for the Gemm
 Retry: Kotlin 2.3.0 toolchain alignment.
 
 Retry: Kotlin compilerOptions DSL.
+
+Retry: DownloadManager Kotlin 2.3 call fix.
