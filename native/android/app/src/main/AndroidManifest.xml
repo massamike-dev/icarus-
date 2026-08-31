@@ -29,6 +29,7 @@
         android:label="I.C.A.R.U.S."
         android:usesCleartextTraffic="false"
         android:theme="@style/AppTheme">
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
 
         <activity
             android:name=".MontageActivity"
