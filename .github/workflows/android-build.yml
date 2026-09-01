@@ -47,7 +47,7 @@ jobs:
           if-no-files-found: ignore
 
   signed-play-aab:
-    if: github.event_name == 'workflow_dispatch' && inputs.build_release
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.build_release)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
