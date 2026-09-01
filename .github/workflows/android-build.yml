@@ -62,20 +62,27 @@ jobs:
       - name: Verify signing configuration
         env:
           KEYSTORE_B64: ${{ secrets.ICARUS_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.ICARUS_KEYSTORE_PASSWORD }}
+          SIGNING_PASSWORD_B64: ${{ secrets.ICARUS_SIGNING_PASSWORD_BASE64 }}
           KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ICARUS_KEY_PASSWORD }}
         run: |
           test -n "$KEYSTORE_B64"
-          test -n "$STORE_PASSWORD"
+          test -n "$SIGNING_PASSWORD_B64"
           test -n "$KEY_ALIAS"
-          test -n "$KEY_PASSWORD"
       - name: Decode upload keystore
         env:
           KEYSTORE_B64: ${{ secrets.ICARUS_KEYSTORE_BASE64 }}
         run: |
           printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/icarus-upload.jks"
           chmod 600 "$RUNNER_TEMP/icarus-upload.jks"
+      - name: Decode and mask signing password
+        env:
+          SIGNING_PASSWORD_B64: ${{ secrets.ICARUS_SIGNING_PASSWORD_BASE64 }}
+        run: |
+          SIGNING_PASSWORD="$(printf '%s' "$SIGNING_PASSWORD_B64" | base64 --decode)"
+          test -n "$SIGNING_PASSWORD"
+          echo "::add-mask::$SIGNING_PASSWORD"
+          echo "ICARUS_KEYSTORE_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
+          echo "ICARUS_KEY_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
       - name: Prepare account-free wake-word engine
         run: bash native/android/scripts/prepare-sherpa-kws.sh
       - name: Build signed Play Store bundle
@@ -83,9 +90,7 @@ jobs:
         env:
           ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
           ICARUS_KEYSTORE_FILE: ${{ runner.temp }}/icarus-upload.jks
-          ICARUS_KEYSTORE_PASSWORD: ${{ secrets.ICARUS_KEYSTORE_PASSWORD }}
           ICARUS_KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
-          ICARUS_KEY_PASSWORD: ${{ secrets.ICARUS_KEY_PASSWORD }}
         run: |
           gradle :app:lintRelease :app:bundleRelease -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
           jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
