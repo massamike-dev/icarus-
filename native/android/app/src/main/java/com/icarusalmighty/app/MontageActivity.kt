@@ -24,7 +24,7 @@ import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.Transformer
 import java.io.File
 
-@OptIn(UnstableApi::class)
+@UnstableApi
 class MontageActivity : AppCompatActivity() {
     private val selected = mutableListOf<Uri>()
     private lateinit var status: TextView
