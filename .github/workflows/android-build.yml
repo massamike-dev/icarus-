@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_release:
-        description: "Build signed Play Store AAB"
+        description: "Build signed Play Store AAB and shareable APK"
         required: false
         type: boolean
         default: false
@@ -85,19 +85,25 @@ jobs:
           echo "ICARUS_KEY_PASSWORD=$SIGNING_PASSWORD" >> "$GITHUB_ENV"
       - name: Prepare account-free wake-word engine
         run: bash native/android/scripts/prepare-sherpa-kws.sh
-      - name: Build signed Play Store bundle
+      - name: Build signed Play Store bundle and shareable APK
         working-directory: native/android
         env:
           ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
           ICARUS_KEYSTORE_FILE: ${{ runner.temp }}/icarus-upload.jks
           ICARUS_KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
         run: |
-          gradle :app:lintRelease :app:bundleRelease -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
+          gradle :app:lintRelease :app:bundleRelease :app:assembleRelease -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
           jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify -verbose -certs app/build/outputs/apk/release/app-release.apk
       - uses: actions/upload-artifact@v4
         with:
           name: ICARUS-Play-release-aab
           path: native/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-shareable-release-apk
+          path: native/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
