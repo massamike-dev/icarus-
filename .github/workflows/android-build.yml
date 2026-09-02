@@ -118,8 +118,8 @@ jobs:
       - name: Publish rolling ICARUS test release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: icarus-test-latest
-          APK_URL: https://github.com/massamike-dev/Jarvis-/releases/download/icarus-test-latest/ICARUS-latest.apk
+          RELEASE_TAG: v1.3.5-test
+          APK_URL: https://github.com/massamike-dev/Jarvis-/releases/download/v1.3.5-test/ICARUS-latest.apk
         run: |
           cp native/android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/ICARUS-latest.apk"
           cp native/android/app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/ICARUS-latest.aab"
@@ -143,8 +143,9 @@ jobs:
           }
           Path("public/android-update.json").write_text(json.dumps(manifest, indent=2) + "\n")
           PY
-          gh release view "$RELEASE_TAG" >/dev/null 2>&1 || gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "ICARUS Latest Test Build" --notes "Rolling signed ICARUS Android test build." --prerelease
-          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/ICARUS-latest.apk" "$RUNNER_TEMP/ICARUS-latest.aab" public/android-update.json --clobber
+          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "ICARUS 1.3.5 Test Build" --notes "Signed ICARUS Android test build 13." --draft
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/ICARUS-latest.apk" "$RUNNER_TEMP/ICARUS-latest.aab" public/android-update.json
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/android-update.json
