@@ -100,6 +100,77 @@ class LocalModelManager(private val context: Context) {
         }
     }
 
+    fun interpretCommand(requestId: String?, command: String, onResult: (String) -> Unit) {
+        scope.launch {
+            val result = try {
+                require(command.isNotBlank()) { "missing_command" }
+                verifyModel()
+                val text = StringBuilder()
+                val session = createCommandConversation()
+                try {
+                    session.sendMessageAsync(command.take(1000)).collect { text.append(it) }
+                } finally {
+                    try { session.close() } catch (_: Exception) {}
+                }
+
+                val raw = text.toString().trim()
+                val start = raw.indexOf('{')
+                val end = raw.lastIndexOf('}')
+                require(start >= 0 && end > start) { "malformed_command" }
+                val parsed = JSONObject(raw.substring(start, end + 1))
+                val requestedAction = parsed.optString("action")
+                val action = if (requestedAction in NATIVE_ACTIONS) requestedAction else "unknown"
+                val args = parsed.optJSONObject("arguments") ?: JSONObject()
+                val recipient = firstString(args, "recipient", "contact", "contactName", "name", "number", "phone")
+                val message = firstString(args, "message", "body", "text")
+                val clarification = when {
+                    action == "send_sms" && recipient.isBlank() -> "Who would you like me to text?"
+                    action == "send_sms" && message.isBlank() -> "What would you like me to text $recipient?"
+                    action == "make_call" && recipient.isBlank() -> "Who would you like me to call?"
+                    else -> ""
+                }
+                val safeAction = if (clarification.isBlank()) action else "unknown"
+                val summary = if (clarification.isNotBlank()) clarification
+                    else parsed.optString("spokenSummary", "Review this command.").take(300)
+
+                JSONObject().put("ok", true).put("requestId", requestId ?: JSONObject.NULL)
+                    .put("data", JSONObject()
+                        .put("action", safeAction)
+                        .put("arguments", if (safeAction == "unknown") JSONObject() else args)
+                        .put("spokenSummary", summary)
+                        .apply { if (clarification.isNotBlank()) put("clarification", clarification) }
+                        .put("requiresConfirmation", safeAction in SENSITIVE_ACTIONS)
+                        .put("executionStatus", "not_executed")
+                        .put("provider", "on_device")
+                        .put("model", MODEL_NAME)
+                        .put("offline", true))
+            } catch (e: Exception) {
+                JSONObject().put("ok", false).put("requestId", requestId ?: JSONObject.NULL)
+                    .put("error", when (e.message) {
+                        "model_not_downloaded" -> "local_model_not_downloaded"
+                        "model_size_mismatch", "model_checksum_mismatch" -> "local_model_verification_failed"
+                        else -> "local_command_interpretation_failed"
+                    }).put("message", e.message ?: e.javaClass.simpleName)
+            }
+            onResult(result.toString())
+        }
+    }
+
+    @Synchronized private fun createCommandConversation(): Conversation {
+        getConversation()
+        val runtime = requireNotNull(engine) { "local_model_failed" }
+        return runtime.createConversation(ConversationConfig(systemInstruction = Contents.of(COMMAND_SYSTEM)))
+    }
+
+    private fun firstString(args: JSONObject, vararg keys: String): String {
+        keys.forEach { key ->
+            if (args.has(key) && !args.isNull(key)) {
+                args.optString(key, "").trim().takeIf { it.isNotBlank() }?.let { return it }
+            }
+        }
+        return ""
+    }
+
     @Synchronized private fun getConversation(): Conversation {
         conversation?.let { return it }
         Engine.setNativeMinLogSeverity(LogSeverity.ERROR)
@@ -155,6 +226,24 @@ class LocalModelManager(private val context: Context) {
         private const val PREFS = "icarus_local_model"
         private const val KEY_ID = "download_id"
         private const val KEY_SHA = "verified_sha"
+        private val NATIVE_ACTIONS = setOf(
+            "open_app", "set_alarm", "set_timer", "toggle_flashlight", "set_volume",
+            "set_brightness", "navigate_to", "get_battery", "take_photo", "make_call",
+            "send_sms", "find_videos", "compose_video_montage", "list_bluetooth",
+            "bluetooth_status", "wake_word", "obd_list", "obd_connect", "obd_snapshot",
+            "obd_disconnect", "unknown"
+        )
+        private val SENSITIVE_ACTIONS = setOf(
+            "set_brightness", "navigate_to", "take_photo", "make_call", "send_sms",
+            "compose_video_montage"
+        )
+        private const val COMMAND_SYSTEM = """Convert exactly one Android device command into strict JSON.
+Return only {"action":"allowed_action","arguments":{},"spokenSummary":"short description"}.
+Allowed actions: open_app, set_alarm, set_timer, toggle_flashlight, set_volume, set_brightness, navigate_to, get_battery, take_photo, make_call, send_sms, find_videos, compose_video_montage, list_bluetooth, bluetooth_status, wake_word, obd_list, obd_connect, obd_snapshot, obd_disconnect, unknown.
+Never invent a contact, phone number, SMS body, destination, app, time, or second action.
+For make_call and send_sms preserve the spoken contact under "contact".
+For send_sms include "message" only when the user actually supplied it.
+If unclear or unsupported use unknown. Never claim execution."""
         private const val SYSTEM = """You are ICARUS: Intelligent Companion for Assistance, Reasoning, Understanding, and Support. You are Michael's calm, wise, patient, quietly humorous and reassuring personal assistant. Lead with the useful answer, speak plainly, admit uncertainty, never invent completed actions, and require confirmation for sensitive or irreversible actions. Be especially useful for construction, masonry, Wennig Industries, vehicles, tools, Android development, creative work, research, planning, writing and calculations. Keep spoken answers concise. Wisdom before action, clarity before complexity, and loyalty without dishonesty."""
     }
 }
