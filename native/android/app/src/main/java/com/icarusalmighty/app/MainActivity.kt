@@ -18,6 +18,7 @@ import android.database.Cursor
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
+import android.media.ToneGenerator
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     private lateinit var splashView: ImageView
     private var pendingWake = false
+    private var commandRecognizer: SpeechRecognizer? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val wakePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -107,6 +110,12 @@ class MainActivity : AppCompatActivity() {
         if (intent.getBooleanExtra(EXTRA_WAKE_WORD, false)) {
             dispatchWakeWord()
         }
+    }
+
+    override fun onDestroy() {
+        commandRecognizer?.destroy()
+        commandRecognizer = null
+        super.onDestroy()
     }
 
     @Suppress("SetJavaScriptEnabled")
@@ -202,7 +211,107 @@ class MainActivity : AppCompatActivity() {
                 "window.dispatchEvent(new CustomEvent('icarus-wake-word',{detail:{phrase:'hey icarus'}}));",
                 null
             )
+            playWakeTone()
+            mainHandler.postDelayed({ startNativeCommandCapture() }, 550L)
         }
+    }
+
+    private fun playWakeTone() {
+        runCatching {
+            ToneGenerator(AudioManager.STREAM_NOTIFICATION, 78).apply {
+                startTone(ToneGenerator.TONE_PROP_ACK, 180)
+                mainHandler.postDelayed({ release() }, 260L)
+            }
+        }
+    }
+
+    private fun startNativeCommandCapture() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            dispatchVoiceError("Microphone permission is required.")
+            return
+        }
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            dispatchVoiceError("Android speech recognition is unavailable.")
+            restartWakeWordLater(1500L)
+            return
+        }
+        commandRecognizer?.destroy()
+        commandRecognizer = SpeechRecognizer.createSpeechRecognizer(this).also { recognizer ->
+            recognizer.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) = dispatchVoiceState("listening")
+                override fun onBeginningOfSpeech() = dispatchVoiceState("hearing")
+                override fun onRmsChanged(rmsdB: Float) = Unit
+                override fun onBufferReceived(buffer: ByteArray?) = Unit
+                override fun onEndOfSpeech() = dispatchVoiceState("processing")
+                override fun onPartialResults(partialResults: Bundle?) = Unit
+                override fun onEvent(eventType: Int, params: Bundle?) = Unit
+                override fun onError(error: Int) {
+                    val message = when (error) {
+                        SpeechRecognizer.ERROR_NO_MATCH -> "I didn't catch that."
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "I didn't hear a command."
+                        SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Speech recognition is unavailable offline on this device."
+                        else -> "I couldn't capture that command."
+                    }
+                    dispatchVoiceError(message)
+                    restartWakeWordLater(1600L)
+                }
+                override fun onResults(results: Bundle?) {
+                    val transcript = results
+                        ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        ?.firstOrNull()
+                        .orEmpty()
+                        .trim()
+                    if (transcript.isBlank()) {
+                        dispatchVoiceError("I didn't catch that.")
+                        restartWakeWordLater(1600L)
+                    } else {
+                        dispatchNativeCommand(transcript)
+                        restartWakeWordLater(25_000L)
+                    }
+                }
+            })
+            recognizer.startListening(
+                Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                    .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                    .putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.US.toLanguageTag())
+                    .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
+                    .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                    .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 900L)
+            )
+        }
+    }
+
+    private fun dispatchNativeCommand(transcript: String) {
+        val quoted = JSONObject.quote(transcript)
+        webView.post {
+            webView.evaluateJavascript(
+                "sessionStorage.setItem('icarus-native-command',$quoted);" +
+                    "window.dispatchEvent(new CustomEvent('icarus-native-command',{detail:{transcript:$quoted}}));",
+                null
+            )
+        }
+    }
+
+    private fun dispatchVoiceState(state: String) {
+        webView.post {
+            webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('icarus-native-voice-state',{detail:{state:${JSONObject.quote(state)}}}));",
+                null
+            )
+        }
+    }
+
+    private fun dispatchVoiceError(message: String) {
+        webView.post {
+            webView.evaluateJavascript(
+                "window.dispatchEvent(new CustomEvent('icarus-native-voice-error',{detail:{message:${JSONObject.quote(message)}}}));",
+                null
+            )
+        }
+    }
+
+    private fun restartWakeWordLater(delayMs: Long) {
+        mainHandler.postDelayed({ startWakeWordService() }, delayMs)
     }
 
     companion object {
