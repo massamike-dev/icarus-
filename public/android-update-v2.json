@@ -1,12 +1,12 @@
 {
-  "versionCode": 15,
-  "versionName": "1.3.7",
+  "versionCode": 16,
+  "versionName": "1.3.8",
   "releaseDate": "2026-09-03",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.3.7-test/ICARUS-latest.apk",
-  "sha256": "8cf573ff4ff650e6c01a30d855995d4841f1fccfce1429041ce51477965519e6",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.3.8-test/ICARUS-latest.apk",
+  "sha256": "257c592c4f772490fa20ef3f355d1dfb2d10fe08341c8ef310b03295c832ece3",
   "patchNotes": [
     "Moved the automatic update feed to public GitHub so update checks work without signing in.",
-    "Updated the signed Android test build to version 1.3.7 (build 15).",
+    "Updated the signed Android test build to version 1.3.8 (build 16).",
     "Kept ICARUS connected to the live Base44 app at icarusassistant.com.",
     "Preserved signed in-place installation without uninstalling the existing app."
   ]
