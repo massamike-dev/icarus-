@@ -147,7 +147,7 @@ jobs:
                   "Preserved signed in-place installation without uninstalling the existing app."
               ]
           }
-          Path("public/android-update.json").write_text(json.dumps(manifest, indent=2) + "\\n")
+          Path("public/android-update.json").write_text(json.dumps(manifest, indent=2) + "\n")
           PY
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             IS_DRAFT="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)"
