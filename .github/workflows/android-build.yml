@@ -119,8 +119,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION_CODE="$(sed -n 's/.*versionCode = \\([0-9]*\\).*/\\1/p' native/android/app/build.gradle.kts)"
-          VERSION_NAME="$(sed -n 's/.*versionName = "\\([^"]*\\)".*/\\1/p' native/android/app/build.gradle.kts)"
+          VERSION_CODE="$(awk '$1 == "versionCode" { print $3; exit }' native/android/app/build.gradle.kts)"
+          VERSION_NAME="$(awk '$1 == "versionName" { gsub(/"/, "", $3); print $3; exit }' native/android/app/build.gradle.kts)"
           RELEASE_TAG="v${VERSION_NAME}-test"
           RELEASE_DATE="$(date -u +%F)"
           APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/ICARUS-latest.apk"
