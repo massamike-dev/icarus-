@@ -1,13 +1,13 @@
 {
-  "versionCode": 13,
-  "versionName": "1.3.5",
-  "releaseDate": "2026-09-02",
-  "downloadUrl": "https://github.com/massamike-dev/Jarvis-/releases/download/v1.3.5-test/ICARUS-latest.apk",
-  "sha256": "b7fe468192c75c3de7545e4ae92c53e432b34649bd48f4babd264b6c34474974",
+  "versionCode": 14,
+  "versionName": "1.3.6",
+  "releaseDate": "2026-09-03",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.3.6-test/ICARUS-latest.apk",
+  "sha256": "d2fa6dc4a576e865e5f453736b67daa5601fd710b9c3fcc89cdb5a5518532b9c",
   "patchNotes": [
-    "Fixed Android safe-area spacing so the top and bottom controls are fully visible.",
-    "Updated the signed Android test build to version 1.3.5 (build 13).",
+    "Moved the automatic update feed to public GitHub so update checks work without signing in.",
+    "Updated the signed Android test build to version 1.3.6 (build 14).",
     "Kept ICARUS connected to the live Base44 app at icarusassistant.com.",
-    "Preserved automatic update checks and signed in-place installation."
+    "Preserved signed in-place installation without uninstalling the existing app."
   ]
-}
+}\n
