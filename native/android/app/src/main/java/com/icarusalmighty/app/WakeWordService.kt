@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 
@@ -28,6 +30,12 @@ class WakeWordService : Service() {
     }
 
     private fun onWakeDetected() {
+        runCatching {
+            ToneGenerator(AudioManager.STREAM_NOTIFICATION, 82).apply {
+                startTone(ToneGenerator.TONE_PROP_ACK, 180)
+                android.os.Handler(mainLooper).postDelayed({ release() }, 260L)
+            }
+        }
         val launch = Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             .putExtra(MainActivity.EXTRA_WAKE_WORD, true)
