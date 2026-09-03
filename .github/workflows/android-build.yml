@@ -115,12 +115,16 @@ jobs:
           path: native/android/app/build/reports/lint-results-release.html
           if-no-files-found: ignore
 
-      - name: Publish rolling ICARUS test release
+      - name: Publish versioned ICARUS test release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: v1.3.5-test
-          APK_URL: https://github.com/massamike-dev/Jarvis-/releases/download/v1.3.5-test/ICARUS-latest.apk
         run: |
+          VERSION_CODE="$(sed -n 's/.*versionCode = \\([0-9]*\\).*/\\1/p' native/android/app/build.gradle.kts)"
+          VERSION_NAME="$(sed -n 's/.*versionName = "\\([^"]*\\)".*/\\1/p' native/android/app/build.gradle.kts)"
+          RELEASE_TAG="v${VERSION_NAME}-test"
+          RELEASE_DATE="$(date -u +%F)"
+          APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/ICARUS-latest.apk"
+          export VERSION_CODE VERSION_NAME RELEASE_TAG RELEASE_DATE APK_URL
           cp native/android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/ICARUS-latest.apk"
           cp native/android/app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/ICARUS-latest.aab"
           SHA256="$(sha256sum "$RUNNER_TEMP/ICARUS-latest.apk" | cut -d' ' -f1)"
@@ -128,28 +132,38 @@ jobs:
           python3 - <<'PY'
           import json, os
           from pathlib import Path
+          version_code = int(os.environ["VERSION_CODE"])
+          version_name = os.environ["VERSION_NAME"]
           manifest = {
-              "versionCode": 13,
-              "versionName": "1.3.5",
-              "releaseDate": "2026-09-02",
+              "versionCode": version_code,
+              "versionName": version_name,
+              "releaseDate": os.environ["RELEASE_DATE"],
               "downloadUrl": os.environ["APK_URL"],
               "sha256": os.environ["SHA256"],
               "patchNotes": [
-                  "Fixed Android safe-area spacing so the top and bottom controls are fully visible.",
-                  "Updated the signed Android test build to version 1.3.5 (build 13).",
+                  "Moved the automatic update feed to public GitHub so update checks work without signing in.",
+                  f"Updated the signed Android test build to version {version_name} (build {version_code}).",
                   "Kept ICARUS connected to the live Base44 app at icarusassistant.com.",
-                  "Preserved automatic update checks and signed in-place installation."
+                  "Preserved signed in-place installation without uninstalling the existing app."
               ]
           }
-          Path("public/android-update.json").write_text(json.dumps(manifest, indent=2) + "\n")
+          Path("public/android-update.json").write_text(json.dumps(manifest, indent=2) + "\\n")
           PY
-          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "ICARUS 1.3.5 Test Build" --notes "Signed ICARUS Android test build 13." --draft
-          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/ICARUS-latest.apk" "$RUNNER_TEMP/ICARUS-latest.aab" public/android-update.json
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            IS_DRAFT="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)"
+            if [ "$IS_DRAFT" != "true" ]; then
+              echo "Release $RELEASE_TAG is already published and immutable."
+              exit 0
+            fi
+          else
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "ICARUS $VERSION_NAME Test Build" --notes "Signed ICARUS Android test build $VERSION_CODE." --draft
+          fi
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/ICARUS-latest.apk" "$RUNNER_TEMP/ICARUS-latest.aab" public/android-update.json --clobber
           gh release edit "$RELEASE_TAG" --draft=false --prerelease
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/android-update.json
           if ! git diff --cached --quiet; then
-            git commit -m "Update ICARUS 1.3.5 updater manifest [skip ci]"
+            git commit -m "Update ICARUS $VERSION_NAME updater manifest [skip ci]"
             git push origin HEAD:main
           fi

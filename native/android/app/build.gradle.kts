@@ -19,11 +19,11 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.3.5"
+        versionCode = 14
+        versionName = "1.3.6"
         ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "ICARUS_WEB_URL", "\"${webUrl.replace("\"", "\\\"")}\"")
-        buildConfigField("String", "UPDATE_NOTES_URL", "\"https://icarusassistant.com/android-update.json\"")
+        buildConfigField("String", "UPDATE_NOTES_URL", "\"https://raw.githubusercontent.com/massamike-dev/icarus-/main/public/android-update.json\"")
     }
 
     buildFeatures { buildConfig = true }
