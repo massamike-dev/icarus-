@@ -286,6 +286,10 @@ class IcarusNativeBridge(
                     localModel.generate(requestId, firstString(args, "prompt", "message", "text"), ::dispatchNativeResult)
                     ""
                 }
+                "interpret_command" -> {
+                    localModel.interpretCommand(requestId, firstString(args, "command", "prompt", "text"), ::dispatchNativeResult)
+                    ""
+                }
                 "obd_list" -> listBluetooth(requestId, obdOnly = true)
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
@@ -421,11 +425,13 @@ class IcarusNativeBridge(
         return ok(requestId, JSONObject().put("reviewOpened", true).put("query", query))
     }
 
+    @SuppressLint("MissingPermission")
     private fun makeCall(requestId: String?, args: JSONObject): String {
         val number = resolvePhone(args) ?: return error(requestId, "contact_not_found")
-        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(number)}"))
+        requirePermission(Manifest.permission.CALL_PHONE)
+        val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${Uri.encode(number)}"))
         activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("number", number))
+        return ok(requestId, JSONObject().put("number", number).put("callStarted", true))
     }
 
     private fun sendSms(requestId: String?, args: JSONObject): String {
@@ -529,7 +535,7 @@ class IcarusNativeBridge(
 
     private fun resolvePhone(args: JSONObject): String? {
         firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let { return it }
-        val contact = firstString(args, "contact", "name")
+        val contact = firstString(args, "recipient", "contact", "contactName", "name")
         if (contact.isBlank()) return null
         requirePermission(Manifest.permission.READ_CONTACTS)
 
@@ -584,7 +590,7 @@ class IcarusNativeBridge(
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
-            "local_model_status", "download_local_model", "delete_local_model", "local_chat"
+            "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command"
         )
 
         fun statusJson(context: Context): String = JSONObject()
