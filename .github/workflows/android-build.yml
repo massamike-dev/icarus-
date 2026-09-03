@@ -147,7 +147,7 @@ jobs:
                   "Preserved signed in-place installation without uninstalling the existing app."
               ]
           }
-          Path("public/android-update.json").write_text(json.dumps(manifest, indent=2) + "\n")
+          Path("public/android-update-v2.json").write_text(json.dumps(manifest, indent=2) + "\n")
           PY
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             IS_DRAFT="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)"
@@ -158,11 +158,11 @@ jobs:
           else
             gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "ICARUS $VERSION_NAME Test Build" --notes "Signed ICARUS Android test build $VERSION_CODE." --draft
           fi
-          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/ICARUS-latest.apk" "$RUNNER_TEMP/ICARUS-latest.aab" public/android-update.json --clobber
+          gh release upload "$RELEASE_TAG" "$RUNNER_TEMP/ICARUS-latest.apk" "$RUNNER_TEMP/ICARUS-latest.aab" public/android-update-v2.json --clobber
           gh release edit "$RELEASE_TAG" --draft=false --prerelease
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/android-update.json
+          git add public/android-update-v2.json
           if ! git diff --cached --quiet; then
             git commit -m "Update ICARUS $VERSION_NAME updater manifest [skip ci]"
             git push origin HEAD:main
