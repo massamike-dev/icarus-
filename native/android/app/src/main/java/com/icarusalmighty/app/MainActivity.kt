@@ -96,11 +96,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(rootView)
         configureWebView()
         loadIcarus()
+        ensureWakeListenerRunning()
         PlayUpdateManager.checkOnLaunch(this)
     }
 
     override fun onResume() {
         super.onResume()
+        ensureWakeListenerRunning()
         PlayUpdateManager.resumeIfNeeded(this)
     }
 
@@ -190,6 +192,16 @@ class MainActivity : AppCompatActivity() {
     private fun startWakeWordService() {
         val intent = Intent(this, WakeWordService::class.java)
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    /**
+     * Wake listening is a native app capability, so it must not depend on the
+     * embedded web page loading or calling the JavaScript bridge first.
+     */
+    private fun ensureWakeListenerRunning() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            runCatching { startWakeWordService() }
+        }
     }
 
     private fun notifyNativeStatus() {

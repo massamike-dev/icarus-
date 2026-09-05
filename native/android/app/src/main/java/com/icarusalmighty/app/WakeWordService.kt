@@ -26,7 +26,8 @@ class WakeWordService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) stopSelf()
-        return START_NOT_STICKY
+        // Keep the assistant available after Android reclaims the process.
+        return START_STICKY
     }
 
     private fun onWakeDetected() {
@@ -42,6 +43,8 @@ class WakeWordService : Service() {
         runCatching { startActivity(launch) }
         getSystemService(NotificationManager::class.java)
             .notify(NOTIFICATION_ID, notification("ICARUS activated"))
+        // MainActivity pauses microphone ownership while it captures the
+        // command, then starts this service again when command handling ends.
         stopSelf()
     }
 
