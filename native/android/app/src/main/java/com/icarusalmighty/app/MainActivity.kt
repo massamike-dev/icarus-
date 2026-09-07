@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingWake = false
     private var commandRecognizer: SpeechRecognizer? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private lateinit var metaWearables: MetaWearablesController
 
     private val wakePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
@@ -72,6 +73,7 @@ class MainActivity : AppCompatActivity() {
 
         rootView = FrameLayout(this)
         webView = WebView(this)
+        metaWearables = MetaWearablesController(this, ::dispatchMetaResult)
         splashView = ImageView(this).apply {
             setImageResource(R.drawable.ic_launcher)
             setBackgroundColor(android.graphics.Color.rgb(2, 8, 23))
@@ -115,7 +117,17 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         commandRecognizer?.destroy()
         commandRecognizer = null
+        if (::metaWearables.isInitialized) metaWearables.close()
         super.onDestroy()
+    }
+
+    private fun dispatchMetaResult(payload: String) {
+        webView.post {
+            webView.evaluateJavascript(
+                "window.ICARUS_NATIVE_RESULT && window.ICARUS_NATIVE_RESULT(" + JSONObject.quote(payload) + ");",
+                null
+            )
+        }
     }
 
     @Suppress("SetJavaScriptEnabled")
@@ -148,7 +160,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        webView.addJavascriptInterface(IcarusNativeBridge(this, webView), "ICARUS_NATIVE")
+        webView.addJavascriptInterface(IcarusNativeBridge(this, webView, metaWearables), "ICARUS_NATIVE")
     }
 
     private fun loadIcarus() {
@@ -321,7 +333,8 @@ class MainActivity : AppCompatActivity() {
 
 class IcarusNativeBridge(
     private val activity: Activity,
-    private val webView: WebView
+    private val webView: WebView,
+    private val metaWearables: MetaWearablesController,
 ) {
     private val context: Context get() = activity
     private val obd = ObdManager(context)
@@ -355,7 +368,9 @@ class IcarusNativeBridge(
     }
 
     @JavascriptInterface
-    fun getStatus(): String = statusJson(context)
+    fun getStatus(): String = JSONObject(statusJson(context))
+        .put("metaWearables", metaWearables.status())
+        .toString()
 
     @JavascriptInterface
     fun getCapabilities(): String = JSONObject().put("capabilities", JSONArray(CAPABILITIES)).toString()
@@ -403,7 +418,8 @@ class IcarusNativeBridge(
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
-                else -> error(requestId, "unsupported_action")
+                else -> if (action.startsWith("meta_")) metaWearables.execute(action, requestId, args)
+                    else error(requestId, "unsupported_action")
             }
         } catch (e: SecurityException) {
             error(requestId, "permission_required", e.message)
@@ -699,7 +715,9 @@ class IcarusNativeBridge(
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
-            "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command"
+            "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
+            "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
+            "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable"
         )
 
         fun statusJson(context: Context): String = JSONObject()
