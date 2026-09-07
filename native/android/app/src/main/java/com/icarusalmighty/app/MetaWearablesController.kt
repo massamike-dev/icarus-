@@ -1,6 +1,10 @@
 package com.icarusalmighty.app
 
+import android.Manifest
 import android.graphics.Bitmap
+import android.os.Build
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import android.media.AudioManager
 import android.speech.tts.TextToSpeech
 import androidx.activity.result.ActivityResultLauncher
@@ -93,8 +97,17 @@ class MetaWearablesController(
     fun execute(action: String, requestId: String?, args: JSONObject): String = when (action) {
         "meta_status" -> response(true, requestId, status())
         "meta_register" -> {
-            activity.runOnUiThread { Wearables.startRegistration(activity) }
-            accepted(requestId, "registration_started")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                ContextCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+            ) {
+                activity.runOnUiThread {
+                    activity.requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), 4117)
+                }
+                response(false, requestId, error = "bluetooth_permission_required", message = "Allow Nearby devices, then tap Connect Meta glasses again.")
+            } else {
+                activity.runOnUiThread { Wearables.startRegistration(activity) }
+                accepted(requestId, "registration_started")
+            }
         }
         "meta_unregister" -> {
             activity.runOnUiThread { Wearables.startUnregistration(activity) }
