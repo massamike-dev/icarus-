@@ -1,13 +1,13 @@
 {
-  "versionCode": 17,
-  "versionName": "1.3.9",
-  "releaseDate": "2026-09-03",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.3.9-test/ICARUS-latest.apk",
-  "sha256": "107ed5fc80795d7aec352f333481ed6a894aa026a2b9bbf8c27ddd99778efb32",
+  "versionCode": 18,
+  "versionName": "1.4.1",
+  "releaseDate": "2026-09-07",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.4.1-test/ICARUS-latest.apk",
+  "sha256": "c6fb4f588fa1ded69c8889ba90579ed23aac1220f1408c53c07ca089b92fb65d",
   "patchNotes": [
-    "Moved the automatic update feed to public GitHub so update checks work without signing in.",
-    "Updated the signed Android test build to version 1.3.9 (build 17).",
-    "Kept ICARUS connected to the live Base44 app at icarusassistant.com.",
-    "Preserved signed in-place installation without uninstalling the existing app."
+    "Added Meta Wearables DAT Android SDK support.",
+    "Added Meta camera, display, audio, and Mock Device Kit foundations.",
+    "Kept ICARUS connected to the live Base44 app.",
+    "Preserved signed in-place updates without uninstalling."
   ]
 }
