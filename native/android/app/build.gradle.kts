@@ -20,12 +20,12 @@ android {
 
     defaultConfig {
         applicationId = "com.icarusalmighty.app"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 36
         versionCode = 17
         versionName = "1.3.9"
-manifestPlaceholders["mwdat_application_id"] = metaApplicationId
-manifestPlaceholders["mwdat_client_token"] = metaClientToken
+        manifestPlaceholders["mwdat_application_id"] = metaApplicationId
+        manifestPlaceholders["mwdat_client_token"] = metaClientToken
         ndk { abiFilters += "arm64-v8a" }
         buildConfigField("String", "ICARUS_WEB_URL", "\"${webUrl.replace("\"", "\\\"")}\"")
         buildConfigField("String", "UPDATE_NOTES_URL", "\"https://raw.githubusercontent.com/massamike-dev/icarus-/main/public/android-update-v2.json\"")
@@ -78,8 +78,8 @@ dependencies {
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.16.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     implementation("com.android.billingclient:billing-ktx:7.1.1")
-implementation("com.meta.wearable:mwdat-core:0.9.0")
-implementation("com.meta.wearable:mwdat-camera:0.9.0")
-implementation("com.meta.wearable:mwdat-display:0.9.0")
-implementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
+    implementation("com.meta.wearable:mwdat-core:0.9.0")
+    implementation("com.meta.wearable:mwdat-camera:0.9.0")
+    implementation("com.meta.wearable:mwdat-display:0.9.0")
+    implementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
 }
