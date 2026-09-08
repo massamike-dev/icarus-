@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "com.unity.textmeshpro": "3.0.9",
+    "com.unity.ugui": "1.0.0",
+    "com.unity.xr.interaction.toolkit": "2.6.5",
+    "com.unity.xr.management": "4.5.1",
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.xreal.xr": "file:../com.xreal.xr.tar.gz",
+    "com.unity.modules.androidjni": "1.0.0",
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.imageconversion": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.uielements": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0",
+    "com.unity.modules.xr": "1.0.0"
+  }
+}
