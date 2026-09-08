@@ -2,15 +2,15 @@ namespace Icarus.Spatial
 {
     public sealed class TelemetrySnapshot
     {
-        public bool Connected { get; init; }
-        public long SampleTimeMs { get; init; }
-        public string Error { get; init; }
-        public double? SpeedMph { get; init; }
-        public double? Rpm { get; init; }
-        public double? CoolantF { get; init; }
-        public double? FuelPercent { get; init; }
-        public double? EngineLoadPercent { get; init; }
-        public double? ThrottlePercent { get; init; }
-        public double? Voltage { get; init; }
+        public bool Connected { get; set; }
+        public long SampleTimeMs { get; set; }
+        public string Error { get; set; }
+        public double? SpeedMph { get; set; }
+        public double? Rpm { get; set; }
+        public double? CoolantF { get; set; }
+        public double? FuelPercent { get; set; }
+        public double? EngineLoadPercent { get; set; }
+        public double? ThrottlePercent { get; set; }
+        public double? Voltage { get; set; }
     }
 }
