@@ -1,5 +1,4 @@
 from pathlib import Path
-import sys
 
 root = Path(__file__).resolve().parents[1]
 required = [
@@ -12,6 +11,7 @@ required = [
     "xreal/Assets/Icarus/Runtime/IcarusSpatialBootstrap.cs",
     "xreal/Assets/Icarus/Runtime/LoopbackTelemetryClient.cs",
     "xreal/Assets/Icarus/Runtime/SpatialHudView.cs",
+    "xreal/Assets/Icarus/Runtime/GazeTapInteractor.cs",
     "xreal/Assets/Icarus/Shaders/VolumetricHUD.shader",
     "xreal/Assets/Icarus/Editor/IcarusXrealBuild.cs",
 ]
@@ -31,11 +31,22 @@ for label, needle in checks.items():
         raise SystemExit(f"XREAL {label} setting missing: {needle}")
 
 manifest = (root / "xreal/Packages/manifest.json").read_text()
-if '"com.xreal.xr": "file:../com.xreal.xr.tar.gz"' not in manifest:
-    raise SystemExit("XREAL package must reference the official local SDK tarball")
+for needle in [
+    '"com.xreal.xr": "file:../com.xreal.xr.tar.gz"',
+    '"com.unity.inputsystem": "1.7.0"',
+    '"com.unity.xr.management": "4.5.1"',
+]:
+    if needle not in manifest:
+        raise SystemExit(f"XREAL package invariant missing: {needle}")
 
 service = (root / required[0]).read_text()
-for needle in ["InetAddress.getLoopbackAddress()", "Authorization:", "obd.snapshot()", "ACTION_STOP"]:
+for needle in [
+    "InetAddress.getLoopbackAddress()",
+    "Authorization:",
+    "manager.snapshot()",
+    "ACTION_STOP",
+    'requestLine.startsWith("GET ")',
+]:
     if needle not in service:
         raise SystemExit(f"Native XREAL telemetry bridge invariant missing: {needle}")
 if "POST " in service:
@@ -49,6 +60,15 @@ for field in ["double? SpeedMph", "double? Rpm", "double? CoolantF", "double? Fu
 hud = (root / "xreal/Assets/Icarus/Runtime/SpatialHudView.cs").read_text()
 if '"—"' not in hud or "43 MPH" in hud or "1850 RPM" in hud:
     raise SystemExit("HUD must render unavailable data as an em dash and contain no demo readings")
+
+interactor = (root / "xreal/Assets/Icarus/Runtime/GazeTapInteractor.cs").read_text()
+if "UnityEngine.InputSystem" not in interactor:
+    raise SystemExit("XREAL gaze/tap interaction must use Unity's Input System")
+
+build = (root / "xreal/Assets/Icarus/Editor/IcarusXrealBuild.cs").read_text()
+for needle in ["activeInputHandler", "SetPreloadedAssets", "AndroidArchitecture.ARM64", "GraphicsDeviceType.OpenGLES3"]:
+    if needle not in build:
+        raise SystemExit(f"XREAL Unity build invariant missing: {needle}")
 
 print("XREAL Spatial HUD source validation passed")
 print("Note: binary Unity build still requires the official XREAL SDK tarball and a Unity build environment.")
