@@ -44,6 +44,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.update.PlayUpdateManager
+import com.icarusalmighty.app.driving.DrivingHudActivity
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedInputStream
@@ -415,6 +416,7 @@ class IcarusNativeBridge(
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
+                "open_driving_hud" -> openDrivingHud(requestId, args)
                 else -> error(requestId, "unsupported_action")
             }
         } catch (e: SecurityException) {
@@ -654,6 +656,21 @@ class IcarusNativeBridge(
         return ok(requestId, JSONObject().put("connected", false))
     }
 
+    private fun openDrivingHud(requestId: String?, args: JSONObject): String {
+        val address = firstString(args, "obdAddress", "address").trim()
+        val intent = Intent(context, DrivingHudActivity::class.java).apply {
+            if (address.isNotBlank()) putExtra(DrivingHudActivity.EXTRA_OBD_ADDRESS, address)
+        }
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(
+            requestId,
+            JSONObject()
+                .put("opened", true)
+                .put("liveTelemetryRequired", true)
+                .put("obdAddressProvided", address.isNotBlank())
+        )
+    }
+
     private fun resolvePhone(args: JSONObject): String? {
         firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let { return it }
         val contact = firstString(args, "recipient", "contact", "contactName", "name")
@@ -710,7 +727,7 @@ class IcarusNativeBridge(
             "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
+            "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command"
         )
 
