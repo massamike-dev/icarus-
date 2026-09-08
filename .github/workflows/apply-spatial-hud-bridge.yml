@@ -1,0 +1,94 @@
+name: Apply Spatial HUD Bridge Patch
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - feature/spatial-hud-1.4.0
+    paths:
+      - .github/workflows/apply-spatial-hud-bridge.yml
+
+jobs:
+  patch-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/spatial-hud-1.4.0
+          fetch-depth: 0
+
+      - name: Patch native WebView bridge
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("native/android/app/src/main/java/com/icarusalmighty/app/MainActivity.kt")
+          text = path.read_text()
+
+          replacements = [
+              (
+                  'import com.icarusalmighty.app.update.PlayUpdateManager\n',
+                  'import com.icarusalmighty.app.update.PlayUpdateManager\nimport com.icarusalmighty.app.driving.DrivingHudActivity\n'
+              ),
+              (
+                  '                "obd_disconnect" -> obdDisconnect(requestId)\n',
+                  '                "obd_disconnect" -> obdDisconnect(requestId)\n                "open_driving_hud" -> openDrivingHud(requestId, args)\n'
+              ),
+              (
+                  '''    private fun obdDisconnect(requestId: String?): String {
+        obd.disconnect()
+        return ok(requestId, JSONObject().put("connected", false))
+    }
+
+    private fun resolvePhone(args: JSONObject): String? {''',
+                  '''    private fun obdDisconnect(requestId: String?): String {
+        obd.disconnect()
+        return ok(requestId, JSONObject().put("connected", false))
+    }
+
+    private fun openDrivingHud(requestId: String?, args: JSONObject): String {
+        val address = firstString(args, "obdAddress", "address").trim()
+        val intent = Intent(context, DrivingHudActivity::class.java).apply {
+            if (address.isNotBlank()) putExtra(DrivingHudActivity.EXTRA_OBD_ADDRESS, address)
+        }
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(
+            requestId,
+            JSONObject()
+                .put("opened", true)
+                .put("liveTelemetryRequired", true)
+                .put("obdAddressProvided", address.isNotBlank())
+        )
+    }
+
+    private fun resolvePhone(args: JSONObject): String? {'''
+              ),
+              (
+                  '            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts",',
+                  '            "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts",'
+              ),
+          ]
+
+          for old, new in replacements:
+              if new in text:
+                  continue
+              if old not in text:
+                  raise SystemExit(f"Expected bridge anchor not found: {old[:120]!r}")
+              text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      - name: Commit bridge patch
+        run: |
+          if git diff --quiet; then
+            echo "Bridge patch already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add native/android/app/src/main/java/com/icarusalmighty/app/MainActivity.kt
+          git commit -m "Wire native spatial HUD into ICARUS bridge"
+          git push origin HEAD:feature/spatial-hud-1.4.0
