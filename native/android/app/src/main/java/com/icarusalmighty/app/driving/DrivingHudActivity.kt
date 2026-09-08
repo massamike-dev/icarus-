@@ -13,6 +13,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +25,7 @@ import com.icarusalmighty.app.WakeWordService
 import java.util.Locale
 
 class DrivingHudActivity : AppCompatActivity() {
+    private lateinit var volumeSurface: VolumetricHudSurface
     private lateinit var hud: DrivingHudView
     private var telemetry: DrivingTelemetryController? = null
     private var latestState = DrivingHudState()
@@ -44,14 +46,40 @@ class DrivingHudActivity : AppCompatActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        hud = DrivingHudView(this, ::handleHudAction)
-        setContentView(hud)
+        volumeSurface = VolumetricHudSurface(this)
+        hud = DrivingHudView(this, ::handleHudAction).apply {
+            // The Canvas HUD remains crisp while allowing the GPU volume field to read through it.
+            alpha = 0.90f
+        }
+        val root = FrameLayout(this).apply {
+            addView(
+                volumeSurface,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+            addView(
+                hud,
+                FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+            )
+        }
+        setContentView(root)
         requestNeededPermissionsOrStart()
     }
 
     override fun onResume() {
         super.onResume()
+        volumeSurface.onResume()
         WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
+    }
+
+    override fun onPause() {
+        volumeSurface.onPause()
+        super.onPause()
     }
 
     override fun onDestroy() {
@@ -84,6 +112,7 @@ class DrivingHudActivity : AppCompatActivity() {
             ?: findSingleKnownObdAddress()
         telemetry = DrivingTelemetryController(this, address) { state ->
             latestState = state
+            volumeSurface.render(state)
             hud.render(state)
         }.also { it.start() }
     }
