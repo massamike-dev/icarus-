@@ -9,7 +9,6 @@ import java.nio.FloatBuffer
 import java.util.concurrent.atomic.AtomicReference
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
-import kotlin.math.roundToInt
 
 /**
  * Decorative GPU volume renderer for the Spatial HUD.
@@ -37,7 +36,7 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
             VisualState(
                 live = state.obdConnected,
                 heat = heat,
-                rpmPulse = state.rpm?.let { (it.coerceIn(0, 6000) / 6000f) } ?: 0f
+                rpmPulse = state.rpm?.let { it.coerceIn(0, 6000) / 6000f } ?: 0f
             )
         )
     }
@@ -248,7 +247,7 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
                     accumulated += cyan * horizon;
                     accumulated += gold * horizon * 0.22;
 
-                    float vignette = smoothstep(1.55, 0.22, dot(p, p));
+                    float vignette = 1.0 - smoothstep(0.22, 1.55, dot(p, p));
                     vec3 background = mix(vec3(0.002, 0.008, 0.025), vec3(0.004, 0.035, 0.09), max(p.y + 0.55, 0.0));
                     vec3 finalColor = background + accumulated * vignette;
 
