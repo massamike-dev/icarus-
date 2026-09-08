@@ -1,0 +1,27 @@
+name: Validate ICARUS XREAL Spatial HUD
+
+on:
+  push:
+    branches:
+      - "feature/xreal-spatial-hud"
+    paths:
+      - "xreal/**"
+      - "native/android/app/src/main/java/com/icarusalmighty/app/spatial/**"
+      - "scripts/validate_xreal_spatial.py"
+      - ".github/workflows/xreal-spatial-validate.yml"
+  pull_request:
+    paths:
+      - "xreal/**"
+      - "native/android/app/src/main/java/com/icarusalmighty/app/spatial/**"
+      - "scripts/validate_xreal_spatial.py"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate XREAL 3DoF and live-data contracts
+        run: python3 scripts/validate_xreal_spatial.py
