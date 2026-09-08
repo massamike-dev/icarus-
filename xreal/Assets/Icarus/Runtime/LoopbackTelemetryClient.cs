@@ -13,7 +13,7 @@ namespace Icarus.Spatial
     public sealed class LoopbackTelemetryClient : MonoBehaviour
     {
         public event Action<TelemetrySnapshot> SnapshotReceived;
-        private readonly ConcurrentQueue<TelemetrySnapshot> pending = new();
+        private readonly ConcurrentQueue<TelemetrySnapshot> pending = new ConcurrentQueue<TelemetrySnapshot>();
         private CancellationTokenSource cancellation;
         private SpatialLaunchContext launch;
 
@@ -33,14 +33,22 @@ namespace Icarus.Spatial
 
         private void Update()
         {
-            while (pending.TryDequeue(out var snapshot)) SnapshotReceived?.Invoke(snapshot);
+            TelemetrySnapshot snapshot;
+            while (pending.TryDequeue(out snapshot))
+            {
+                var handler = SnapshotReceived;
+                if (handler != null) handler(snapshot);
+            }
         }
 
         private void OnDestroy()
         {
-            cancellation?.Cancel();
-            cancellation?.Dispose();
-            cancellation = null;
+            if (cancellation != null)
+            {
+                cancellation.Cancel();
+                cancellation.Dispose();
+                cancellation = null;
+            }
         }
 
         private async Task PollLoop(CancellationToken token)
@@ -64,22 +72,26 @@ namespace Icarus.Spatial
 
         private async Task<string> RequestTelemetry(CancellationToken token)
         {
-            using var client = new TcpClient();
+            using (var client = new TcpClient())
             using (token.Register(() => client.Dispose()))
             {
                 await client.ConnectAsync("127.0.0.1", launch.Port);
-                using var stream = client.GetStream();
-                var request = $"GET /telemetry HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer {launch.Token}\r\nConnection: close\r\n\r\n";
-                var bytes = Encoding.ASCII.GetBytes(request);
-                await stream.WriteAsync(bytes, 0, bytes.Length, token);
-                await stream.FlushAsync(token);
-                using var reader = new StreamReader(stream, Encoding.UTF8);
-                var response = await reader.ReadToEndAsync();
-                var split = response.IndexOf("\r\n\r\n", StringComparison.Ordinal);
-                if (split < 0) throw new IOException("Malformed ICARUS spatial bridge response");
-                if (!response.StartsWith("HTTP/1.1 200", StringComparison.Ordinal))
-                    throw new IOException("ICARUS spatial bridge rejected the request");
-                return response[(split + 4)..];
+                using (var stream = client.GetStream())
+                {
+                    var request = "GET /telemetry HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: Bearer " + launch.Token + "\r\nConnection: close\r\n\r\n";
+                    var bytes = Encoding.ASCII.GetBytes(request);
+                    await stream.WriteAsync(bytes, 0, bytes.Length, token);
+                    await stream.FlushAsync(token);
+                    using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    {
+                        var response = await reader.ReadToEndAsync();
+                        var split = response.IndexOf("\r\n\r\n", StringComparison.Ordinal);
+                        if (split < 0) throw new IOException("Malformed ICARUS spatial bridge response");
+                        if (!response.StartsWith("HTTP/1.1 200", StringComparison.Ordinal))
+                            throw new IOException("ICARUS spatial bridge rejected the request");
+                        return response.Substring(split + 4);
+                    }
+                }
             }
         }
 
