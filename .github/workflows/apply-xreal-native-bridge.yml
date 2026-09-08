@@ -1,0 +1,34 @@
+name: Apply XREAL Native Bridge
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - "feature/xreal-spatial-hud"
+    paths:
+      - ".github/workflows/apply-xreal-native-bridge.yml"
+
+jobs:
+  patch-native-host:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/xreal-spatial-hud
+          fetch-depth: 0
+      - name: Patch current native WebView bridge
+        run: python3 scripts/apply_xreal_native_bridge.py
+      - name: Commit XREAL bridge patch
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "XREAL bridge patch already applied"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add native/android/app/src/main/java/com/icarusalmighty/app/MainActivity.kt
+          git commit -m "Wire XREAL Spatial HUD into current ICARUS host"
+          git push origin HEAD:feature/xreal-spatial-hud
