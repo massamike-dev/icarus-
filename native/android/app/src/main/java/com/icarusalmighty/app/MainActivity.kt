@@ -662,6 +662,8 @@ class IcarusNativeBridge(
 
     private fun openDrivingHud(requestId: String?, args: JSONObject): String {
         val address = firstString(args, "obdAddress", "address").trim()
+        // Vehicle Mode may already own the adapter socket. Release it so the HUD can reconnect cleanly.
+        obd.disconnect()
         val intent = Intent(context, DrivingHudActivity::class.java).apply {
             if (address.isNotBlank()) putExtra(DrivingHudActivity.EXTRA_OBD_ADDRESS, address)
         }
