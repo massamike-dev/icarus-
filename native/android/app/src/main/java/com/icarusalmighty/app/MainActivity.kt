@@ -45,6 +45,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.update.PlayUpdateManager
 import com.icarusalmighty.app.driving.DrivingHudActivity
+import com.icarusalmighty.app.spatial.SpatialTelemetryService
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedInputStream
@@ -420,6 +421,9 @@ class IcarusNativeBridge(
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
                 "open_driving_hud" -> openDrivingHud(requestId, args)
+                "xreal_status" -> xrealStatus(requestId)
+                "open_xreal_hud" -> openXrealHud(requestId, args)
+                "close_xreal_hud" -> closeXrealHud(requestId)
                 else -> if (action.startsWith("meta_")) metaWearables.execute(action, requestId, args)
                     else error(requestId, "unsupported_action")
             }
@@ -677,6 +681,88 @@ class IcarusNativeBridge(
         )
     }
 
+    private fun xrealStatus(requestId: String?): String {
+        val launch = Intent(Intent.ACTION_VIEW, Uri.parse("icarus-spatial://launch"))
+            .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
+        val installed = context.packageManager.resolveActivity(launch, 0) != null
+        return ok(
+            requestId,
+            JSONObject()
+                .put("installed", installed)
+                .put("package", SpatialTelemetryService.COMPANION_PACKAGE)
+                .put("host", "beam_pro")
+                .put("tracking", "3dof")
+                .put("liveTelemetryOnly", true)
+        )
+    }
+
+    private fun openXrealHud(requestId: String?, args: JSONObject): String {
+        if (Build.VERSION.SDK_INT >= 31) {
+            requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
+            requirePermission(Manifest.permission.BLUETOOTH_SCAN)
+        }
+        val address = firstString(args, "obdAddress", "address").trim()
+        if (address.isBlank()) return error(requestId, "missing_device_address", "Select a live OBD adapter before opening the XREAL HUD.")
+
+        val token = UUID.randomUUID().toString().replace("-", "") +
+            UUID.randomUUID().toString().replace("-", "")
+        val launchUri = Uri.Builder()
+            .scheme("icarus-spatial")
+            .authority("launch")
+            .appendQueryParameter("port", SpatialTelemetryService.PORT.toString())
+            .appendQueryParameter("token", token)
+            .build()
+        val launch = Intent(Intent.ACTION_VIEW, launchUri)
+            .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
+
+        if (context.packageManager.resolveActivity(launch, 0) == null) {
+            return error(
+                requestId,
+                "xreal_companion_not_installed",
+                "Install the ICARUS XREAL companion on Beam Pro before opening the Spatial HUD."
+            )
+        }
+
+        // The XREAL bridge becomes the only OBD socket owner while the companion is active.
+        obd.disconnect()
+        context.stopService(
+            Intent(context, SpatialTelemetryService::class.java)
+                .setAction(SpatialTelemetryService.ACTION_STOP)
+        )
+        val service = Intent(context, SpatialTelemetryService::class.java)
+            .setAction(SpatialTelemetryService.ACTION_START)
+            .putExtra(SpatialTelemetryService.EXTRA_OBD_ADDRESS, address)
+            .putExtra(SpatialTelemetryService.EXTRA_TOKEN, token)
+        ContextCompat.startForegroundService(context, service)
+
+        return try {
+            activity.runOnUiThread { activity.startActivity(launch) }
+            ok(
+                requestId,
+                JSONObject()
+                    .put("opened", true)
+                    .put("host", "beam_pro")
+                    .put("tracking", "3dof")
+                    .put("liveTelemetryRequired", true)
+                    .put("port", SpatialTelemetryService.PORT)
+            )
+        } catch (e: Exception) {
+            context.stopService(
+                Intent(context, SpatialTelemetryService::class.java)
+                    .setAction(SpatialTelemetryService.ACTION_STOP)
+            )
+            error(requestId, "xreal_launch_failed", e.message)
+        }
+    }
+
+    private fun closeXrealHud(requestId: String?): String {
+        context.stopService(
+            Intent(context, SpatialTelemetryService::class.java)
+                .setAction(SpatialTelemetryService.ACTION_STOP)
+        )
+        return ok(requestId, JSONObject().put("telemetryStopped", true))
+    }
+
     private fun resolvePhone(args: JSONObject): String? {
         firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let { return it }
         val contact = firstString(args, "recipient", "contact", "contactName", "name")
@@ -733,7 +819,7 @@ class IcarusNativeBridge(
             "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
+            "obd_disconnect", "open_driving_hud", "xreal_status", "open_xreal_hud", "close_xreal_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable"
