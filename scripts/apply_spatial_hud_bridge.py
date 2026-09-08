@@ -20,6 +20,10 @@ replacements = [
         '            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts",',
         '            "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts",',
     ),
+    (
+        '        val address = firstString(args, "obdAddress", "address").trim()\n        val intent = Intent(context, DrivingHudActivity::class.java).apply {',
+        '        val address = firstString(args, "obdAddress", "address").trim()\n        // Vehicle Mode may already own the adapter socket. Release it so the HUD can reconnect cleanly.\n        obd.disconnect()\n        val intent = Intent(context, DrivingHudActivity::class.java).apply {',
+    ),
 ]
 
 for old, new in replacements:
