@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -13,7 +14,10 @@ namespace Icarus.Spatial.Editor
         [MenuItem("ICARUS/Build XREAL Android")]
         public static void BuildAndroid()
         {
-            var projectRoot = Directory.GetParent(Application.dataPath)!.FullName;
+            var projectDirectory = Directory.GetParent(Application.dataPath);
+            if (projectDirectory == null)
+                throw new BuildFailedException("Unable to resolve the ICARUS XREAL project root.");
+            var projectRoot = projectDirectory.FullName;
             var sdkTarball = Path.Combine(projectRoot, "com.xreal.xr.tar.gz");
             if (!File.Exists(sdkTarball))
                 throw new BuildFailedException("Missing com.xreal.xr.tar.gz. Download XREAL SDK 3.1.0 after accepting XREAL's terms and place the tarball at xreal/com.xreal.xr.tar.gz.");
@@ -26,7 +30,8 @@ namespace Icarus.Spatial.Editor
             PlayerSettings.productName = "ICARUS Spatial HUD";
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.icarusalmighty.spatial");
             PlayerSettings.bundleVersion = Environment.GetEnvironmentVariable("ICARUS_XREAL_VERSION") ?? "1.0.0";
-            PlayerSettings.Android.bundleVersionCode = int.TryParse(Environment.GetEnvironmentVariable("ICARUS_XREAL_VERSION_CODE"), out var code) ? code : 1;
+            int versionCode;
+            PlayerSettings.Android.bundleVersionCode = int.TryParse(Environment.GetEnvironmentVariable("ICARUS_XREAL_VERSION_CODE"), out versionCode) ? versionCode : 1;
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
@@ -37,7 +42,7 @@ namespace Icarus.Spatial.Editor
 
             Directory.CreateDirectory("Assets/Generated");
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            new GameObject("ICARUS Spatial Runtime").AddComponent<IcarusSpatialBootstrap>();
+            new GameObject("ICARUS Spatial Runtime").AddComponent<Icarus.Spatial.IcarusSpatialBootstrap>();
             const string scenePath = "Assets/Generated/IcarusSpatial.unity";
             EditorSceneManager.SaveScene(scene, scenePath);
 
@@ -54,8 +59,8 @@ namespace Icarus.Spatial.Editor
             };
             var report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
-                throw new BuildFailedException($"ICARUS XREAL build failed: {report.summary.result}");
-            Debug.Log($"ICARUS XREAL build complete: {output}");
+                throw new BuildFailedException("ICARUS XREAL build failed: " + report.summary.result);
+            Debug.Log("ICARUS XREAL build complete: " + output);
         }
 
         private static void ValidateXrealSettings(string projectRoot)
