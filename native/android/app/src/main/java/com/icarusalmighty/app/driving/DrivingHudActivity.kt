@@ -90,25 +90,30 @@ class DrivingHudActivity : AppCompatActivity() {
 
     private fun handleHudAction(action: HudAction) {
         val controller = telemetry ?: return
-        val moving = latestState.vehicleMoving == true
+        val parkedControlsAllowed = latestState.parkedControlsAllowed
         when (action) {
             HudAction.EXIT -> finish()
             HudAction.VOICE -> startVoiceCapture()
             HudAction.SHOW_ENGINE -> {
-                if (moving) movingLockout() else controller.showEngineDetails()
+                if (!parkedControlsAllowed) parkedOnlyLockout() else controller.showEngineDetails()
             }
             HudAction.TOGGLE_DIAGNOSTICS -> {
-                if (moving) movingLockout() else controller.toggleDiagnostics()
+                if (!parkedControlsAllowed) parkedOnlyLockout() else controller.toggleDiagnostics()
             }
             HudAction.TOGGLE_NAVIGATION -> {
-                // Navigation remains glanceable while moving, but expansion is parked-only.
-                if (moving) movingLockout() else controller.toggleNavigation()
+                // Navigation remains glanceable while moving. Expansion requires a confirmed stopped speed.
+                if (!parkedControlsAllowed) parkedOnlyLockout() else controller.toggleNavigation()
             }
         }
     }
 
-    private fun movingLockout() {
-        Toast.makeText(this, "Detailed controls are locked while the vehicle is moving. Use voice.", Toast.LENGTH_SHORT).show()
+    private fun parkedOnlyLockout() {
+        val message = if (latestState.vehicleMoving == null) {
+            "Detailed controls require a confirmed stopped vehicle. Speed is unavailable; use voice."
+        } else {
+            "Detailed controls are locked while the vehicle is moving. Use voice."
+        }
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun startVoiceCapture() {
