@@ -1,25 +1,27 @@
 package com.icarusalmighty.app.driving
 
 data class DrivingHudState(
-    val speedMph: Int = 43,
-    val rpm: Int = 1850,
-    val fuelPercent: Int = 63,
-    val engineTempF: Int = 198,
-    val batteryVolts: Double = 14.2,
-    val engineLoadPercent: Int = 34,
-    val nextTurnDistanceFt: Int = 450,
-    val nextRoad: String = "Ridgeview Blvd",
-    val roadStatus: String = "ROAD CLEAR",
-    val roadDetail: String = "GOOD CONDITIONS AHEAD",
+    val speedMph: Int? = null,
+    val rpm: Int? = null,
+    val fuelPercent: Int? = null,
+    val engineTempF: Int? = null,
+    val batteryVolts: Double? = null,
+    val engineLoadPercent: Int? = null,
+    val nextTurnDistanceFt: Int? = null,
+    val nextRoad: String? = null,
+    val roadStatus: String = "ROAD DATA OFFLINE",
+    val roadDetail: String = "CONNECT A LIVE NAVIGATION SOURCE",
     val diagnosticsExpanded: Boolean = true,
     val navigationExpanded: Boolean = true,
     val listening: Boolean = false,
-    val parked: Boolean = false,
+    val vehicleMoving: Boolean? = null,
     val obdConnected: Boolean = false,
-    val sourceLabel: String = "SIMULATION",
+    val sourceLabel: String = "NO LIVE VEHICLE DATA",
     val alertMessage: String? = null,
     val lastVoiceCommand: String? = null
-)
+) {
+    val parkedControlsAllowed: Boolean get() = vehicleMoving == false
+}
 
 enum class HudAction {
     TOGGLE_DIAGNOSTICS,
