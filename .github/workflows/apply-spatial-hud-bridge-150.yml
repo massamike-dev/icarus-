@@ -18,7 +18,7 @@ jobs:
         with:
           ref: feature/spatial-hud-1.5.0
           fetch-depth: 0
-      - name: Patch current native WebView bridge
+      - name: Patch current native WebView bridge and OBD handoff
         run: python3 scripts/apply_spatial_hud_bridge.py
       - name: Commit bridge patch
         shell: bash
@@ -30,5 +30,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add native/android/app/src/main/java/com/icarusalmighty/app/MainActivity.kt
-          git commit -m "Wire Spatial HUD into current ICARUS native bridge"
+          git commit -m "Harden Spatial HUD OBD handoff"
           git push origin HEAD:feature/spatial-hud-1.5.0
