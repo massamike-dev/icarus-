@@ -5,13 +5,11 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.ObdManager
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 class DrivingTelemetryController(
     private val context: Context,
@@ -25,11 +23,22 @@ class DrivingTelemetryController(
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
-        publish(state)
-        if (!obdAddress.isNullOrBlank() && hasBluetoothPermission()) {
-            startObdLoop(obdAddress)
-        } else {
-            startSimulationLoop()
+        when {
+            obdAddress.isNullOrBlank() -> mutate {
+                copy(
+                    obdConnected = false,
+                    sourceLabel = "NO LIVE VEHICLE DATA",
+                    alertMessage = "CONNECT AN OBD ADAPTER FOR LIVE TELEMETRY"
+                )
+            }
+            !hasBluetoothPermission() -> mutate {
+                copy(
+                    obdConnected = false,
+                    sourceLabel = "BLUETOOTH PERMISSION REQUIRED",
+                    alertMessage = "BLUETOOTH PERMISSION IS REQUIRED FOR OBD DATA"
+                )
+            }
+            else -> startObdLoop(obdAddress)
         }
     }
 
@@ -42,10 +51,14 @@ class DrivingTelemetryController(
     fun toggleDiagnostics() = mutate { copy(diagnosticsExpanded = !diagnosticsExpanded) }
     fun toggleNavigation() = mutate { copy(navigationExpanded = !navigationExpanded) }
     fun setListening(value: Boolean) = mutate { copy(listening = value) }
+
     fun showEngineDetails() = mutate {
+        val temp = engineTempF?.let { "$it°F" } ?: "—"
+        val load = engineLoadPercent?.let { "$it%" } ?: "—"
+        val volts = batteryVolts?.let { "%.1fV".format(it) } ?: "—"
         copy(
             diagnosticsExpanded = true,
-            alertMessage = "ENGINE ${engineTempF}°F  •  LOAD ${engineLoadPercent}%  •  ${"%.1f".format(batteryVolts)}V"
+            alertMessage = "ENGINE $temp  •  LOAD $load  •  $volts"
         )
     }
 
@@ -63,12 +76,12 @@ class DrivingTelemetryController(
                 showEngineDetails(); true
             }
             "show" in normalized && ("navigation" in normalized || "route" in normalized) -> {
-                mutate { copy(navigationExpanded = true, alertMessage = "ROUTE GUIDANCE EXPANDED") }; true
+                mutate { copy(navigationExpanded = true, alertMessage = "ROUTE PANEL EXPANDED") }; true
             }
             ("hide" in normalized || "close" in normalized) && ("navigation" in normalized || "route" in normalized) -> {
                 mutate { copy(navigationExpanded = false, alertMessage = null) }; true
             }
-            "road status" in normalized || "road clear" in normalized -> {
+            "road status" in normalized -> {
                 mutate { copy(alertMessage = "$roadStatus • $roadDetail") }; true
             }
             "clear alert" in normalized || "dismiss" in normalized -> {
@@ -78,49 +91,22 @@ class DrivingTelemetryController(
         }
     }
 
-    private fun startSimulationLoop() {
-        val started = SystemClock.elapsedRealtime()
-        val tick = object : Runnable {
-            override fun run() {
-                if (!running.get()) return
-                val seconds = (SystemClock.elapsedRealtime() - started) / 1000.0
-                val speed = (43 + sin(seconds / 2.1) * 3.5).roundToInt().coerceAtLeast(0)
-                val rpm = (1850 + sin(seconds * 1.4) * 210).roundToInt().coerceAtLeast(700)
-                val temp = (198 + sin(seconds / 5.0) * 2.2).roundToInt()
-                val load = (34 + sin(seconds / 1.8) * 8).roundToInt().coerceIn(5, 95)
-                val turn = (450 - ((seconds * 5).roundToInt() % 380)).coerceAtLeast(70)
-                state = state.copy(
-                    speedMph = speed,
-                    rpm = rpm,
-                    engineTempF = temp,
-                    engineLoadPercent = load,
-                    nextTurnDistanceFt = turn,
-                    parked = speed < 2,
-                    obdConnected = false,
-                    sourceLabel = "SIMULATION"
-                )
-                publish(state)
-                mainHandler.postDelayed(this, 120L)
-            }
-        }
-        mainHandler.post(tick)
-    }
-
     private fun startObdLoop(address: String) {
         executor.execute {
             val obd = ObdManager(context.applicationContext)
             try {
+                mutateFromWorker { copy(sourceLabel = "CONNECTING OBD…", alertMessage = "CONNECTING TO OBD ADAPTER") }
                 obd.connect(address)
                 mutateFromWorker { copy(obdConnected = true, sourceLabel = "OBD LIVE", alertMessage = "OBD CONNECTED") }
                 while (running.get()) {
                     val snap = obd.snapshot()
-                    val speed = snap.optDouble("speedMph", state.speedMph.toDouble()).roundToInt().coerceAtLeast(0)
-                    val rpm = snap.optDouble("rpm", state.rpm.toDouble()).roundToInt().coerceAtLeast(0)
-                    val coolant = snap.optDouble("coolantF", state.engineTempF.toDouble()).roundToInt()
-                    val fuel = snap.optDouble("fuelPercent", state.fuelPercent.toDouble()).roundToInt().coerceIn(0, 100)
-                    val load = snap.optDouble("engineLoadPercent", state.engineLoadPercent.toDouble()).roundToInt().coerceIn(0, 100)
-                    val volts = snap.optDouble("voltage", state.batteryVolts)
-                    val warning = coolant >= 235
+                    val speed = snap.valueOrNull("speedMph")?.roundToInt()?.coerceAtLeast(0)
+                    val rpm = snap.valueOrNull("rpm")?.roundToInt()?.coerceAtLeast(0)
+                    val coolant = snap.valueOrNull("coolantF")?.roundToInt()
+                    val fuel = snap.valueOrNull("fuelPercent")?.roundToInt()?.coerceIn(0, 100)
+                    val load = snap.valueOrNull("engineLoadPercent")?.roundToInt()?.coerceIn(0, 100)
+                    val volts = snap.valueOrNull("voltage")
+                    val warning = coolant?.let { it >= 235 } == true
                     mutateFromWorker {
                         copy(
                             speedMph = speed,
@@ -129,11 +115,9 @@ class DrivingTelemetryController(
                             fuelPercent = fuel,
                             engineLoadPercent = load,
                             batteryVolts = volts,
-                            parked = speed < 2,
+                            vehicleMoving = speed?.let { it >= 2 },
                             obdConnected = true,
                             sourceLabel = "OBD LIVE",
-                            roadStatus = if (warning) "ENGINE TEMP HIGH" else "ROAD CLEAR",
-                            roadDetail = if (warning) "REDUCE LOAD AND CHECK COOLING SYSTEM" else "GOOD CONDITIONS AHEAD",
                             alertMessage = if (warning) "COOLANT ${coolant}°F" else alertMessage
                         )
                     }
@@ -142,16 +126,27 @@ class DrivingTelemetryController(
             } catch (e: Exception) {
                 mutateFromWorker {
                     copy(
+                        speedMph = null,
+                        rpm = null,
+                        engineTempF = null,
+                        fuelPercent = null,
+                        engineLoadPercent = null,
+                        batteryVolts = null,
+                        vehicleMoving = null,
                         obdConnected = false,
-                        sourceLabel = "SIMULATION",
+                        sourceLabel = "OBD OFFLINE",
                         alertMessage = "OBD UNAVAILABLE • ${e.message ?: "CONNECTION FAILED"}"
                     )
                 }
-                mainHandler.post { if (running.get()) startSimulationLoop() }
             } finally {
                 runCatching { obd.disconnect() }
             }
         }
+    }
+
+    private fun org.json.JSONObject.valueOrNull(name: String): Double? {
+        if (!has(name) || isNull(name)) return null
+        return optDouble(name).takeUnless { it.isNaN() }
     }
 
     private fun hasBluetoothPermission(): Boolean =
