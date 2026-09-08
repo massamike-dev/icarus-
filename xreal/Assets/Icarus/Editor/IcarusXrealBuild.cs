@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Build;
@@ -23,6 +24,8 @@ namespace Icarus.Spatial.Editor
                 throw new BuildFailedException("Missing com.xreal.xr.tar.gz. Download XREAL SDK 3.1.0 after accepting XREAL's terms and place the tarball at xreal/com.xreal.xr.tar.gz.");
 
             ValidateXrealSettings(projectRoot);
+            EnsureInputHandling();
+            EnsurePreloadedXrealAssets();
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
             EditorUserBuildSettings.buildAppBundle = Environment.GetEnvironmentVariable("ICARUS_XREAL_AAB") == "1";
 
@@ -61,6 +64,37 @@ namespace Icarus.Spatial.Editor
             if (report.summary.result != BuildResult.Succeeded)
                 throw new BuildFailedException("ICARUS XREAL build failed: " + report.summary.result);
             Debug.Log("ICARUS XREAL build complete: " + output);
+        }
+
+        private static void EnsureInputHandling()
+        {
+            var objects = AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/ProjectSettings.asset");
+            if (objects == null || objects.Length == 0)
+                throw new BuildFailedException("Unity PlayerSettings asset is unavailable.");
+            var serialized = new SerializedObject(objects[0]);
+            var property = serialized.FindProperty("activeInputHandler");
+            if (property == null)
+                throw new BuildFailedException("Unity activeInputHandler setting is unavailable.");
+            property.intValue = 2; // Both: XREAL template baseline, with new Input System enabled.
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void EnsurePreloadedXrealAssets()
+        {
+            var paths = new[]
+            {
+                "Assets/XR/Settings/XREALSettings.asset",
+                "Assets/XR/XRGeneralSettingsPerBuildTarget.asset"
+            };
+            var assets = new List<UnityEngine.Object>(PlayerSettings.GetPreloadedAssets());
+            foreach (var path in paths)
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
+                if (asset == null)
+                    throw new BuildFailedException("Required XREAL preload asset is unavailable: " + path);
+                if (!assets.Contains(asset)) assets.Add(asset);
+            }
+            PlayerSettings.SetPreloadedAssets(assets.ToArray());
         }
 
         private static void ValidateXrealSettings(string projectRoot)
