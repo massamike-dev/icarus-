@@ -1,6 +1,14 @@
 # ICARUS Spatial HUD
 
-ICARUS 1.5.0 introduces a native fullscreen Driving Mode HUD designed for phone, external display, and future XREAL spatial presentation.
+ICARUS 1.5.2 introduces a native fullscreen Driving Mode HUD designed for phone/external display today and future XREAL spatial presentation.
+
+## Rendering contract
+
+- The interactive HUD is layered over a real OpenGL ES 3 volumetric renderer.
+- The volumetric layer uses fragment-shader ray marching with procedural density/noise, scan-shell, corridor, and holographic core fields.
+- Coolant-derived heat tint and RPM-derived pulse are used only when the corresponding live OBD values exist.
+- Decorative scan rings, grid depth, glow, volumetric motion, and holographic fields are presentation effects only and are never represented as sensor measurements.
+- True XREAL head-tracked stereo presentation remains a separate XREAL SDK/Unity XR integration; this Android renderer is the production native foundation and external-display path.
 
 ## Telemetry contract
 
@@ -14,7 +22,6 @@ ICARUS 1.5.0 introduces a native fullscreen Driving Mode HUD designed for phone,
 
 - Voice remains available as the primary in-motion interaction path.
 - Detailed touch interaction requires live OBD speed to confirm that the vehicle is stopped. If speed is unavailable, detailed touch stays locked and voice remains available.
-- Decorative scan rings, grid depth, glow, and motion are presentation effects only and are never represented as sensor data.
 
 ## Native handoff
 
