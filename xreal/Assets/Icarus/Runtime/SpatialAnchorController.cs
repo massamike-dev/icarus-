@@ -8,7 +8,7 @@ namespace Icarus.Spatial
     {
         public Transform Head { get; set; }
         public SpatialFollowMode Mode { get; private set; } = SpatialFollowMode.BodyAnchor;
-        public Vector3 Offset = new(0f, -0.12f, 2.2f);
+        public Vector3 Offset = new Vector3(0f, -0.12f, 2.2f);
         public float BodyCatchupDegrees = 22f;
         public float BodyCatchupSpeed = 3.5f;
         public float SmoothFollowSpeed = 5.5f;
