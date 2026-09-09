@@ -36,4 +36,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "ICARUSNative"
-include(":app")
+include(":app", ":xreal")
