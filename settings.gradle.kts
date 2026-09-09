@@ -4,4 +4,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "IcarusNativeBridge"
-include(":app")
+include(":app", ":xreal")
