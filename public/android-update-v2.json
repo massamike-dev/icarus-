@@ -1,9 +1,9 @@
 {
-  "versionCode": 19,
-  "versionName": "1.4.2",
-  "releaseDate": "2026-09-07",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.4.2-test/ICARUS-latest.apk",
-  "sha256": "2c3b962f561de36eddfb044593257beaa6cda378f3c5bd317d4bcaf970e259a2",
+  "versionCode": 20,
+  "versionName": "1.4.3",
+  "releaseDate": "2026-09-09",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.4.3-test/ICARUS-latest.apk",
+  "sha256": "04e6815b7bfcd26781f78a67e790ef6601383f7f2389d690fd9d6ea06bf77564",
   "patchNotes": [
     "Added Meta Wearables DAT Android SDK support.",
     "Added Meta camera, display, audio, and Mock Device Kit foundations.",
