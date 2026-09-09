@@ -19,6 +19,9 @@ import com.icarusalmighty.app.wake.WakeEnrollment
 import com.icarusalmighty.app.wake.WakeTemplateStore
 import com.icarusalmighty.app.conversation.ConversationActivity
 import com.icarusalmighty.app.update.PlayUpdateManager
+import com.icarusalmighty.xreal.XrealLaunchResult
+import com.icarusalmighty.xreal.XrealMode
+import com.icarusalmighty.xreal.XrealModeController
 import kotlin.concurrent.thread
 
 class MainActivity : ComponentActivity() {
@@ -81,6 +84,17 @@ class MainActivity : ComponentActivity() {
         root.addView(Button(this).apply {
             text = "Open Conversation Mode"
             setOnClickListener { startActivity(Intent(this@MainActivity, ConversationActivity::class.java)) }
+        })
+        root.addView(Button(this).apply {
+            text = "Open XREAL Glasses Mode"
+            setOnClickListener {
+                when (XrealModeController(this@MainActivity).launch(XrealMode.ASSISTANT)) {
+                    XrealLaunchResult.Started -> renderStatus("Launching XREAL glasses mode.")
+                    XrealLaunchResult.RuntimeUnavailable -> renderStatus(
+                        "XREAL module is ready. The Unity/XREAL runtime still needs to be linked."
+                    )
+                }
+            }
         })
         root.addView(Button(this).apply {
             text = "Stop background listening"
