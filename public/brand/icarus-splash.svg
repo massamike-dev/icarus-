@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1920" role="img" aria-labelledby="title">
+  <title id="title">ICARUS splash screen</title>
+  <defs>
+    <radialGradient id="space" cx="50%" cy="34%" r="80%"><stop offset="0" stop-color="#123555"/><stop offset=".42" stop-color="#061a30"/><stop offset="1" stop-color="#020817"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f6df9b"/><stop offset=".45" stop-color="#d6b65b"/><stop offset="1" stop-color="#9a6d24"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6bf9ff"/><stop offset="1" stop-color="#13a7d4"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1080" height="1920" fill="url(#space)"/>
+  <g opacity=".22" fill="none" stroke="#36d8f0"><circle cx="540" cy="650" r="380"/><circle cx="540" cy="650" r="430"/><path d="M100 650h880M540 150v1000"/></g>
+  <g transform="translate(190 300) scale(.684)">
+    <circle cx="512" cy="500" r="340" fill="none" stroke="#d6b65b" stroke-width="22"/>
+    <g fill="url(#gold)"><path d="M488 342C408 267 310 230 184 244c68 29 111 68 132 116-70-22-132-17-190 15 101 11 184 58 263 139l99-53z"/><path d="M536 342c80-75 178-112 304-98-68 29-111 68-132 116 70-22 132-17 190 15-101 11-184 58-263 139l-99-53z"/><path d="M448 276h128l-31 78v286l56 63H423l56-63V354z"/><path d="M220 609l96 172 91-148 105 164 105-164 91 148 96-172-164 278-125-167-125 167z"/></g>
+    <g fill="url(#cyan)" filter="url(#glow)"><path d="M336 411l118 27-88 43-80-28z"/><path d="M688 411l-118 27 88 43 80-28z"/></g>
+  </g>
+  <text x="540" y="1150" text-anchor="middle" fill="#ead18b" font-family="Arial,Helvetica,sans-serif" font-size="112" font-weight="700" letter-spacing="18">ICARUS</text>
+  <text x="540" y="1235" text-anchor="middle" fill="#72e9f5" font-family="Arial,Helvetica,sans-serif" font-size="29" letter-spacing="5">AI ASSISTANT • VEHICLE MODE • GLASSES MODE</text>
+  <path d="M80 1535 Q540 1380 1000 1535" fill="none" stroke="#2ad7ee" stroke-width="5" opacity=".5"/>
+  <path d="M0 1590 Q540 1440 1080 1590V1920H0z" fill="#061a30" opacity=".62"/>
+  <circle cx="540" cy="1580" r="9" fill="#f1d27c" filter="url(#glow)"/>
+</svg>

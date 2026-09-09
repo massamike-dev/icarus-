@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title">
+  <title id="title">ICARUS AI Assistant social hero</title>
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="45%" r="80%"><stop offset="0" stop-color="#123555"/><stop offset=".48" stop-color="#061a30"/><stop offset="1" stop-color="#020817"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f6df9b"/><stop offset=".45" stop-color="#d6b65b"/><stop offset="1" stop-color="#9a6d24"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6bf9ff"/><stop offset="1" stop-color="#13a7d4"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g opacity=".18" fill="none" stroke="#42dce9"><path d="M610 118h470M670 170h390M630 460h500M760 510h290"/><circle cx="930" cy="315" r="165"/><circle cx="930" cy="315" r="205"/></g>
+  <g transform="translate(62 63) scale(.49)"><circle cx="512" cy="500" r="340" fill="none" stroke="#d6b65b" stroke-width="22"/><g fill="url(#gold)"><path d="M488 342C408 267 310 230 184 244c68 29 111 68 132 116-70-22-132-17-190 15 101 11 184 58 263 139l99-53z"/><path d="M536 342c80-75 178-112 304-98-68 29-111 68-132 116 70-22 132-17 190 15-101 11-184 58-263 139l-99-53z"/><path d="M448 276h128l-31 78v286l56 63H423l56-63V354z"/><path d="M220 609l96 172 91-148 105 164 105-164 91 148 96-172-164 278-125-167-125 167z"/></g><g fill="url(#cyan)" filter="url(#glow)"><path d="M336 411l118 27-88 43-80-28z"/><path d="M688 411l-118 27 88 43 80-28z"/></g></g>
+  <text x="590" y="285" fill="#ead18b" font-family="Arial,Helvetica,sans-serif" font-size="92" font-weight="700" letter-spacing="14">ICARUS</text>
+  <text x="594" y="348" fill="#70e8f4" font-family="Arial,Helvetica,sans-serif" font-size="25" letter-spacing="3">AI ASSISTANT • VEHICLE MODE • GLASSES MODE</text>
+  <path d="M594 390h450" stroke="#d6b65b" stroke-width="3" opacity=".55"/>
+  <path d="M594 424c68-28 112 29 170 0s103 29 165 0 104 20 147-6" fill="none" stroke="#45dff0" stroke-width="4" opacity=".7"/>
+  <path d="M735 535l82-68 55 39 112-110" fill="none" stroke="#d6b65b" stroke-width="5" opacity=".55"/>
+  <circle cx="984" cy="396" r="9" fill="#63eff8" filter="url(#glow)"/>
+</svg>

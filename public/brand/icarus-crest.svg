@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">ICARUS W Crest</title>
+  <desc id="desc">Gold and cyan futuristic winged I and W crest on midnight navy.</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="72%"><stop offset="0" stop-color="#0b2744"/><stop offset="0.58" stop-color="#041426"/><stop offset="1" stop-color="#020817"/></radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f6df9b"/><stop offset="0.42" stop-color="#d6b65b"/><stop offset="1" stop-color="#9a6d24"/></linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#5cf6ff"/><stop offset="1" stop-color="#16a9d6"/></linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+  <circle cx="512" cy="500" r="340" fill="none" stroke="#d6b65b" stroke-width="22" opacity=".86"/>
+  <circle cx="512" cy="500" r="308" fill="none" stroke="#40d9f4" stroke-width="5" opacity=".28"/>
+  <g fill="url(#gold)">
+    <path d="M488 342C408 267 310 230 184 244c68 29 111 68 132 116-70-22-132-17-190 15 101 11 184 58 263 139l99-53z"/>
+    <path d="M536 342c80-75 178-112 304-98-68 29-111 68-132 116 70-22 132-17 190 15-101 11-184 58-263 139l-99-53z"/>
+    <path d="M448 276h128l-31 78v286l56 63H423l56-63V354z"/>
+    <path d="M220 609l96 172 91-148 105 164 105-164 91 148 96-172-164 278-125-167-125 167z"/>
+  </g>
+  <g fill="url(#cyan)" filter="url(#glow)">
+    <path d="M336 411l118 27-88 43-80-28z"/><path d="M688 411l-118 27 88 43 80-28z"/>
+    <path d="M445 486l54-19-27 49z"/><path d="M579 486l-54-19 27 49z"/>
+  </g>
+  <path d="M512 349v284" stroke="#fff2c6" stroke-width="12" opacity=".65"/>
+  <circle cx="512" cy="500" r="367" fill="none" stroke="#d6b65b" stroke-width="3" opacity=".32"/>
+</svg>
