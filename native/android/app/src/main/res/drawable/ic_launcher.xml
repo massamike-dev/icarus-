@@ -4,13 +4,12 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path android:fillColor="#020817" android:pathData="M0,0H108V108H0Z" />
-    <path android:fillColor="#0B2744" android:fillAlpha="0.75" android:pathData="M54,8A46,46 0,1 0,54 100A46,46 0,1 0,54 8Z" />
-    <path android:fillColor="#00000000" android:strokeColor="#D6B65B" android:strokeWidth="2.6" android:pathData="M54,17A37,37 0,1 0,54 91A37,37 0,1 0,54 17Z" />
-    <path android:fillColor="#D6B65B" android:pathData="M51.5,37C42,28.5 31.5,25.8 18.5,27.5C25.5,30.5 30,34.8 32.5,40C26,38 20,38.5 14,42C25,43 34,48 42.5,56L51.5,51Z" />
-    <path android:fillColor="#D6B65B" android:pathData="M56.5,37C66,28.5 76.5,25.8 89.5,27.5C82.5,30.5 78,34.8 75.5,40C82,38 88,38.5 94,42C83,43 74,48 65.5,56L56.5,51Z" />
-    <path android:fillColor="#EAD18B" android:pathData="M47,29H61L58,38V67L64,74H44L50,67V38Z" />
-    <path android:fillColor="#5CF6FF" android:pathData="M34,45L48,48L38,53L29,50Z" />
-    <path android:fillColor="#5CF6FF" android:pathData="M74,45L60,48L70,53L79,50Z" />
-    <path android:fillColor="#D6B65B" android:pathData="M20,63L31,83L42,66L54,85L66,66L77,83L88,63L69,94L54,74L39,94Z" />
-    <path android:fillColor="#FFF2C6" android:fillAlpha="0.55" android:pathData="M53.4,37H54.6V67H53.4Z" />
+    <path android:fillColor="#C9A95F" android:pathData="M43,22H65V29H59V67H65V74H43V67H49V29H43Z" />
+    <path android:fillColor="#C9A95F" android:pathData="M49,37L39,29L28,27L17,31L29,34L38,40L49,49Z" />
+    <path android:fillColor="#C9A95F" android:pathData="M59,37L69,29L80,27L91,31L79,34L70,40L59,49Z" />
+    <path android:fillColor="#58E7F2" android:pathData="M31,44L47,47L38,52L27,49Z" />
+    <path android:fillColor="#58E7F2" android:pathData="M77,44L61,47L70,52L81,49Z" />
+    <path android:fillColor="#E7D59B" android:pathData="M50,34H58V63H50Z" />
+    <path android:fillColor="#C9A95F" android:pathData="M20,65L31,86L42,68L54,88L66,68L77,86L88,65L72,96L54,76L36,96Z" />
+    <path android:fillColor="#FFF2C6" android:pathData="M52,36H56V61H52Z" />
 </vector>
