@@ -1,5 +1,11 @@
 package com.icarusalmighty.app
 
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
+import androidx.core.content.ContextCompat
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -7,8 +13,9 @@ import org.json.JSONObject
  * Crash-safe optional-integration boundary.
  *
  * MainActivity already routes `meta_*` actions here. 1.4.4 uses that stable dispatch path
- * as a compatibility transport for both independent wearable toggles so the large native
- * bridge does not need a risky rewrite. User-facing settings remain provider-specific.
+ * as a compatibility transport for both independent wearable toggles and phone Driving Mode
+ * GPS so the large native bridge does not need a risky rewrite. User-facing settings remain
+ * provider-specific and location remains a core phone capability, not a Meta dependency.
  *
  * Meta DAT stays startup-guarded until device validation is complete. XREAL is constructed
  * lazily only after the XREAL toggle is enabled.
@@ -62,6 +69,7 @@ class MetaWearablesController(
         return when (action) {
             "meta_integration_status" -> ok(requestId, status())
             "meta_integration_set" -> setIntegration(requestId, args)
+            "meta_phone_location" -> phoneLocation(requestId)
             "meta_xreal_status" -> ok(requestId, xreal()?.status() ?: JSONObject()
                 .put("provider", "xreal")
                 .put("enabled", false)
@@ -93,6 +101,37 @@ class MetaWearablesController(
             .put("fallback", "phone"))
     }
 
+    private fun phoneLocation(requestId: String?): String {
+        val fineGranted = ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarseGranted = ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (!fineGranted && !coarseGranted) {
+            activity.runOnUiThread {
+                activity.requestPermissions(
+                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                    LOCATION_PERMISSION_REQUEST,
+                )
+            }
+            return error(requestId, "location_permission_required", "Allow location while using ICARUS to enable the Driving Mode map and GPS.")
+        }
+
+        val manager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val locations = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+            .mapNotNull { provider -> runCatching { manager.getLastKnownLocation(provider) }.getOrNull() }
+        val location: Location = locations.maxByOrNull { it.time }
+            ?: return error(requestId, "location_unavailable", "Waiting for a GPS fix. Keep Driving Mode open and try again.")
+
+        val data = JSONObject()
+            .put("latitude", location.latitude)
+            .put("longitude", location.longitude)
+            .put("accuracyMeters", location.accuracy.toDouble())
+            .put("timestamp", location.time)
+            .put("provider", location.provider ?: "unknown")
+        if (location.hasSpeed()) data.put("speedMph", location.speed * 2.2369362920544)
+        if (location.hasBearing()) data.put("bearingDegrees", location.bearing.toDouble())
+        if (location.hasAltitude()) data.put("altitudeMeters", location.altitude)
+        return ok(requestId, data)
+    }
+
     private fun executeMetaAction(action: String, requestId: String?): String {
         if (!flags().metaEnabled) {
             return error(requestId, "integration_disabled", "Meta Integration is turned off in ICARUS settings.")
@@ -119,5 +158,9 @@ class MetaWearablesController(
 
     fun close() {
         xrealController = null
+    }
+
+    companion object {
+        private const val LOCATION_PERMISSION_REQUEST = 4414
     }
 }
