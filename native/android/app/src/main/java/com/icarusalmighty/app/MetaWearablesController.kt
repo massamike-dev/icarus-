@@ -1,6 +1,7 @@
 package com.icarusalmighty.app
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -35,13 +36,19 @@ class MetaWearablesController(
             .also { xrealController = it }
     }
 
+    private fun xrealPhoneFallback(): JSONObject = JSONObject()
+        .put("provider", "xreal")
+        .put("enabled", false)
+        .put("runtimeAvailable", false)
+        .put("fallback", "phone")
+
     fun status(): JSONObject {
         val current = flags()
-        val xrealStatus = if (current.xrealEnabled) xreal()?.status() else JSONObject()
-            .put("provider", "xreal")
-            .put("enabled", false)
-            .put("runtimeAvailable", false)
-            .put("fallback", "phone")
+        val xrealStatus = if (current.xrealEnabled) {
+            xreal()?.status() ?: xrealPhoneFallback()
+        } else {
+            xrealPhoneFallback()
+        }
 
         return JSONObject()
             .put("available", false)
@@ -70,11 +77,7 @@ class MetaWearablesController(
             "meta_integration_status" -> ok(requestId, status())
             "meta_integration_set" -> setIntegration(requestId, args)
             "meta_phone_location" -> phoneLocation(requestId)
-            "meta_xreal_status" -> ok(requestId, xreal()?.status() ?: JSONObject()
-                .put("provider", "xreal")
-                .put("enabled", false)
-                .put("runtimeAvailable", false)
-                .put("fallback", "phone"))
+            "meta_xreal_status" -> ok(requestId, xreal()?.status() ?: xrealPhoneFallback())
             "meta_xreal_launch" -> {
                 val controller = xreal()
                     ?: return error(requestId, "integration_disabled", "XREAL Integration is turned off in ICARUS settings.")
@@ -101,6 +104,7 @@ class MetaWearablesController(
             .put("fallback", "phone"))
     }
 
+    @SuppressLint("MissingPermission")
     private fun phoneLocation(requestId: String?): String {
         val fineGranted = ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(activity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -125,7 +129,7 @@ class MetaWearablesController(
             .put("longitude", location.longitude)
             .put("accuracyMeters", location.accuracy.toDouble())
             .put("timestamp", location.time)
-            .put("provider", location.provider ?: "unknown")
+            .put("provider", location.provider)
         if (location.hasSpeed()) data.put("speedMph", location.speed * 2.2369362920544)
         if (location.hasBearing()) data.put("bearingDegrees", location.bearing.toDouble())
         if (location.hasAltitude()) data.put("altitudeMeters", location.altitude)
