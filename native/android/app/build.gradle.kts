@@ -22,8 +22,8 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 20
-        versionName = "1.4.3"
+        versionCode = 21
+        versionName = "1.4.4"
         manifestPlaceholders["mwdat_application_id"] = metaApplicationId
         manifestPlaceholders["mwdat_client_token"] = metaClientToken
         ndk { abiFilters += "arm64-v8a" }
@@ -83,4 +83,6 @@ dependencies {
     implementation("com.meta.wearable:mwdat-camera:0.9.0")
     implementation("com.meta.wearable:mwdat-display:0.9.0")
     implementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
+
+    testImplementation("junit:junit:4.13.2")
 }
