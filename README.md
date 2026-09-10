@@ -1,58 +1,107 @@
-# I.C.A.R.U.S. Native Android Bridge
+# I.C.A.R.U.S.
 
-Native companion for the existing Base44 I.C.A.R.U.S. assistant. It supplies Android capabilities that a web app cannot provide.
+**Intelligent Companion for Assistance, Reasoning, Understanding, and Support**
 
-## Intended lifecycle
+ICARUS is an Android-first personal assistant backed by the published Base44 web app. The Android host adds capabilities that a browser cannot safely provide, including wake-word listening, native voice capture/TTS, device actions, Bluetooth/OBD-II access, optional wearable integrations, and signed in-place updates.
 
-1. After a phone restart, background listening is off.
-2. The user opens ICARUS and taps **Enable until restart**.
-3. Android starts a microphone foreground service with a persistent notification.
-4. Locking the screen or removing the UI from Recents does not intentionally enable a reboot receiver.
-5. Restarting, force-stopping, revoking microphone permission, pressing Stop, or OS termination disables listening. Reopen the app to start it again.
+## Canonical Android app
+
+> **`native/android/` is the only canonical Android application.**
+
+Current package: `com.icarusalmighty.app`
+
+- **1.4.3 / versionCode 20** is the current stability baseline.
+- **1.4.4 / versionCode 21** is the integration-hardening line under development.
+- `native/android/app/` is the installable ICARUS application module.
+- `native/android/xreal/` is the optional XREAL integration module.
+- `.github/workflows/android-build.yml` is the canonical Android CI/release workflow.
+
+The repository-root `/app` tree is a **legacy 1.2.0 bridge retained only for historical reference**. Do not build, release, or add new work there. See `app/README.md`.
+
+## 1.4.4 architecture
+
+Driving Mode is a core ICARUS feature. Wearables and vehicle telemetry are optional extensions, never prerequisites.
+
+```text
+ICARUS
+└── Driving Mode
+    ├── Phone map + GPS + ICARUS voice   (core)
+    ├── OBD-II telemetry                 (optional)
+    ├── XREAL integration                (optional)
+    └── Meta integration                 (optional)
+```
+
+If Meta or XREAL is disabled, unavailable, disconnected, or fails, phone Driving Mode continues. OBD-II may be connected or removed independently. No ARCore or Google Play Services for AR dependency is required for core Driving Mode.
+
+### Optional integration rules
+
+- **Meta Integration** defaults off. When off, Meta runtime code must not initialize and Meta controls are hidden.
+- **XREAL Integration** defaults off. When off, the XREAL runtime/controller must not be constructed and XREAL controls are hidden.
+- Turning either integration off must never disable map/GPS navigation, ICARUS voice, or normal assistant use.
+- Wearable failures degrade to the phone UI rather than terminating ICARUS.
+- OBD-II is read-only telemetry. ICARUS does not send vehicle-control commands to the ECU.
 
 ## Implemented foundation
 
 - Android 14+ microphone foreground-service declarations
-- Bluetooth headset, Bluetooth LE audio and car-audio conversation routing
-- Hands-free Conversation Mode with Listening, Thinking and Speaking states
-- Automatic listen-again loop until "end conversation" or "goodbye ICARUS"
-- Manual post-reboot activation and persistent Stop notification
-- Free on-device wake engine trained from five recordings of the user's own voice
-- Short command capture after wake detection
-- Review/confirmation activity
-- Command parser and handlers for alarms, timers, flashlight, volume, display settings, navigation, dialer, SMS composer, calendar, camera, battery and installed apps
-- MediaStore video catalog covering accessible shared storage volumes
-- Non-destructive montage plan and video-classifier boundary
-- Media3 dependencies for preview/export implementation
-- Authenticated Base44 native-command gateway boundary
-- Server-side allow-listed `interpretNativeCommand` function added to the Base44 app
-- Authenticated `nativeConversationTurn` endpoint that preserves ICARUS personality, approved memory, history and usage limits
-- No credentials in source code
+- Account-free local wake-word engine with persistent opt-in notification
+- Native short-command speech capture after wake detection
+- Android TTS voice path and hands-free conversation support
+- Native device actions for alarms, timers, flashlight, volume, brightness, navigation, camera, calls/SMS, Bluetooth, battery, and app launching
+- Local Gemma fallback and native-command interpretation boundary
+- Bluetooth OBD-II connection with read-only RPM, speed, coolant, voltage, engine-load and related telemetry
+- Base44 command/conversation gateway
+- Signed Play AAB and shareable APK pipeline
+- In-place updater manifest
+- XREAL module boundary
+- Meta DAT dependency boundary, currently guarded while startup compatibility is validated
 
-## Wake-word testing
+## Wake-word release requirement
 
-Open the app, grant microphone permission, choose **Enroll Hey ICARUS**, and say the phrase five times. Templates are stored in app-private preferences and matched locally. No wake audio is uploaded. After enrollment, choose **Enable until restart**. The enrolled matcher is intentionally conservative and must be calibrated on real devices for false accepts and missed detections before release. Only the short command after a detected wake event uses Android speech recognition.
+The wake engine is functional but must be calibrated on real target devices before general release. Measure false accepts and missed detections in quiet, vehicle, TV/music, pocket, and Bluetooth-audio conditions. Do not treat an uncalibrated threshold as production-ready merely because it compiled. Computers are exceptionally willing to pass CI while misunderstanding the room.
 
-## Base44 connection
+## Privacy and permissions
 
-Add the published Base44 URL to untracked `local.properties`:
+The canonical Android app requests only permissions tied to explicit features. See [`PRIVACY.md`](PRIVACY.md) for the permission-by-permission rationale and release checklist.
 
-```properties
-BASE44_URL=https://your-published-icarus-app.example
-```
+Published privacy policy: **https://icarusassistant.com/privacy-policy**
 
-The Base44 command and conversation endpoints are present. The remaining account-integration step is a secure native sign-in flow that supplies a short-lived Base44 session to `SessionTokenProvider`. Do not copy a browser cookie or hard-code a token. Until signed native authentication is completed, only the local allow-listed command router is enabled.
+Key rules:
+
+- Wake-word listening is user-enabled and uses a foreground microphone service with a persistent notification.
+- Wake-word processing is local; the short command after a wake event may use Android speech recognition.
+- Location is used for Driving Mode/navigation only and does not require background-location permission.
+- Contacts are used only when resolving a user-requested call/text recipient.
+- Camera access is user initiated.
+- Bluetooth is used for audio routing and optional OBD-II/wearable connections.
+- Original media is never modified by the montage pipeline.
+- No authentication tokens, API keys, or signing credentials belong in source control.
 
 ## Safety model
 
-Calls open the system dialer and texts open the system SMS composer. The bridge does not silently call or send. Destructive, financial, sharing, camera, location-sharing and media-editing actions require review. Original videos are never modified.
+Sensitive device actions remain explicit and reviewable. Calls/texts should use user-visible Android flows or clearly confirmed native behavior. Destructive, financial, sharing, camera, location-sharing, and media-editing actions require appropriate confirmation. Optional integrations do not get broader authority merely because they are attached to glasses.
 
-## Build
+## Build the canonical app
 
-Open the project in Android Studio, allow it to install Android SDK 35, and use the generated Gradle wrapper or Android Studio build action. Java 17 is required.
+Requirements: Java 17 and Android SDK 36.
 
-GitHub Actions also builds a debug APK after every push to `main` or when the
-`Build ICARUS Debug APK` workflow is started manually. Download the resulting
-`ICARUS-Native-Bridge-debug` artifact from the completed Actions run.
+```bash
+cd native/android
+bash scripts/prepare-sherpa-kws.sh
+gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
+  -PICARUS_WEB_URL="https://icarusassistant.com"
+```
 
-This is a functional bridge foundation, not a finished APK. The wake SDK/model, Base44 native authentication endpoint, contact resolution, visual video classifier, montage preview/export UI and device testing remain required.
+For release builds use `.github/workflows/android-build.yml`; signing credentials remain in GitHub Actions secrets.
+
+## Release-readiness checklist
+
+Before calling a build generally release-ready:
+
+1. Unit tests pass for command policy, optional-integration capability gating, and Driving Mode fallback.
+2. Debug/release lint and signed APK/AAB builds pass.
+3. Wake-word thresholds are calibrated on representative devices.
+4. Privacy policy and permission disclosures match the shipped manifest.
+5. Meta and XREAL can each be disabled without changing core Driving Mode behavior.
+6. Unsupported/incomplete UI is gated or labeled rather than exposed as a dead control.
+7. Device testing covers fresh install, in-place upgrade, reboot, revoked permissions, offline mode, and accessory disconnects.

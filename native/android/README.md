@@ -1,34 +1,65 @@
-# ICARUS Native Android Host
+# Canonical ICARUS Android app
 
-This Android app is the Stage 2/3 native bridge for the Base44 ICARUS UI.
+This directory is the authoritative Android application for ICARUS.
 
-## Implemented
-- WebView host with `window.ICARUS_NATIVE` JavaScript interface
-- verified-result action contract
-- foreground “Hey Icarus” speech-recognition service after the user opens the app and grants microphone access
-- launch installed apps by visible app name
-- flashlight, media volume, brightness permission flow, battery status
-- alarms and timers
-- safe call dialer and SMS composer with contact lookup
-- navigation and camera intents
-- paired Bluetooth device reporting
-- read-only Bluetooth Classic ELM327-style OBD-II connection
-- OBD snapshot: speed, RPM, coolant temperature, engine load, throttle, fuel level, and adapter voltage
+- Package: `com.icarusalmighty.app`
+- Current development line: `1.4.4` / versionCode `21`
+- App module: `app/`
+- Optional XREAL module: `xreal/`
+- Canonical CI/release workflow: `.github/workflows/android-build.yml`
+- Published Base44 host: `https://icarusassistant.com`
 
-## Build prerequisite
-Base44's sandbox does not contain Java, Gradle, the Android SDK, or Unity, so this source cannot be compiled to an APK inside Base44.
+Do not make Android product changes in the repository-root `/app` directory. That tree is the deprecated 1.2.0 bridge retained only for historical comparison.
 
-Open `native/android` in Android Studio. Before building, set `ICARUS_WEB_URL` in `gradle.properties` to the published HTTPS URL for the Base44 ICARUS app.
+## Core architecture
 
-Then build/install the `app` configuration on Beam Pro or another supported Android host.
+Phone Driving Mode is always available independently of accessories:
+
+```text
+Driving Mode
+├── Map + foreground GPS + ICARUS voice
+├── OBD-II telemetry (optional)
+├── XREAL spatial HUD (optional)
+└── Meta wearable features (optional)
+```
+
+Disabling Meta or XREAL must prevent that integration from initializing or being invoked. A failed/disconnected wearable falls back to the phone experience rather than interrupting navigation or ICARUS voice.
+
+## Implemented native host capabilities
+
+- WebView host with `window.ICARUS_NATIVE`
+- account-free wake-word engine and foreground microphone service
+- native command capture and Android TTS
+- installed-app launch, flashlight, volume, brightness, battery, alarms/timers
+- calls/SMS/contact resolution with sensitive-action policy
+- navigation intents and phone Driving Mode GPS bridge
+- Bluetooth device reporting
+- read-only ELM327-style OBD-II telemetry
+- local Gemma model boundary
+- signed Play AAB/shareable APK and in-place updater
+- optional XREAL module boundary
+- Meta DAT boundary, currently crash-guarded pending device validation
+
+## Build
+
+Java 17 and Android SDK 36 are required.
+
+```bash
+bash scripts/prepare-sherpa-kws.sh
+gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
+  -PICARUS_WEB_URL="https://icarusassistant.com"
+```
+
+Release builds and signing should run through the canonical GitHub Actions workflow rather than local ad-hoc signing.
 
 ## Permissions
-Microphone permission is requested for the wake-word foreground service. Other protected permissions such as contacts, camera, Bluetooth and system brightness are requested only when the matching device action needs them.
 
-## Wake-word reality check
-The foreground service is designed to remain alive after the app is opened, including while the screen is off, until restart/force-stop/service stop. Android can still restrict background activity launches on some firmware. Beam Pro testing is required before claiming that a wake phrase always brings the full UI to the foreground from every screen-off state.
+See the repository-root [`PRIVACY.md`](../../PRIVACY.md). Location is foreground-only for Driving Mode; ICARUS does not request Android background-location permission.
+
+## Wake-word release check
+
+The wake service is intentionally opt-in and user-visible. The detection threshold still requires real-device calibration for false accepts and missed detections before general release.
 
 ## Vehicle safety
-The OBD implementation is read-only. It sends standard diagnostic PID queries and adapter setup commands only. It contains no ECU write/reflash/control commands.
 
-Published Base44 host: https://icarus-wise-guide.base44.app
+The OBD implementation is read-only. It sends standard diagnostic PID queries and adapter setup commands only. It contains no ECU write/reflash/control commands.

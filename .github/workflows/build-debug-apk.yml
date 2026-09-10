@@ -1,11 +1,17 @@
-name: Build ICARUS Debug APK
+name: Build ICARUS Canonical Debug APK
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - "native/android/**"
+      - ".github/workflows/build-debug-apk.yml"
   pull_request:
     branches: [main]
+    paths:
+      - "native/android/**"
+      - ".github/workflows/build-debug-apk.yml"
 
 permissions:
   contents: read
@@ -13,7 +19,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    env:
+      GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
 
     steps:
       - name: Check out source
@@ -28,18 +36,24 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.11.1"
+          gradle-version: "8.13"
 
-      - name: Prepare offline Hey ICARUS engine
-        run: bash scripts/prepare-sherpa-kws.sh
+      - name: Prepare account-free Hey ICARUS engine
+        run: bash native/android/scripts/prepare-sherpa-kws.sh
 
-      - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
+      - name: Test and build canonical debug APK
+        working-directory: native/android
+        env:
+          ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
+        run: |
+          gradle --no-daemon :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
+            -PICARUS_WEB_URL="$ICARUS_WEB_URL" \
+            --stacktrace
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: ICARUS-Native-Bridge-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ICARUS-debug-apk
+          path: native/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 30
