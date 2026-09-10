@@ -118,17 +118,11 @@ class LocalModelManager(private val context: Context) {
                 val end = raw.lastIndexOf('}')
                 require(start >= 0 && end > start) { "malformed_command" }
                 val parsed = JSONObject(raw.substring(start, end + 1))
-                val requestedAction = parsed.optString("action")
-                val action = if (requestedAction in NATIVE_ACTIONS) requestedAction else "unknown"
+                val action = NativeCommandPolicy.normalizeAction(parsed.optString("action"))
                 val args = parsed.optJSONObject("arguments") ?: JSONObject()
                 val recipient = firstString(args, "recipient", "contact", "contactName", "name", "number", "phone")
                 val message = firstString(args, "message", "body", "text")
-                val clarification = when {
-                    action == "send_sms" && recipient.isBlank() -> "Who would you like me to text?"
-                    action == "send_sms" && message.isBlank() -> "What would you like me to text $recipient?"
-                    action == "make_call" && recipient.isBlank() -> "Who would you like me to call?"
-                    else -> ""
-                }
+                val clarification = NativeCommandPolicy.clarificationFor(action, recipient, message)
                 val safeAction = if (clarification.isBlank()) action else "unknown"
                 val summary = if (clarification.isNotBlank()) clarification
                     else parsed.optString("spokenSummary", "Review this command.").take(300)
@@ -139,7 +133,7 @@ class LocalModelManager(private val context: Context) {
                         .put("arguments", if (safeAction == "unknown") JSONObject() else args)
                         .put("spokenSummary", summary)
                         .apply { if (clarification.isNotBlank()) put("clarification", clarification) }
-                        .put("requiresConfirmation", safeAction in SENSITIVE_ACTIONS)
+                        .put("requiresConfirmation", NativeCommandPolicy.requiresConfirmation(safeAction))
                         .put("executionStatus", "not_executed")
                         .put("provider", "on_device")
                         .put("model", MODEL_NAME)
@@ -226,17 +220,6 @@ class LocalModelManager(private val context: Context) {
         private const val PREFS = "icarus_local_model"
         private const val KEY_ID = "download_id"
         private const val KEY_SHA = "verified_sha"
-        private val NATIVE_ACTIONS = setOf(
-            "open_app", "set_alarm", "set_timer", "toggle_flashlight", "set_volume",
-            "set_brightness", "navigate_to", "get_battery", "take_photo", "make_call",
-            "send_sms", "find_videos", "compose_video_montage", "list_bluetooth",
-            "bluetooth_status", "wake_word", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "unknown"
-        )
-        private val SENSITIVE_ACTIONS = setOf(
-            "set_brightness", "navigate_to", "take_photo", "make_call", "send_sms",
-            "compose_video_montage"
-        )
         private const val COMMAND_SYSTEM = """Convert exactly one Android device command into strict JSON.
 Return only {"action":"allowed_action","arguments":{},"spokenSummary":"short description"}.
 Allowed actions: open_app, set_alarm, set_timer, toggle_flashlight, set_volume, set_brightness, navigate_to, get_battery, take_photo, make_call, send_sms, find_videos, compose_video_montage, list_bluetooth, bluetooth_status, wake_word, obd_list, obd_connect, obd_snapshot, obd_disconnect, unknown.
