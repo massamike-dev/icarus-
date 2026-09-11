@@ -1,6 +1,6 @@
 # ICARUS Spatial HUD
 
-ICARUS 1.6.0 combines the native fullscreen Driving Mode HUD with a dedicated XREAL/Beam Pro companion path for Air 2 Pro spatial presentation.
+ICARUS 1.6.1 combines the native fullscreen Driving Mode HUD with a dedicated XREAL/Beam Pro companion path for Air 2 Pro spatial presentation.
 
 ## Rendering contract
 
@@ -38,7 +38,7 @@ When XREAL mode opens:
 6. The companion renders null/missing values as unavailable rather than substituting demo data.
 7. The native telemetry service shuts itself down when the companion stops polling.
 
-The XREAL companion source lives under `xreal/`. A binary XREAL APK requires the official XREAL SDK 3.1 archive after accepting XREAL's API terms and a Unity 2022.3.62f2 Android build environment. The SDK archive is intentionally not vendored into this repository.
+The XREAL companion source lives under `xreal/`. The supplied official XREAL SDK archive has been verified as `com.xreal.xr` 3.1.0 and is intentionally not vendored into this repository. Producing the binary companion APK requires that local archive plus Unity 2022.3.62f2 with Android Build Support and an activated Unity editor license.
 
 ## Native phone handoff
 
