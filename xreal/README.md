@@ -27,15 +27,33 @@ XREAL distributes SDK 3.1.0 as `com.xreal.xr.tar.gz` behind its API Terms accept
 
 `xreal/com.xreal.xr.tar.gz`
 
-The package manifest already references it as `file:../com.xreal.xr.tar.gz`.
+The package manifest references it as `file:../com.xreal.xr.tar.gz`.
+
+### Verified build input
+
+The SDK archive supplied for this implementation was inspected directly and reports:
+
+- package: `com.xreal.xr`
+- display name: `XREAL XR Plugin`
+- version: `3.1.0`
+- package Unity baseline: `2021.3`
+- SHA-256: `fd7d0fce103712e7acc85bfcbb8b127007e1d84f64596efb6c11580bea058d90`
+
+The archive also defines `MODE_3DOF = 1`, `XREAL_DEVICE_TYPE_AIR2_PRO = 3`, single-pass-instanced stereo support, and `SupportMultiResume`, matching this project's Air 2 Pro + Beam Pro configuration.
+
+The SDK tarball and Unity-generated build/cache folders are git-ignored on purpose. Do not commit or redistribute the XREAL package through this repository.
 
 ## Unity version
 
-The project is pinned to Unity `2022.3.62f2`, matching XREAL's current template. Android builds use OpenGL ES 3, API 29+, IL2CPP and ARM64.
+The project is pinned to Unity `2022.3.62f2` (`7670c08855a9`), matching the project baseline used for this integration. Android builds use OpenGL ES 3, API 29+, IL2CPP and ARM64.
 
 ## Build
 
-Open the `xreal` directory as a Unity project, then use **ICARUS > Build XREAL Android**. The build script creates the runtime scene programmatically and outputs `xreal/Build/ICARUS-XREAL.apk` by default.
+1. Place the accepted XREAL SDK archive at `xreal/com.xreal.xr.tar.gz`.
+2. Open the `xreal` directory as a Unity project using Unity `2022.3.62f2` with Android Build Support installed.
+3. Use **ICARUS > Build XREAL Android**.
+
+The build script creates the runtime scene programmatically and outputs `xreal/Build/ICARUS-XREAL.apk` by default.
 
 For an AAB set environment variable `ICARUS_XREAL_AAB=1` before invoking the same build method in batch mode.
 
