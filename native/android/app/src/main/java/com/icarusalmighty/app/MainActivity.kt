@@ -93,6 +93,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         commandRecognizer?.destroy()
         commandRecognizer = null
+        if (::nativeBridge.isInitialized) nativeBridge.close()
         if (::metaWearables.isInitialized) metaWearables.close()
         super.onDestroy()
     }
