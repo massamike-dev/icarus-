@@ -4,9 +4,8 @@ import java.net.URI
 import java.util.Locale
 
 /**
- * Keeps the privileged Android JavaScript bridge scoped to the configured
- * ICARUS HTTPS origin. External pages belong in the user's browser, never in
- * the privileged WebView.
+ * Keeps privileged Android web messaging scoped to the configured ICARUS
+ * HTTPS origin.
  */
 object TrustedWebPolicy {
     fun isTrustedUrl(candidate: String?, configuredBaseUrl: String?): Boolean {
@@ -19,6 +18,15 @@ object TrustedWebPolicy {
 
         return candidateUri.host?.lowercase(Locale.US) == baseUri.host?.lowercase(Locale.US) &&
             effectivePort(candidateUri) == effectivePort(baseUri)
+    }
+
+    fun originRule(configuredBaseUrl: String?): String? {
+        if (configuredBaseUrl.isNullOrBlank()) return null
+        val uri = parse(configuredBaseUrl) ?: return null
+        if (!uri.scheme.equals("https", ignoreCase = true) || !uri.userInfo.isNullOrBlank()) return null
+        val host = uri.host?.lowercase(Locale.US)?.takeIf { it.isNotBlank() } ?: return null
+        val port = effectivePort(uri)
+        return if (port == 443) "https://$host" else "https://$host:$port"
     }
 
     private fun parse(value: String): URI? = try {
