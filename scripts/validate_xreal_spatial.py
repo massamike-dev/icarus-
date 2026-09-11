@@ -35,6 +35,7 @@ for needle in [
     '"com.xreal.xr": "file:../com.xreal.xr.tar.gz"',
     '"com.unity.inputsystem": "1.7.0"',
     '"com.unity.xr.management": "4.5.1"',
+    '"com.unity.xr.core-utils": "2.2.0"',
 ]:
     if needle not in manifest:
         raise SystemExit(f"XREAL package invariant missing: {needle}")
@@ -66,9 +67,19 @@ if "UnityEngine.InputSystem" not in interactor:
     raise SystemExit("XREAL gaze/tap interaction must use Unity's Input System")
 
 build = (root / "xreal/Assets/Icarus/Editor/IcarusXrealBuild.cs").read_text()
-for needle in ["activeInputHandler", "SetPreloadedAssets", "AndroidArchitecture.ARM64", "GraphicsDeviceType.OpenGLES3"]:
+for needle in [
+    "activeInputHandler",
+    "SetPreloadedAssets",
+    "AndroidArchitecture.ARM64",
+    "GraphicsDeviceType.OpenGLES3",
+    'Path.Combine(projectRoot, "com.xreal.xr.tar.gz")',
+]:
     if needle not in build:
         raise SystemExit(f"XREAL Unity build invariant missing: {needle}")
 
+project_version = (root / "xreal/ProjectSettings/ProjectVersion.txt").read_text()
+if "2022.3.62f2" not in project_version or "7670c08855a9" not in project_version:
+    raise SystemExit("XREAL Unity project must stay pinned to 2022.3.62f2 (7670c08855a9)")
+
 print("XREAL Spatial HUD source validation passed")
-print("Note: binary Unity build still requires the official XREAL SDK tarball and a Unity build environment.")
+print("Binary companion build requires the local accepted XREAL SDK tarball plus an activated Unity Android build environment.")
