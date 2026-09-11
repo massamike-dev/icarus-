@@ -9,11 +9,13 @@ on:
       - "native/android/app/src/main/java/com/icarusalmighty/app/spatial/**"
       - "scripts/validate_xreal_spatial.py"
       - ".github/workflows/xreal-spatial-validate.yml"
+      - ".gitignore"
   pull_request:
     paths:
       - "xreal/**"
       - "native/android/app/src/main/java/com/icarusalmighty/app/spatial/**"
       - "scripts/validate_xreal_spatial.py"
+      - ".gitignore"
 
 jobs:
   validate:
