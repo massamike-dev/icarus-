@@ -9,3 +9,13 @@ app/src/main/assets/sherpa-onnx-*/
 app/src/main/jniLibs/
 *.jks
 *.keystore
+
+# XREAL Unity companion: licensed/local SDK and generated Unity output
+xreal/com.xreal.xr.tar.gz
+xreal/Library/
+xreal/Temp/
+xreal/Obj/
+xreal/Logs/
+xreal/UserSettings/
+xreal/Build/
+xreal/MemoryCaptures/

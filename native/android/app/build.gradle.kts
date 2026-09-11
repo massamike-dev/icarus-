@@ -22,8 +22,8 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 22
-        versionName = "1.5.2"
+        versionCode = 24
+        versionName = "1.6.1"
         manifestPlaceholders["mwdat_application_id"] = metaApplicationId
         manifestPlaceholders["mwdat_client_token"] = metaClientToken
         ndk { abiFilters += "arm64-v8a" }
