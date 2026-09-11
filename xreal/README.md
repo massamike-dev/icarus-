@@ -53,7 +53,7 @@ The project is pinned to Unity `2022.3.62f2` (`7670c08855a9`). Android builds us
 2. Open the `xreal` directory as a Unity project using Unity `2022.3.62f2` with Android Build Support installed and an activated Unity editor license.
 3. Use **ICARUS > Build XREAL Android**.
 
-The build script creates the runtime scene programmatically and outputs `xreal/Build/ICARUS-XREAL.apk` by default.
+The build script validates the local SDK archive, creates the runtime scene programmatically, pins the companion to landscape, and outputs `xreal/Build/ICARUS-XREAL.apk` by default.
 
 For an AAB set environment variable `ICARUS_XREAL_AAB=1` before invoking the same build method in batch mode.
 
