@@ -72,7 +72,9 @@ for needle in [
     "SetPreloadedAssets",
     "AndroidArchitecture.ARM64",
     "GraphicsDeviceType.OpenGLES3",
+    "UIOrientation.LandscapeLeft",
     'Path.Combine(projectRoot, "com.xreal.xr.tar.gz")',
+    "ValidateSdkPackage",
 ]:
     if needle not in build:
         raise SystemExit(f"XREAL Unity build invariant missing: {needle}")
@@ -80,6 +82,11 @@ for needle in [
 project_version = (root / "xreal/ProjectSettings/ProjectVersion.txt").read_text()
 if "2022.3.62f2" not in project_version or "7670c08855a9" not in project_version:
     raise SystemExit("XREAL Unity project must stay pinned to 2022.3.62f2 (7670c08855a9)")
+
+ignore = (root / ".gitignore").read_text()
+for needle in ["xreal/com.xreal.xr.tar.gz", "xreal/Library/", "xreal/Build/"]:
+    if needle not in ignore:
+        raise SystemExit(f"XREAL cleanup invariant missing from .gitignore: {needle}")
 
 print("XREAL Spatial HUD source validation passed")
 print("Binary companion build requires the local accepted XREAL SDK tarball plus an activated Unity Android build environment.")
