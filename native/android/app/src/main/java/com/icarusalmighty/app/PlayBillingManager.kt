@@ -26,32 +26,36 @@ class PlayBillingManager(
     private val billingClient = BillingClient.newBuilder(activity)
         .setListener { result, purchases ->
             val requestId = pendingSubscribeRequestId
+            if (requestId == null) {
+                clearPendingSubscribe()
+                return@setListener
+            }
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                if (requestId != null) dispatchError(requestId, billingError(result))
+                dispatchError(requestId, billingError(result))
                 clearPendingSubscribe()
                 return@setListener
             }
 
             val purchase = purchases?.firstOrNull()
             if (purchase == null) {
-                if (requestId != null) dispatchError(requestId, "purchase_missing")
+                dispatchError(requestId, "purchase_missing")
                 clearPendingSubscribe()
                 return@setListener
             }
 
             when (purchase.purchaseState) {
                 com.android.billingclient.api.Purchase.PurchaseState.PURCHASED -> {
-                    acknowledgeIfNeeded(purchase) {
-                        if (requestId != null) dispatchPurchase(requestId, purchase, "purchased")
+                    acknowledgeIfNeeded(requestId, purchase) {
+                        dispatchPurchase(requestId, purchase, "purchased")
                         clearPendingSubscribe()
                     }
                 }
                 com.android.billingclient.api.Purchase.PurchaseState.PENDING -> {
-                    if (requestId != null) dispatchPurchase(requestId, purchase, "pending")
+                    dispatchPurchase(requestId, purchase, "pending")
                     clearPendingSubscribe()
                 }
                 else -> {
-                    if (requestId != null) dispatchError(requestId, "purchase_not_completed")
+                    dispatchError(requestId, "purchase_not_completed")
                     clearPendingSubscribe()
                 }
             }
@@ -87,7 +91,10 @@ class PlayBillingManager(
                     return@queryPurchasesAsync
                 }
 
-                acknowledgeIfNeeded(purchase) {
+                // Restore/query flows use their own request id. If acknowledgement
+                // fails, always resolve that exact request instead of looking at
+                // the unrelated new-purchase state.
+                acknowledgeIfNeeded(requestId, purchase) {
                     dispatchPurchase(requestId, purchase, "purchased")
                 }
             }
@@ -159,14 +166,16 @@ class PlayBillingManager(
         val offers = details.subscriptionOfferDetails.orEmpty()
         if (offers.isEmpty()) return null
 
-        // Prefer an offer containing a zero-price phase (the advertised 7-day
-        // trial), then fall back to the product's first eligible offer.
+        // Prefer a trial when Google Play says the user is eligible, otherwise
+        // fall back to the first eligible paid offer. The UI does not promise a
+        // trial until Play actually presents one.
         return offers.firstOrNull { offer ->
             offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
         } ?: offers.first()
     }
 
     private fun acknowledgeIfNeeded(
+        requestId: String,
         purchase: com.android.billingclient.api.Purchase,
         after: () -> Unit,
     ) {
@@ -182,9 +191,8 @@ class PlayBillingManager(
             if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                 after()
             } else {
-                val requestId = pendingSubscribeRequestId
-                if (requestId != null) dispatchError(requestId, "purchase_acknowledgement_failed")
-                clearPendingSubscribe()
+                dispatchError(requestId, "purchase_acknowledgement_failed")
+                if (pendingSubscribeRequestId == requestId) clearPendingSubscribe()
             }
         }
     }
