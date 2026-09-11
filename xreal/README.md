@@ -45,12 +45,12 @@ The SDK tarball and Unity-generated build/cache folders are git-ignored on purpo
 
 ## Unity version
 
-The project is pinned to Unity `2022.3.62f2` (`7670c08855a9`), matching the project baseline used for this integration. Android builds use OpenGL ES 3, API 29+, IL2CPP and ARM64.
+The project is pinned to Unity `2022.3.62f2` (`7670c08855a9`). Android builds use OpenGL ES 3, API 29+, IL2CPP and ARM64.
 
 ## Build
 
 1. Place the accepted XREAL SDK archive at `xreal/com.xreal.xr.tar.gz`.
-2. Open the `xreal` directory as a Unity project using Unity `2022.3.62f2` with Android Build Support installed.
+2. Open the `xreal` directory as a Unity project using Unity `2022.3.62f2` with Android Build Support installed and an activated Unity editor license.
 3. Use **ICARUS > Build XREAL Android**.
 
 The build script creates the runtime scene programmatically and outputs `xreal/Build/ICARUS-XREAL.apk` by default.
@@ -65,4 +65,4 @@ For an AAB set environment variable `ICARUS_XREAL_AAB=1` before invoking the sam
 4. The Unity companion polls only loopback with that token.
 5. If the companion stops polling, the native telemetry service shuts itself down automatically.
 
-XREAL's current documentation warns that Android 16 compatibility is still under investigation. The intended XREAL host for this project is Beam Pro, not an Android 16 phone.
+The intended XREAL host for this project is Beam Pro. Android phone fallback remains the native ICARUS Driving HUD.
