@@ -24,6 +24,7 @@ namespace Icarus.Spatial.Editor
                 throw new BuildFailedException("Missing com.xreal.xr.tar.gz. Download XREAL SDK 3.1.0 after accepting XREAL's terms and place the tarball at xreal/com.xreal.xr.tar.gz.");
 
             ValidateXrealSettings(projectRoot);
+            ValidateSdkPackage(projectRoot, sdkTarball);
             EnsureInputHandling();
             EnsurePreloadedXrealAssets();
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
@@ -35,7 +36,7 @@ namespace Icarus.Spatial.Editor
             PlayerSettings.bundleVersion = Environment.GetEnvironmentVariable("ICARUS_XREAL_VERSION") ?? "1.0.0";
             int versionCode;
             PlayerSettings.Android.bundleVersionCode = int.TryParse(Environment.GetEnvironmentVariable("ICARUS_XREAL_VERSION_CODE"), out versionCode) ? versionCode : 1;
-            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
@@ -107,6 +108,17 @@ namespace Icarus.Spatial.Editor
                 throw new BuildFailedException("ICARUS XREAL build must use single-pass stereo.");
             if (!text.Contains("SupportMultiResume: 1"))
                 throw new BuildFailedException("ICARUS XREAL build requires multi-resume for Beam Pro.");
+        }
+
+        private static void ValidateSdkPackage(string projectRoot, string sdkTarball)
+        {
+            var manifest = Path.Combine(projectRoot, "Packages", "manifest.json");
+            var manifestText = File.ReadAllText(manifest);
+            if (!manifestText.Contains("\"com.xreal.xr\": \"file:../com.xreal.xr.tar.gz\""))
+                throw new BuildFailedException("Unity Package Manager must reference the local accepted XREAL SDK archive.");
+            var fileInfo = new FileInfo(sdkTarball);
+            if (fileInfo.Length < 10 * 1024 * 1024)
+                throw new BuildFailedException("XREAL SDK archive is unexpectedly small or incomplete.");
         }
     }
 }
