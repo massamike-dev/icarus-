@@ -33,6 +33,7 @@ class IcarusNativeBridge(
     private val context: Context get() = activity
     private val obd = ObdManager(context)
     private val localModel = LocalModelManager(context)
+    private val billing = PlayBillingManager(activity, resultDispatcher)
     private var tts: TextToSpeech? = null
     private var pendingSpeech: Triple<String, Float, Float>? = null
 
@@ -95,6 +96,18 @@ class IcarusNativeBridge(
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
                 "session_logout" -> sessionLogout(requestId)
+                "check_subscription" -> {
+                    val id = requestId ?: return error(null, "missing_request_id")
+                    billing.checkSubscription(id)
+                    ""
+                }
+                "subscribe" -> {
+                    val id = requestId ?: return error(null, "missing_request_id")
+                    val sku = firstString(args, "sku", "productId").trim()
+                    if (sku.isBlank()) return error(id, "missing_subscription_product")
+                    billing.subscribe(id, sku)
+                    ""
+                }
                 "check_update" -> checkUpdate(requestId)
                 "local_model_status" -> ok(requestId, localModel.status())
                 "download_local_model" -> ok(requestId, localModel.startDownload(args.optBoolean("wifiOnly", true)))
@@ -119,6 +132,18 @@ class IcarusNativeBridge(
         } catch (e: Exception) {
             error(requestId, "native_action_failed", e.message)
         }
+    }
+
+    fun close() {
+        context.stopService(Intent(context, WakeWordService::class.java))
+        obd.disconnect()
+        pendingSpeech = null
+        activity.runOnUiThread {
+            tts?.stop()
+            tts?.shutdown()
+            tts = null
+        }
+        billing.close()
     }
 
     private fun openApp(requestId: String?, args: JSONObject): String {
@@ -406,7 +431,7 @@ class IcarusNativeBridge(
             "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_update",
+            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable"
