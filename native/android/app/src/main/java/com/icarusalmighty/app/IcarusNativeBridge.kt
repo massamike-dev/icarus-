@@ -1,0 +1,423 @@
+package com.icarusalmighty.app
+
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.database.Cursor
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraManager
+import android.media.AudioManager
+import android.net.Uri
+import android.os.BatteryManager
+import android.os.Build
+import android.provider.AlarmClock
+import android.provider.ContactsContract
+import android.provider.Settings
+import android.speech.tts.TextToSpeech
+import androidx.core.content.ContextCompat
+import com.icarusalmighty.app.update.PlayUpdateManager
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.Locale
+import kotlin.math.roundToInt
+
+class IcarusNativeBridge(
+    private val activity: Activity,
+    private val metaWearables: MetaWearablesController,
+    private val resultDispatcher: (String) -> Unit,
+) {
+    private val context: Context get() = activity
+    private val obd = ObdManager(context)
+    private val localModel = LocalModelManager(context)
+    private var tts: TextToSpeech? = null
+    private var pendingSpeech: Triple<String, Float, Float>? = null
+
+    private fun configureIcarusVoice(engine: TextToSpeech, requestedRate: Float, requestedPitch: Float) {
+        val maleMarkers = listOf(
+            "male", "masculine", "david", "james", "john", "george", "ryan",
+            "arthur", "daniel", "mark", "alex", "tom", "oliver", "fred", "iom", "iob"
+        )
+        val femaleMarkers = listOf(
+            "female", "samantha", "victoria", "zira", "susan", "karen", "moira",
+            "tessa", "fiona", "serena", "allison", "ava", "catherine"
+        )
+        val preferred = engine.voices.orEmpty()
+            .filter { it.locale.language.equals("en", ignoreCase = true) }
+            .maxByOrNull { voice ->
+                val name = voice.name.lowercase(Locale.US)
+                val features = voice.features.orEmpty().joinToString(" ").lowercase(Locale.US)
+                var score = 0
+                if (voice.locale.country.equals("US", ignoreCase = true)) score += 40
+                if (!voice.isNetworkConnectionRequired) score += 20
+                if (maleMarkers.any { name.contains(it) || features.contains(it) }) score += 1000
+                if (femaleMarkers.any { name.contains(it) || features.contains(it) }) score -= 1000
+                score
+            }
+        if (preferred != null) engine.voice = preferred
+        engine.setSpeechRate(requestedRate.coerceIn(0.75f, 0.95f))
+        engine.setPitch(requestedPitch.coerceIn(0.68f, 0.84f))
+    }
+
+    fun getStatus(): String = JSONObject(statusJson(context))
+        .put("metaWearables", metaWearables.status())
+        .toString()
+
+    fun getCapabilities(): String = JSONObject().put("capabilities", JSONArray(CAPABILITIES)).toString()
+
+    fun executeAction(payloadJson: String): String {
+        val payload = try { JSONObject(payloadJson) } catch (_: Exception) {
+            return error(null, "invalid_payload")
+        }
+        val requestId = payload.optString("requestId").ifBlank { null }
+        val action = payload.optString("action")
+        val args = payload.optJSONObject("arguments") ?: JSONObject()
+
+        return try {
+            when (action) {
+                "open_app" -> openApp(requestId, args)
+                "set_alarm" -> setAlarm(requestId, args)
+                "set_timer" -> setTimer(requestId, args)
+                "toggle_flashlight" -> setFlashlight(requestId, args)
+                "set_volume" -> setVolume(requestId, args)
+                "set_brightness" -> setBrightness(requestId, args)
+                "navigate_to" -> navigate(requestId, args)
+                "get_battery" -> battery(requestId)
+                "take_photo" -> takePhoto(requestId)
+                "make_call" -> makeCall(requestId, args)
+                "send_sms" -> sendSms(requestId, args)
+                "find_videos", "compose_video_montage" -> openMontage(requestId, args)
+                "list_bluetooth", "bluetooth_status" -> listBluetooth(requestId)
+                "wake_word" -> wakeWord(requestId, args)
+                "speak_text" -> speakText(requestId, args)
+                "stop_speaking" -> stopSpeaking(requestId)
+                "session_logout" -> sessionLogout(requestId)
+                "check_update" -> checkUpdate(requestId)
+                "local_model_status" -> ok(requestId, localModel.status())
+                "download_local_model" -> ok(requestId, localModel.startDownload(args.optBoolean("wifiOnly", true)))
+                "delete_local_model" -> ok(requestId, localModel.deleteModel())
+                "local_chat" -> {
+                    localModel.generate(requestId, firstString(args, "prompt", "message", "text"), resultDispatcher)
+                    ""
+                }
+                "interpret_command" -> {
+                    localModel.interpretCommand(requestId, firstString(args, "command", "prompt", "text"), resultDispatcher)
+                    ""
+                }
+                "obd_list" -> listBluetooth(requestId, obdOnly = true)
+                "obd_connect" -> obdConnect(requestId, args)
+                "obd_snapshot" -> obdSnapshot(requestId)
+                "obd_disconnect" -> obdDisconnect(requestId)
+                else -> if (action.startsWith("meta_")) metaWearables.execute(action, requestId, args)
+                    else error(requestId, "unsupported_action")
+            }
+        } catch (e: SecurityException) {
+            error(requestId, "permission_required", e.message)
+        } catch (e: Exception) {
+            error(requestId, "native_action_failed", e.message)
+        }
+    }
+
+    private fun openApp(requestId: String?, args: JSONObject): String {
+        val target = firstString(args, "appName", "app", "name").lowercase(Locale.US).trim()
+        if (target.isBlank()) return error(requestId, "missing_app_name")
+
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val matches = context.packageManager.queryIntentActivities(launcher, 0)
+        val best = matches.firstOrNull {
+            it.loadLabel(context.packageManager).toString().lowercase(Locale.US) == target
+        } ?: matches.firstOrNull {
+            it.loadLabel(context.packageManager).toString().lowercase(Locale.US).contains(target)
+        } ?: return error(requestId, "app_not_found")
+
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(best.activityInfo.packageName)
+            ?: return error(requestId, "app_not_launchable")
+        activity.runOnUiThread { activity.startActivity(launchIntent) }
+        return ok(requestId, JSONObject().put("app", best.loadLabel(context.packageManager).toString()))
+    }
+
+    private fun setAlarm(requestId: String?, args: JSONObject): String {
+        val hour = args.optInt("hour", -1)
+        val minute = args.optInt("minute", 0)
+        if (hour !in 0..23 || minute !in 0..59) return error(requestId, "invalid_alarm_time")
+        val intent = Intent(AlarmClock.ACTION_SET_ALARM)
+            .putExtra(AlarmClock.EXTRA_HOUR, hour)
+            .putExtra(AlarmClock.EXTRA_MINUTES, minute)
+            .putExtra(AlarmClock.EXTRA_MESSAGE, firstString(args, "label", "message").ifBlank { "ICARUS alarm" })
+            .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId)
+    }
+
+    private fun setTimer(requestId: String?, args: JSONObject): String {
+        val seconds = when {
+            args.has("durationSeconds") -> args.optInt("durationSeconds")
+            args.has("seconds") -> args.optInt("seconds")
+            args.has("minutes") -> args.optInt("minutes") * 60
+            else -> 0
+        }
+        if (seconds <= 0) return error(requestId, "invalid_timer_duration")
+        val intent = Intent(AlarmClock.ACTION_SET_TIMER)
+            .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
+            .putExtra(AlarmClock.EXTRA_MESSAGE, firstString(args, "label", "message").ifBlank { "ICARUS timer" })
+            .putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId, JSONObject().put("seconds", seconds))
+    }
+
+    private fun setFlashlight(requestId: String?, args: JSONObject): String {
+        requirePermission(Manifest.permission.CAMERA)
+        val manager = context.getSystemService(CameraManager::class.java)
+        val cameraId = manager.cameraIdList.firstOrNull { id ->
+            manager.getCameraCharacteristics(id).get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        } ?: return error(requestId, "flash_not_available")
+        val enabled = if (args.has("enabled")) args.optBoolean("enabled") else true
+        manager.setTorchMode(cameraId, enabled)
+        return ok(requestId, JSONObject().put("enabled", enabled))
+    }
+
+    private fun setVolume(requestId: String?, args: JSONObject): String {
+        val audio = context.getSystemService(AudioManager::class.java)
+        val max = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val current = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val level = when {
+            args.has("level") -> ((args.optDouble("level", 50.0).coerceIn(0.0, 100.0) / 100.0) * max).roundToInt()
+            firstString(args, "direction").equals("up", true) -> (current + 1).coerceAtMost(max)
+            firstString(args, "direction").equals("down", true) -> (current - 1).coerceAtLeast(0)
+            else -> current
+        }
+        audio.setStreamVolume(AudioManager.STREAM_MUSIC, level, AudioManager.FLAG_SHOW_UI)
+        return ok(requestId, JSONObject().put("level", ((level.toDouble() / max) * 100).roundToInt()))
+    }
+
+    private fun setBrightness(requestId: String?, args: JSONObject): String {
+        if (!Settings.System.canWrite(context)) {
+            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:${context.packageName}"))
+            activity.runOnUiThread { activity.startActivity(intent) }
+            return error(requestId, "write_settings_permission_required")
+        }
+        val percent = args.optDouble("level", 50.0).coerceIn(1.0, 100.0)
+        val value = ((percent / 100.0) * 255).roundToInt().coerceIn(1, 255)
+        Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, value)
+        return ok(requestId, JSONObject().put("level", percent.roundToInt()))
+    }
+
+    private fun navigate(requestId: String?, args: JSONObject): String {
+        val destination = firstString(args, "destination", "query", "address")
+        if (destination.isBlank()) return error(requestId, "missing_destination")
+        val uri = Uri.parse("geo:0,0?q=${Uri.encode(destination)}")
+        val intent = Intent(Intent.ACTION_VIEW, uri)
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId, JSONObject().put("destination", destination))
+    }
+
+    private fun battery(requestId: String?): String {
+        val manager = context.getSystemService(BatteryManager::class.java)
+        val level = manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val charging = manager.isCharging
+        return ok(requestId, JSONObject().put("level", level).put("charging", charging))
+    }
+
+    private fun takePhoto(requestId: String?): String {
+        val intent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId, JSONObject().put("opened", true))
+    }
+
+    private fun openMontage(requestId: String?, args: JSONObject): String {
+        val query = firstString(args, "query", "subject", "description")
+        val intent = Intent(context, MontageActivity::class.java).putExtra(MontageActivity.EXTRA_QUERY, query)
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId, JSONObject().put("reviewOpened", true).put("query", query))
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun makeCall(requestId: String?, args: JSONObject): String {
+        val number = resolvePhone(args) ?: return error(requestId, "contact_not_found")
+        requirePermission(Manifest.permission.CALL_PHONE)
+        val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${Uri.encode(number)}"))
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId, JSONObject().put("number", number).put("callStarted", true))
+    }
+
+    private fun sendSms(requestId: String?, args: JSONObject): String {
+        val number = resolvePhone(args) ?: return error(requestId, "contact_not_found")
+        val message = firstString(args, "message", "body", "text")
+        val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("smsto:${Uri.encode(number)}"))
+            .putExtra("sms_body", message)
+        activity.runOnUiThread { activity.startActivity(intent) }
+        return ok(requestId, JSONObject().put("number", number).put("composerOpened", true))
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun listBluetooth(requestId: String?, obdOnly: Boolean = false): String {
+        if (Build.VERSION.SDK_INT >= 31) requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
+        val adapter = context.getSystemService(BluetoothManager::class.java).adapter
+            ?: return error(requestId, "bluetooth_unavailable")
+        val devices = JSONArray()
+        adapter.bondedDevices.orEmpty()
+            .filter { !obdOnly || looksLikeObd(it.name.orEmpty()) }
+            .sortedBy { it.name ?: it.address }
+            .forEach { device ->
+                devices.put(JSONObject().put("name", device.name ?: "Bluetooth device").put("address", device.address))
+            }
+        return ok(requestId, JSONObject().put("enabled", adapter.isEnabled).put("devices", devices))
+    }
+
+    private fun wakeWord(requestId: String?, args: JSONObject): String {
+        val enabled = !args.has("enabled") || args.optBoolean("enabled")
+        val intent = Intent(context, WakeWordService::class.java)
+        if (enabled) {
+            val host = activity as? MainActivity ?: return error(requestId, "native_host_unavailable")
+            host.requestWakePermissionFromDisclosure()
+        } else {
+            context.stopService(intent)
+        }
+        return ok(requestId, JSONObject().put("enabled", enabled).put("permissionRequested", enabled))
+    }
+
+    private fun speakText(requestId: String?, args: JSONObject): String {
+        val text = firstString(args, "text", "content").trim()
+        if (text.isBlank()) return error(requestId, "missing_text")
+        val rate = args.optDouble("rate", 1.0).toFloat().coerceIn(0.5f, 1.5f)
+        val pitch = args.optDouble("pitch", 1.0).toFloat().coerceIn(0.5f, 1.5f)
+        pendingSpeech = Triple(text.take(12000), rate, pitch)
+        activity.runOnUiThread {
+            val existing = tts
+            if (existing != null) {
+                configureIcarusVoice(existing, rate, pitch)
+                existing.speak(text, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
+            } else {
+                tts = TextToSpeech(context) { status ->
+                    if (status == TextToSpeech.SUCCESS) {
+                        pendingSpeech?.let { (queuedText, queuedRate, queuedPitch) ->
+                            tts?.let { engine ->
+                                configureIcarusVoice(engine, queuedRate, queuedPitch)
+                                engine.speak(queuedText, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
+                            }
+                        }
+                    }
+                    pendingSpeech = null
+                }
+            }
+        }
+        return ok(
+            requestId,
+            JSONObject()
+                .put("speaking", true)
+                .put("engine", "android_tts")
+                .put("profile", "icarus_deep_male")
+        )
+    }
+
+    private fun checkUpdate(requestId: String?): String {
+        activity.runOnUiThread { PlayUpdateManager.check(activity, silent = false) }
+        return ok(requestId, JSONObject().put("checking", true).put("source", "google_play"))
+    }
+
+    private fun stopSpeaking(requestId: String?): String {
+        activity.runOnUiThread { tts?.stop() }
+        pendingSpeech = null
+        return ok(requestId, JSONObject().put("speaking", false))
+    }
+
+    private fun sessionLogout(requestId: String?): String {
+        context.stopService(Intent(context, WakeWordService::class.java))
+        obd.disconnect()
+        pendingSpeech = null
+        activity.runOnUiThread { tts?.stop() }
+        return ok(requestId, JSONObject().put("nativeSessionCleared", true))
+    }
+
+    private fun obdConnect(requestId: String?, args: JSONObject): String {
+        if (Build.VERSION.SDK_INT >= 31) {
+            requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
+            requirePermission(Manifest.permission.BLUETOOTH_SCAN)
+        }
+        val address = firstString(args, "address", "deviceAddress")
+        if (address.isBlank()) return error(requestId, "missing_device_address")
+        obd.connect(address)
+        return ok(requestId, JSONObject().put("connected", true).put("address", address))
+    }
+
+    private fun obdSnapshot(requestId: String?): String = ok(requestId, obd.snapshot())
+
+    private fun obdDisconnect(requestId: String?): String {
+        obd.disconnect()
+        return ok(requestId, JSONObject().put("connected", false))
+    }
+
+    private fun resolvePhone(args: JSONObject): String? {
+        firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let { return it }
+        val contact = firstString(args, "recipient", "contact", "contactName", "name")
+        if (contact.isBlank()) return null
+        requirePermission(Manifest.permission.READ_CONTACTS)
+
+        var cursor: Cursor? = null
+        return try {
+            cursor = context.contentResolver.query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
+                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?",
+                arrayOf("%$contact%"),
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+            )
+            if (cursor?.moveToFirst() == true) cursor.getString(0) else null
+        } finally {
+            cursor?.close()
+        }
+    }
+
+    private fun requirePermission(permission: String) {
+        if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+            activity.runOnUiThread { activity.requestPermissions(arrayOf(permission), permission.hashCode() and 0xffff) }
+            throw SecurityException("$permission permission required")
+        }
+    }
+
+    private fun firstString(args: JSONObject, vararg keys: String): String {
+        keys.forEach { key ->
+            if (args.has(key) && !args.isNull(key)) return args.optString(key, "")
+        }
+        return ""
+    }
+
+    private fun looksLikeObd(name: String): Boolean =
+        listOf("obd", "elm", "vlink", "veepeak", "obdlink").any { name.lowercase(Locale.US).contains(it) }
+
+    private fun ok(requestId: String?, data: JSONObject = JSONObject()): String = JSONObject()
+        .put("ok", true)
+        .put("requestId", requestId ?: JSONObject.NULL)
+        .put("data", data)
+        .toString()
+
+    private fun error(requestId: String?, code: String, message: String? = null): String = JSONObject()
+        .put("ok", false)
+        .put("requestId", requestId ?: JSONObject.NULL)
+        .put("error", code)
+        .apply { if (!message.isNullOrBlank()) put("message", message) }
+        .toString()
+
+    companion object {
+        val CAPABILITIES = listOf(
+            "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
+            "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
+            "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
+            "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_update",
+            "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
+            "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
+            "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable"
+        )
+
+        fun statusJson(context: Context): String = JSONObject()
+            .put("connected", true)
+            .put("platform", "android")
+            .put("version", BuildConfig.VERSION_NAME)
+            .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
+            .put("capabilities", JSONArray(CAPABILITIES))
+            .toString()
+    }
+}
