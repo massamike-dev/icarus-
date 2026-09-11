@@ -1,15 +1,14 @@
 {
-  "versionCode": 22,
-  "versionName": "1.4.5",
-  "releaseDate": "2026-09-10",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.4.5-test/ICARUS-latest.apk",
-  "sha256": "13d0cd2f24f13d613b74a147252c41bdbb8c5217ef13460120076cbd09f240c7",
+  "versionCode": 23,
+  "versionName": "1.4.6",
+  "releaseDate": "2026-09-11",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.4.6-test/ICARUS-latest.apk",
+  "sha256": "a1ba38b6cdc25e3ed423f79b037082b97235a61ea58c13441b47423111888d4d",
   "patchNotes": [
-    "Prioritized ICARUS as the core hands-free assistant instead of automatically entering Driving Mode.",
-    "Hardened the opt-in wake-word service lifecycle and recovery behavior.",
-    "Connected native voice transcripts to the assistant and preserved Driving Mode voice routing when already driving.",
-    "Added hands-free confirmation and cancellation for protected device actions.",
-    "Reduced wake-listener dead zones and added voice barge-in protection against self-transcription.",
-    "Passed 100 of 100 deterministic wake and voice control-path simulations."
+    "Made native/android the canonical ICARUS Android app.",
+    "Added unit-tested optional Meta and XREAL integration gating.",
+    "Kept phone Driving Mode available when wearables are disabled or unavailable.",
+    "Added phone GPS capability and documented privacy/permission behavior.",
+    "Preserved signed in-place updates without uninstalling."
   ]
 }
