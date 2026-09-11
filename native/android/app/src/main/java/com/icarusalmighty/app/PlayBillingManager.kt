@@ -15,6 +15,12 @@ import org.json.JSONObject
  * Thin Google Play Billing client. The Android app never grants Premium by
  * itself: it only returns Play purchase tokens to the web layer, which sends
  * them to the ICARUS backend for Google Developer API verification.
+ *
+ * New purchase requests use a compact internal product spec of
+ * `productId|accountBinding`. The native shell strips the binding before
+ * querying Play, then passes the 64-character pseudonymous account binding to
+ * BillingFlowParams so the backend can verify that the purchase belongs to the
+ * signed-in ICARUS account.
  */
 class PlayBillingManager(
     private val activity: Activity,
@@ -101,9 +107,17 @@ class PlayBillingManager(
         }
     }
 
-    fun subscribe(requestId: String, productId: String) {
+    fun subscribe(requestId: String, productSpec: String) {
+        val parts = productSpec.split('|', limit = 2)
+        val productId = parts.firstOrNull().orEmpty().trim()
+        val accountBinding = parts.getOrNull(1).orEmpty().trim().lowercase()
+
         if (productId !in SUPPORTED_PRODUCTS) {
             dispatchError(requestId, "unknown_subscription_product")
+            return
+        }
+        if (!ACCOUNT_BINDING.matches(accountBinding)) {
+            dispatchError(requestId, "invalid_billing_account_binding")
             return
         }
         if (pendingSubscribeRequestId != null) {
@@ -144,6 +158,7 @@ class PlayBillingManager(
                     .build()
                 val flowParams = BillingFlowParams.newBuilder()
                     .setProductDetailsParamsList(listOf(productParams))
+                    .setObfuscatedAccountId(accountBinding)
                     .build()
 
                 pendingSubscribeRequestId = requestId
@@ -267,5 +282,6 @@ class PlayBillingManager(
             "icarus_pro_monthly",
             "icarus_pro_annual",
         )
+        private val ACCOUNT_BINDING = Regex("^[0-9a-f]{64}$")
     }
 }
