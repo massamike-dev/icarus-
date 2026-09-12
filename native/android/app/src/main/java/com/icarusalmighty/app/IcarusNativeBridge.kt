@@ -124,6 +124,9 @@ class IcarusNativeBridge(
                 "obd_connect" -> obdConnect(requestId, args)
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
+                "xreal_status" -> metaWearables.execute("meta_xreal_status", requestId, args)
+                "open_xreal_hud" -> metaWearables.execute("meta_xreal_launch", requestId, args)
+                "update_xreal_hud" -> metaWearables.execute("meta_xreal_update", requestId, args)
                 else -> if (action.startsWith("meta_")) metaWearables.execute(action, requestId, args)
                     else error(requestId, "unsupported_action")
             }
@@ -434,7 +437,8 @@ class IcarusNativeBridge(
             "obd_disconnect", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
-            "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable"
+            "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",
+            "xreal_status", "open_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_update"
         )
 
         fun statusJson(context: Context): String = JSONObject()
