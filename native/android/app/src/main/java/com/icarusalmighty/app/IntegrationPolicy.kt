@@ -66,6 +66,7 @@ object IntegrationPolicy {
     private val xrealCapabilities: Set<String> = linkedSetOf(
         "xreal_status",
         "open_xreal_hud",
+        "update_xreal_hud",
     )
 
     fun capabilities(flags: IntegrationFlags): List<String> = buildList {
