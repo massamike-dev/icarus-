@@ -81,7 +81,12 @@ class MetaWearablesController(
             "meta_xreal_launch" -> {
                 val controller = xreal()
                     ?: return error(requestId, "integration_disabled", "XREAL Integration is turned off in ICARUS settings.")
-                ok(requestId, controller.launch(args.optString("mode", "driver")))
+                ok(requestId, controller.launch(args.optString("mode", "vehicle"), args))
+            }
+            "meta_xreal_update" -> {
+                val controller = xreal()
+                    ?: return error(requestId, "integration_disabled", "XREAL Integration is turned off in ICARUS settings.")
+                ok(requestId, controller.update(args))
             }
             else -> executeMetaAction(action, requestId)
         }
