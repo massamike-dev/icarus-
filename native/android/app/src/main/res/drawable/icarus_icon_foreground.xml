@@ -1,0 +1,8 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:top="7dp"
+        android:bottom="7dp"
+        android:left="7dp"
+        android:right="7dp"
+        android:drawable="@drawable/icarus_brand_master" />
+</layer-list>

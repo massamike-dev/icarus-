@@ -8,5 +8,5 @@
         android:width="300dp"
         android:height="300dp"
         android:gravity="center"
-        android:drawable="@drawable/ic_launcher" />
+        android:drawable="@drawable/icarus_brand_master" />
 </layer-list>

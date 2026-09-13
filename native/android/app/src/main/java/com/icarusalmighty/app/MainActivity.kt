@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
         metaWearables = MetaWearablesController(this, ::dispatchNativeResult)
         nativeBridge = IcarusNativeBridge(this, metaWearables, ::dispatchNativeResult)
         splashView = ImageView(this).apply {
-            setImageResource(R.drawable.ic_launcher)
+            setImageResource(R.drawable.icarus_brand_master)
             setBackgroundColor(android.graphics.Color.rgb(2, 8, 23))
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             contentDescription = getString(R.string.app_name)
