@@ -14,6 +14,8 @@ import com.k2fsa.sherpa.onnx.OnlineModelConfig
 import com.k2fsa.sherpa.onnx.OnlineStream
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import java.util.concurrent.atomic.AtomicBoolean
+import org.json.JSONObject
+import kotlin.math.abs
 import kotlin.concurrent.thread
 
 class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
@@ -22,6 +24,10 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
     private var recorder: AudioRecord? = null
     private var spotter: KeywordSpotter? = null
     private var stream: OnlineStream? = null
+    @Volatile private var modelLoaded = false
+    @Volatile private var recorderActive = false
+    @Volatile private var lastAudioAt = 0L
+    @Volatile private var audioLevel = 0f
 
     override fun start(onDetected: () -> Unit): Result<Unit> = runCatching {
         if (running.get()) return@runCatching
@@ -29,6 +35,8 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
             "Microphone permission is required for Hey ICARUS."
         }
         val modelDir = "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01"
+        val preferences = context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE)
+        val sensitivity = preferences.getInt("sensitivity", 60).coerceIn(25, 90)
         val config = KeywordSpotterConfig(
             featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
             modelConfig = OnlineModelConfig(
@@ -42,16 +50,23 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
                 modelType = "zipformer2",
             ),
             keywordsFile = "$modelDir/keywords.txt",
-            keywordsScore = 1.8f,
-            keywordsThreshold = 0.30f,
+            keywordsScore = 1.35f + ((90 - sensitivity) / 100f),
+            keywordsThreshold = 0.42f - ((sensitivity - 25) / 500f),
             numTrailingBlanks = 2,
         )
         val kws = KeywordSpotter(context.assets, config)
+        modelLoaded = true
         val kwsStream = kws.createStream()
         val minBytes = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         check(minBytes > 0) { "This phone could not initialize the microphone." }
+        val requestedSource = preferences.getString("microphone_source", "automatic")
+        val audioSource = when (requestedSource) {
+            "phone" -> MediaRecorder.AudioSource.MIC
+            "bluetooth" -> MediaRecorder.AudioSource.VOICE_COMMUNICATION
+            else -> MediaRecorder.AudioSource.VOICE_RECOGNITION
+        }
         val audio = AudioRecord(
-            MediaRecorder.AudioSource.VOICE_RECOGNITION,
+            audioSource,
             SAMPLE_RATE,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
@@ -63,6 +78,8 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
         recorder = audio
         running.set(true)
         audio.startRecording()
+        check(audio.recordingState == AudioRecord.RECORDSTATE_RECORDING) { "The microphone opened but did not begin recording." }
+        recorderActive = true
         worker = thread(name = "icarus-sherpa-wake", isDaemon = true) {
             processAudio(audio, kws, kwsStream, onDetected)
         }
@@ -73,7 +90,12 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
         try {
             while (running.get()) {
                 val count = audio.read(pcm, 0, pcm.size)
-                if (count <= 0) continue
+                if (count < 0) error("Microphone read failed ($count).")
+                if (count == 0) continue
+                var peak = 0
+                for (i in 0 until count) peak = maxOf(peak, abs(pcm[i].toInt()))
+                audioLevel = (peak / 32768f).coerceIn(0f, 1f)
+                lastAudioAt = System.currentTimeMillis()
                 kwsStream.acceptWaveform(FloatArray(count) { pcm[it] / 32768.0f }, SAMPLE_RATE)
                 while (running.get() && kws.isReady(kwsStream)) {
                     kws.decode(kwsStream)
@@ -99,6 +121,7 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
     }
 
     @Synchronized private fun releaseResources() {
+        recorderActive = false
         runCatching { recorder?.release() }
         runCatching { stream?.release() }
         runCatching { spotter?.release() }
@@ -107,6 +130,12 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
         spotter = null
         worker = null
     }
+
+    fun diagnostics(): JSONObject = JSONObject()
+        .put("modelLoaded", modelLoaded)
+        .put("recorderActive", recorderActive)
+        .put("lastAudioAt", lastAudioAt)
+        .put("audioLevel", audioLevel.toDouble())
 
     private companion object { const val SAMPLE_RATE = 16_000 }
 }
