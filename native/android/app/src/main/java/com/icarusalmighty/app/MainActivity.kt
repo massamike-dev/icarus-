@@ -4,11 +4,13 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -35,10 +37,31 @@ class MainActivity : AppCompatActivity() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var metaWearables: MetaWearablesController
     private lateinit var nativeBridge: IcarusNativeBridge
+    private var pendingWakePermissionRequestId: String? = null
 
     private val wakePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+        val requestId = pendingWakePermissionRequestId
+        pendingWakePermissionRequestId = null
+        if (hasMicrophonePermission()) {
             startWakeWordService()
+            dispatchWakeStatusAfterStart(requestId)
+        } else {
+            val permanentlyDenied =
+                !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)
+            if (permanentlyDenied) openIcarusPermissionSettings()
+            dispatchNativeResult(
+                JSONObject()
+                    .put("ok", false)
+                    .put("requestId", requestId ?: JSONObject.NULL)
+                    .put("error", if (permanentlyDenied) "microphone_permission_blocked" else "microphone_permission_denied")
+                    .put("message", if (permanentlyDenied) {
+                        "Microphone access is blocked. ICARUS opened App permissions; allow Microphone, then return and enable Hey ICARUS again."
+                    } else {
+                        "Microphone access is required for Hey ICARUS."
+                    })
+                    .put("settingsOpened", permanentlyDenied)
+                    .toString()
+            )
         }
     }
 
@@ -211,23 +234,73 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    fun requestWakePermissionFromDisclosure() {
+    fun requestWakePermissionFromDisclosure(requestId: String?): String {
+        if (hasMicrophonePermission()) {
+            startWakeWordService()
+            dispatchWakeStatusAfterStart(requestId)
+            return ""
+        }
+
+        val preferences = getSharedPreferences("icarus_permissions", MODE_PRIVATE)
+        val requestedBefore = preferences.getBoolean("microphone_requested", false)
+        if (requestedBefore && !shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+            openIcarusPermissionSettings()
+            return JSONObject()
+                .put("ok", false)
+                .put("requestId", requestId ?: JSONObject.NULL)
+                .put("error", "microphone_permission_blocked")
+                .put("message", "Microphone access is blocked. Allow it on the App permissions screen, then return to ICARUS.")
+                .put("settingsOpened", true)
+                .toString()
+        }
+
         val missing = buildList {
-            if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                add(Manifest.permission.RECORD_AUDIO)
-            }
+            add(Manifest.permission.RECORD_AUDIO)
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
                 ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) {
                 add(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
-        if (missing.isEmpty()) startWakeWordService() else wakePermissions.launch(missing.toTypedArray())
+        pendingWakePermissionRequestId = requestId
+        preferences.edit().putBoolean("microphone_requested", true).apply()
+        wakePermissions.launch(missing.toTypedArray())
+        return ""
     }
 
     private fun startWakeWordService() {
         val intent = Intent(this, WakeWordService::class.java)
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    private fun hasMicrophonePermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    private fun openIcarusPermissionSettings() {
+        startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.parse("package:$packageName"))
+        )
+    }
+
+    private fun dispatchWakeStatusAfterStart(requestId: String?) {
+        mainHandler.postDelayed({
+            val state = WakeWordService.listenerState
+            val success = state == "LISTENING"
+            dispatchNativeResult(
+                JSONObject()
+                    .put("ok", success)
+                    .put("requestId", requestId ?: JSONObject.NULL)
+                    .put("error", if (success) JSONObject.NULL else "wake_listener_start_failed")
+                    .put("message", WakeWordService.lastError ?: JSONObject.NULL)
+                    .put("data", JSONObject()
+                        .put("enabled", success)
+                        .put("permissionGranted", true)
+                        .put("listenerState", state))
+                    .toString()
+            )
+            notifyNativeStatus()
+        }, 700L)
     }
 
     private fun notifyNativeStatus() {

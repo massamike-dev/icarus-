@@ -25,6 +25,8 @@ class WakeWordService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        listenerState = "STARTING"
+        lastError = null
         createChannel()
         startForeground(NOTIFICATION_ID, notification("Listening for “Hey ICARUS”"))
         armEngine()
@@ -41,11 +43,15 @@ class WakeWordService : Service() {
 
     private fun armEngine() {
         if (stopping) return
-        engine.start(::onWakeDetected).onFailure { error ->
-            getSystemService(NotificationManager::class.java)
-                .notify(NOTIFICATION_ID, notification(error.message ?: "Wake listener could not start"))
-            stopSelf()
-        }
+        engine.start(::onWakeDetected)
+            .onSuccess { listenerState = "LISTENING" }
+            .onFailure { error ->
+                lastError = error.message ?: "Wake listener could not start"
+                listenerState = "ERROR"
+                getSystemService(NotificationManager::class.java)
+                    .notify(NOTIFICATION_ID, notification(lastError!!))
+                stopSelf()
+            }
     }
 
     private fun onWakeDetected() {
@@ -75,6 +81,7 @@ class WakeWordService : Service() {
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
         engine.stop()
+        if (listenerState != "ERROR") listenerState = "STOPPED"
         super.onDestroy()
     }
 
@@ -114,5 +121,9 @@ class WakeWordService : Service() {
         private const val NOTIFICATION_ID = 4401
         private const val REARM_AFTER_LAUNCH_FAILURE_MS = 1200L
         const val ACTION_STOP = "com.icarusalmighty.app.STOP_WAKE_WORD"
+        @Volatile var listenerState: String = "STOPPED"
+            private set
+        @Volatile var lastError: String? = null
+            private set
     }
 }

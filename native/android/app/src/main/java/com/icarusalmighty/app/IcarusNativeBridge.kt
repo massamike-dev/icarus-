@@ -64,6 +64,11 @@ class IcarusNativeBridge(
     }
 
     fun getStatus(): String = JSONObject(statusJson(context))
+        .put("wakeWord", JSONObject()
+            .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+            .put("listenerState", WakeWordService.listenerState)
+            .put("enabled", WakeWordService.listenerState == "LISTENING")
+            .put("lastError", WakeWordService.lastError ?: JSONObject.NULL))
         .put("metaWearables", metaWearables.status())
         .toString()
 
@@ -300,11 +305,14 @@ class IcarusNativeBridge(
         val intent = Intent(context, WakeWordService::class.java)
         if (enabled) {
             val host = activity as? MainActivity ?: return error(requestId, "native_host_unavailable")
-            host.requestWakePermissionFromDisclosure()
+            return host.requestWakePermissionFromDisclosure(requestId)
         } else {
             context.stopService(intent)
         }
-        return ok(requestId, JSONObject().put("enabled", enabled).put("permissionRequested", enabled))
+        return ok(requestId, JSONObject()
+            .put("enabled", false)
+            .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+            .put("listenerState", "STOPPED"))
     }
 
     private fun speakText(requestId: String?, args: JSONObject): String {
