@@ -64,11 +64,21 @@ class IcarusNativeBridge(
     }
 
     fun getStatus(): String = JSONObject(statusJson(context))
+        .put("installSource", if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            runCatching { context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName }.getOrNull() ?: "sideload"
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getInstallerPackageName(context.packageName) ?: "sideload"
+        })
         .put("wakeWord", JSONObject()
             .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             .put("listenerState", WakeWordService.listenerState)
             .put("enabled", WakeWordService.listenerState == "LISTENING")
-            .put("lastError", WakeWordService.lastError ?: JSONObject.NULL))
+            .put("lastError", WakeWordService.lastError ?: JSONObject.NULL)
+            .apply {
+                val diagnostics = WakeWordService.diagnostics()
+                diagnostics.keys().forEach { key -> put(key, diagnostics.get(key)) }
+            })
         .put("metaWearables", metaWearables.status())
         .toString()
 
@@ -98,6 +108,8 @@ class IcarusNativeBridge(
                 "find_videos", "compose_video_montage" -> openMontage(requestId, args)
                 "list_bluetooth", "bluetooth_status" -> listBluetooth(requestId)
                 "wake_word" -> wakeWord(requestId, args)
+                "wake_config" -> wakeConfig(requestId, args)
+                "wake_audio_test" -> ok(requestId, JSONObject(getStatus()).getJSONObject("wakeWord"))
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
                 "session_logout" -> sessionLogout(requestId)
@@ -313,6 +325,22 @@ class IcarusNativeBridge(
             .put("enabled", false)
             .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             .put("listenerState", "STOPPED"))
+    }
+
+    private fun wakeConfig(requestId: String?, args: JSONObject): String {
+        val source = args.optString("microphoneSource", "automatic")
+            .takeIf { it in setOf("automatic", "phone", "bluetooth") } ?: "automatic"
+        val sensitivity = args.optInt("sensitivity", 60).coerceIn(25, 90)
+        context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE).edit()
+            .putString("microphone_source", source)
+            .putInt("sensitivity", sensitivity)
+            .putInt("timeout_seconds", args.optInt("timeoutSeconds", 30).coerceAtLeast(0))
+            .putBoolean("follow_up_mode", args.optBoolean("followUpMode", true))
+            .putBoolean("listen_on_screen_wake", args.optBoolean("listenOnScreenWake", true))
+            .putBoolean("incoming_calls", args.optBoolean("incomingCalls", true))
+            .putBoolean("active_during_calls", args.optBoolean("activeDuringCalls", false))
+            .apply()
+        return ok(requestId, JSONObject().put("saved", true).put("microphoneSource", source).put("sensitivity", sensitivity))
     }
 
     private fun speakText(requestId: String?, args: JSONObject): String {
