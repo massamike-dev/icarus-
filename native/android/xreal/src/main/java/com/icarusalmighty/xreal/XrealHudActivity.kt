@@ -86,8 +86,13 @@ class XrealHudActivity : Activity() {
         primaryText = getStringExtra(XrealModeController.EXTRA_PRIMARY_TEXT),
         navigationInstruction = getStringExtra(XrealModeController.EXTRA_NAVIGATION_INSTRUCTION),
         navigationDistance = getStringExtra(XrealModeController.EXTRA_NAVIGATION_DISTANCE),
+        eta = getStringExtra(XrealModeController.EXTRA_ETA),
+        heading = getStringExtra(XrealModeController.EXTRA_HEADING),
         speedMph = intExtraOrNull(XrealModeController.EXTRA_SPEED_MPH),
+        rpm = intExtraOrNull(XrealModeController.EXTRA_RPM),
         engineTempF = intExtraOrNull(XrealModeController.EXTRA_ENGINE_TEMP_F),
+        batteryPercent = intExtraOrNull(XrealModeController.EXTRA_BATTERY_PERCENT),
+        alertText = getStringExtra(XrealModeController.EXTRA_ALERT_TEXT),
     )
 
     private fun Intent.intExtraOrNull(key: String): Int? =
@@ -144,6 +149,9 @@ private class XrealHudView(context: Context) : View(context) {
         canvas.drawLine(w - margin, h - margin, w - margin, h - margin - corner, paint)
         label(canvas, "I C A R U S", margin + 20f, margin + 52f, 28f, gold)
         label(canvas, state.assistantStatus.uppercase(), w - margin - 20f, margin + 52f, 24f, cyan, Paint.Align.RIGHT)
+        state.batteryPercent?.coerceIn(0, 100)?.let {
+            label(canvas, "PHONE $it%", w - margin - 20f, margin + 88f, 18f, dimCyan, Paint.Align.RIGHT)
+        }
     }
 
     private fun drawAssistant(canvas: Canvas, w: Float, h: Float) {
@@ -159,6 +167,9 @@ private class XrealHudView(context: Context) : View(context) {
         state.navigationDistance?.takeIf { it.isNotBlank() }?.let {
             label(canvas, it.uppercase(), w / 2f, 260f, 26f, gold, Paint.Align.CENTER)
         }
+        state.eta?.takeIf { it.isNotBlank() }?.let {
+            label(canvas, "ETA ${it.uppercase()}", w / 2f, 298f, 20f, dimCyan, Paint.Align.CENTER)
+        }
 
         val speed = state.speedMph?.coerceIn(0, 199)
         label(canvas, speed?.toString() ?: "—", w / 2f, h / 2f + 95f, 180f, Color.WHITE, Paint.Align.CENTER)
@@ -166,7 +177,18 @@ private class XrealHudView(context: Context) : View(context) {
 
         val temp = state.engineTempF?.let { "$it°F" } ?: "—"
         metric(canvas, "ENGINE", temp, 170f, h - 178f)
+        val rpm = state.rpm?.coerceIn(0, 9999)?.toString() ?: "—"
+        metric(canvas, "RPM", rpm, 385f, h - 178f)
+        val heading = state.heading?.takeIf { it.isNotBlank() }?.uppercase() ?: "—"
+        metric(canvas, "HEADING", heading, w - 385f, h - 178f, Paint.Align.RIGHT)
         metric(canvas, "MODE", "VEHICLE", w - 170f, h - 178f, Paint.Align.RIGHT)
+
+        state.alertText?.takeIf { it.isNotBlank() }?.let {
+            paint.style = Paint.Style.FILL
+            paint.color = Color.argb(215, 125, 24, 20)
+            canvas.drawRoundRect(RectF(w / 2f - 360f, h - 265f, w / 2f + 360f, h - 205f), 18f, 18f, paint)
+            label(canvas, it.uppercase().take(54), w / 2f, h - 224f, 24f, Color.WHITE, Paint.Align.CENTER)
+        }
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 5f

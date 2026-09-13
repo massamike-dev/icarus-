@@ -78,8 +78,13 @@ class XrealWearablesController(
         primaryText = firstString(args, "primaryText", "text", "message").ifBlank { null },
         navigationInstruction = firstString(args, "navigationInstruction", "instruction", "maneuver").ifBlank { null },
         navigationDistance = firstString(args, "navigationDistance", "distance").ifBlank { null },
+        eta = firstString(args, "eta", "arrivalTime").ifBlank { null },
+        heading = firstString(args, "heading", "cardinalHeading").ifBlank { null },
         speedMph = numberOrNull(args, "speedMph", "speed")?.roundToInt(),
+        rpm = numberOrNull(args, "rpm", "engineRpm")?.roundToInt(),
         engineTempF = numberOrNull(args, "engineTempF", "coolantTempF", "temperature")?.roundToInt(),
+        batteryPercent = numberOrNull(args, "batteryPercent", "phoneBattery")?.roundToInt(),
+        alertText = firstString(args, "alertText", "alert", "warning").ifBlank { null },
     )
 
     private fun firstString(args: JSONObject, vararg keys: String): String {

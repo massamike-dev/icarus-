@@ -38,8 +38,13 @@ class XrealModeController(private val context: Context) {
         state.primaryText?.let { putExtra(EXTRA_PRIMARY_TEXT, it) }
         state.navigationInstruction?.let { putExtra(EXTRA_NAVIGATION_INSTRUCTION, it) }
         state.navigationDistance?.let { putExtra(EXTRA_NAVIGATION_DISTANCE, it) }
+        state.eta?.let { putExtra(EXTRA_ETA, it) }
+        state.heading?.let { putExtra(EXTRA_HEADING, it) }
         state.speedMph?.let { putExtra(EXTRA_SPEED_MPH, it) }
+        state.rpm?.let { putExtra(EXTRA_RPM, it) }
         state.engineTempF?.let { putExtra(EXTRA_ENGINE_TEMP_F, it) }
+        state.batteryPercent?.let { putExtra(EXTRA_BATTERY_PERCENT, it) }
+        state.alertText?.let { putExtra(EXTRA_ALERT_TEXT, it) }
     }
 
     companion object {
@@ -50,8 +55,13 @@ class XrealModeController(private val context: Context) {
         const val EXTRA_PRIMARY_TEXT = "com.icarusalmighty.extra.PRIMARY_TEXT"
         const val EXTRA_NAVIGATION_INSTRUCTION = "com.icarusalmighty.extra.NAVIGATION_INSTRUCTION"
         const val EXTRA_NAVIGATION_DISTANCE = "com.icarusalmighty.extra.NAVIGATION_DISTANCE"
+        const val EXTRA_ETA = "com.icarusalmighty.extra.ETA"
+        const val EXTRA_HEADING = "com.icarusalmighty.extra.HEADING"
         const val EXTRA_SPEED_MPH = "com.icarusalmighty.extra.SPEED_MPH"
+        const val EXTRA_RPM = "com.icarusalmighty.extra.RPM"
         const val EXTRA_ENGINE_TEMP_F = "com.icarusalmighty.extra.ENGINE_TEMP_F"
+        const val EXTRA_BATTERY_PERCENT = "com.icarusalmighty.extra.BATTERY_PERCENT"
+        const val EXTRA_ALERT_TEXT = "com.icarusalmighty.extra.ALERT_TEXT"
     }
 }
 
