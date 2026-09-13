@@ -283,24 +283,26 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun dispatchWakeStatusAfterStart(requestId: String?) {
+    private fun dispatchWakeStatusAfterStart(requestId: String?, attempt: Int = 0) {
         mainHandler.postDelayed({
             val state = WakeWordService.listenerState
+            if (state == "STARTING" && attempt < 12) {
+                dispatchWakeStatusAfterStart(requestId, attempt + 1)
+                return@postDelayed
+            }
             val success = state == "LISTENING"
+            val wake = JSONObject(nativeBridge.getStatus()).getJSONObject("wakeWord")
             dispatchNativeResult(
                 JSONObject()
                     .put("ok", success)
                     .put("requestId", requestId ?: JSONObject.NULL)
                     .put("error", if (success) JSONObject.NULL else "wake_listener_start_failed")
                     .put("message", WakeWordService.lastError ?: JSONObject.NULL)
-                    .put("data", JSONObject()
-                        .put("enabled", success)
-                        .put("permissionGranted", true)
-                        .put("listenerState", state))
+                    .put("data", wake.put("enabled", success))
                     .toString()
             )
             notifyNativeStatus()
-        }, 700L)
+        }, 500L)
     }
 
     private fun notifyNativeStatus() {
