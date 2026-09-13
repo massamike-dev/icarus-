@@ -19,16 +19,17 @@ import androidx.core.app.NotificationCompat
  * capture, then Base44/native safety re-arms the listener after the turn.
  */
 class WakeWordService : Service() {
-    private val engine: WakeWordEngine by lazy { SherpaWakeWordEngine(this) }
+    private val engine: SherpaWakeWordEngine by lazy { SherpaWakeWordEngine(this) }
     private val mainHandler = Handler(Looper.getMainLooper())
     private var stopping = false
 
     override fun onCreate() {
         super.onCreate()
+        activeService = this
         listenerState = "STARTING"
         lastError = null
         createChannel()
-        startForeground(NOTIFICATION_ID, notification("Listening for “Hey ICARUS”"))
+        startForeground(NOTIFICATION_ID, notification("Starting wake-word engine…"))
         armEngine()
     }
 
@@ -44,7 +45,11 @@ class WakeWordService : Service() {
     private fun armEngine() {
         if (stopping) return
         engine.start(::onWakeDetected)
-            .onSuccess { listenerState = "LISTENING" }
+            .onSuccess {
+                listenerState = "LISTENING"
+                getSystemService(NotificationManager::class.java)
+                    .notify(NOTIFICATION_ID, notification("Listening for “Hey ICARUS”"))
+            }
             .onFailure { error ->
                 lastError = error.message ?: "Wake listener could not start"
                 listenerState = "ERROR"
@@ -81,11 +86,14 @@ class WakeWordService : Service() {
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
         engine.stop()
+        activeService = null
         if (listenerState != "ERROR") listenerState = "STOPPED"
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    private fun diagnostics(): org.json.JSONObject = engine.diagnostics()
 
     private fun createChannel() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(
@@ -125,5 +133,8 @@ class WakeWordService : Service() {
             private set
         @Volatile var lastError: String? = null
             private set
+        @Volatile private var activeService: WakeWordService? = null
+
+        fun diagnostics(): org.json.JSONObject = activeService?.diagnostics() ?: org.json.JSONObject()
     }
 }
