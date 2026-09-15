@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: icarus-assistant
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: web
+    buildCommand: npm ci && npm test && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ICARUS_SESSION_SECRET
+        generateValue: true
+      - key: ICARUS_DATA_FILE
+        value: /var/data/icarus.json
+      - key: ICARUS_AI_API_KEY
+        sync: false
+      - key: ICARUS_AI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: ICARUS_AI_MODEL
+        value: gpt-5-mini
+    disk:
+      name: icarus-data
+      mountPath: /var/data
+      sizeGB: 1
