@@ -10,7 +10,7 @@ This document explains why the Android host requests each permission and what re
 
 | Permission | Why ICARUS uses it | Expected behavior |
 | --- | --- | --- |
-| `INTERNET` | Load the published Base44 app, cloud assistant endpoints, update metadata, and optional SDK network calls | Core UI should still degrade cleanly when offline and use local capabilities where available |
+| `INTERNET` | Load the published ICARUS app, cloud assistant endpoints, update metadata, and optional SDK network calls | Core UI should still degrade cleanly when offline and use local capabilities where available |
 | `RECORD_AUDIO` | Wake-word listening and explicit voice/conversation capture | Wake listening is opt-in; foreground mic service shows a persistent notification |
 | `POST_NOTIFICATIONS` | Persistent wake-word foreground-service notification and related status | Requested only where Android requires runtime notification permission |
 | `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | Keep user-enabled wake-word listening alive while the UI is not foregrounded | Stops on force-stop, permission revocation, explicit Stop, or reboot until user re-enables |

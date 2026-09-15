@@ -225,7 +225,7 @@ class MainActivity : AppCompatActivity() {
             <div style='max-width:720px;margin:12vh auto;padding:32px'>
             <h1 style='color:#d4af37'>I.C.A.R.U.S. Native Host</h1>
             <p>The Android bridge is installed, but ICARUS_WEB_URL has not been set to a valid HTTPS ICARUS origin.</p>
-            <p>Set the published Base44 HTTPS URL in <code>native/android/gradle.properties</code>, rebuild, and install again.</p>
+            <p>Set the published ICARUS HTTPS URL in <code>native/android/gradle.properties</code>, rebuild, and install again.</p>
             </div></body></html>
             """.trimIndent(),
             "text/html",

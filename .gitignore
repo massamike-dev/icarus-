@@ -7,7 +7,10 @@ app/build/
 build/
 app/src/main/assets/sherpa-onnx-*/
 app/src/main/jniLibs/
+native/android/app/src/main/assets/sherpa-onnx-*/
+native/android/app/src/main/jniLibs/
 *.jks
 web/node_modules/
 web/dist/
+web/data/
 *.keystore

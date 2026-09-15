@@ -7,7 +7,7 @@ This directory is the authoritative Android application for ICARUS.
 - App module: `app/`
 - Optional XREAL module: `xreal/`
 - Canonical CI/release workflow: `.github/workflows/android-build.yml`
-- Published Base44 host: `https://icarusassistant.com`
+- Published independent ICARUS host: `https://icarusassistant.com`
 
 Do not make Android product changes in the repository-root `/app` directory. That tree is the deprecated 1.2.0 bridge retained only for historical comparison.
 
