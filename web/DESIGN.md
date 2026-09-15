@@ -1,0 +1,11 @@
+# ICARUS Web Design
+
+ICARUS is a rugged command instrument for Michael: calm enough for daily use, precise enough for a vehicle cockpit, and recognizably built from steel, ember, and sky rather than generic AI neon.
+
+## Runtime tokens
+
+The canonical tokens live in `src/styles.css` under `:root`: Ink `#071019`, Panel `#0b1722`, Panel Raised `#101f2b`, Steel `#8fa5b5`, White `#f4f7f8`, Ember `#df6b2d`, Sky `#62c6e8`, Focus `#ffd18d`.
+
+Typography pairs condensed, mechanical Barlow Condensed for identity and headings with Manrope for readable controls and copy. The signature element is the orbital W command core: a restrained instrument, not decorative sci-fi chrome.
+
+Navigation labels and system states remain consistent across mobile and desktop. Motion is limited to the listening state and is disabled when reduced motion is requested. WCAG 2.2 AA keyboard focus and semantic controls are baseline requirements.

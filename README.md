@@ -2,7 +2,7 @@
 
 **Intelligent Companion for Assistance, Reasoning, Understanding, and Support**
 
-ICARUS is an Android-first personal assistant backed by the published Base44 web app. The Android host adds capabilities that a browser cannot safely provide, including wake-word listening, native voice capture/TTS, device actions, Bluetooth/OBD-II access, optional wearable integrations, and signed in-place updates.
+ICARUS is an Android-first personal assistant backed by its own repository-hosted web application and API. The Android host adds capabilities that a browser cannot safely provide, including wake-word listening, native voice capture/TTS, device actions, Bluetooth/OBD-II access, optional wearable integrations, and signed in-place updates.
 
 ## Canonical Android app
 
@@ -50,7 +50,7 @@ If Meta or XREAL is disabled, unavailable, disconnected, or fails, phone Driving
 - Native device actions for alarms, timers, flashlight, volume, brightness, navigation, camera, calls/SMS, Bluetooth, battery, and app launching
 - Local Gemma fallback and native-command interpretation boundary
 - Bluetooth OBD-II connection with read-only RPM, speed, coolant, voltage, engine-load and related telemetry
-- Base44 command/conversation gateway
+- Independent authenticated command, conversation, and memory API
 - Signed Play AAB and shareable APK pipeline
 - In-place updater manifest
 - XREAL module boundary
@@ -93,6 +93,26 @@ gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
 ```
 
 For release builds use `.github/workflows/android-build.yml`; signing credentials remain in GitHub Actions secrets.
+
+## Run the independent web service
+
+```bash
+cd web
+npm ci
+npm test
+npm run build
+ICARUS_SESSION_SECRET="replace-with-at-least-32-random-characters" npm start
+```
+
+Required production configuration:
+
+- `ICARUS_SESSION_SECRET`: random secret of at least 32 characters.
+- `ICARUS_AI_API_KEY`: provider key used only by the server.
+- `ICARUS_AI_BASE_URL`: optional OpenAI-compatible base URL; defaults to OpenAI.
+- `ICARUS_AI_MODEL`: optional model name; defaults to `gpt-5-mini`.
+- `ICARUS_DATA_FILE`: optional persistent-data path; defaults to `web/data/icarus.json`.
+
+The server stores password hashes using scrypt, isolates conversations and memories by authenticated user, and never sends provider credentials to the browser. See [`docs/MIGRATION.md`](docs/MIGRATION.md).
 
 ## Release-readiness checklist
 

@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { createHandler } from './app.js';
+import { emptyStore } from './store.js';
+
+class MemoryStore { constructor(){this.data=emptyStore()} async read(){return structuredClone(this.data)} async update(fn){return fn(this.data)} }
+const withServer=async fn=>{const server=createServer(createHandler({store:new MemoryStore(),env:{NODE_ENV:'test'}}));await new Promise(r=>server.listen(0,'127.0.0.1',r));try{await fn(`http://127.0.0.1:${server.address().port}`)}finally{await new Promise(r=>server.close(r))}};
+const post=(url,payload,token)=>fetch(url,{method:'POST',headers:{'content-type':'application/json',...(token?{authorization:`Bearer ${token}`}:{})},body:JSON.stringify(payload)});
+
+test('health proves the runtime is independent from Base44',()=>withServer(async base=>{const r=await fetch(`${base}/api/health`);assert.deepEqual(await r.json(),{ok:true,service:'icarus-api',base44:false})}));
+test('auth, isolated memory, and conversation flow',()=>withServer(async base=>{let r=await post(`${base}/api/auth/register`,{email:'michael@example.com',name:'Michael',password:'strong-password'});assert.equal(r.status,201);const {token}=await r.json();r=await post(`${base}/api/memories`,{content:'Wennig Industries builds masonry.'},token);assert.equal(r.status,201);r=await post(`${base}/api/chat`,{message:'What do you remember?'},token);const chat=await r.json();assert.equal(r.status,200);assert.ok(chat.conversationId);assert.match(chat.reply,/Cloud AI is not configured/);r=await fetch(`${base}/api/conversations`,{headers:{authorization:`Bearer ${token}`}});assert.equal((await r.json()).conversations[0].messages.length,2);r=await fetch(`${base}/api/memories`);assert.equal(r.status,401)}));
+test('rejects duplicate accounts and invalid credentials',()=>withServer(async base=>{await post(`${base}/api/auth/register`,{email:'m@example.com',password:'long-enough-password'});assert.equal((await post(`${base}/api/auth/register`,{email:'m@example.com',password:'long-enough-password'})).status,409);assert.equal((await post(`${base}/api/auth/login`,{email:'m@example.com',password:'wrong-password'})).status,401)}));

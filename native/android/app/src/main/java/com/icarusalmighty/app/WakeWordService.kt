@@ -16,7 +16,7 @@ import androidx.core.app.NotificationCompat
  * The service stays sticky across ordinary process pressure once the user has
  * enabled hands-free listening, but an explicit Stop action still shuts it
  * down. Detection hands microphone ownership to MainActivity for command
- * capture, then Base44/native safety re-arms the listener after the turn.
+ * capture, then ICARUS web/native safety re-arms the listener after the turn.
  */
 class WakeWordService : Service() {
     private val engine: SherpaWakeWordEngine by lazy { SherpaWakeWordEngine(this) }
