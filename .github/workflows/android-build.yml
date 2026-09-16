@@ -46,25 +46,10 @@ jobs:
         working-directory: native/android
         env:
           ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
-          GH_TOKEN: ${{ github.token }}
         run: |
-          set +e
-          set -o pipefail
           gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
             -PICARUS_WEB_URL="$ICARUS_WEB_URL" \
-            --stacktrace 2>&1 | tee "$RUNNER_TEMP/gradle-debug.log"
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            echo "### Gradle failure" >> "$GITHUB_STEP_SUMMARY"
-            tail -n 120 "$RUNNER_TEMP/gradle-debug.log" >> "$GITHUB_STEP_SUMMARY"
-            tail -n 120 "$RUNNER_TEMP/gradle-debug.log" > "$RUNNER_TEMP/ci-error.txt"
-            encoded="$(base64 -w 0 "$RUNNER_TEMP/ci-error.txt")"
-            gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/native/android/ci-error.txt" \\
-              -f message="Capture Android compile failure" \\
-              -f content="$encoded" \\
-              -f branch="release/1.6.4-play-billing"
-          fi
-          exit "$status"
+            --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
