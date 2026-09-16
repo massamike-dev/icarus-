@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         metaWearables = MetaWearablesController(this, ::dispatchNativeResult)
         nativeBridge = IcarusNativeBridge(this, metaWearables, ::dispatchNativeResult)
         splashView = ImageView(this).apply {
-            setImageResource(R.drawable.icarus_brand_master)
+            setImageResource(R.drawable.ic_launcher)
             setBackgroundColor(android.graphics.Color.rgb(2, 8, 23))
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             contentDescription = getString(R.string.app_name)
@@ -171,6 +171,7 @@ class MainActivity : AppCompatActivity() {
                         .start()
                 }
                 if (!TrustedWebPolicy.isTrustedUrl(url, BuildConfig.ICARUS_WEB_URL)) return
+                removeLegacyReadyLabel()
                 notifyNativeStatus()
                 if (pendingWake) {
                     pendingWake = false
@@ -191,6 +192,36 @@ class MainActivity : AppCompatActivity() {
                 handleNativeMessage(message.data)
             }
         }
+    }
+
+    private fun removeLegacyReadyLabel() {
+        val script = """
+            (() => {
+              const hideLegacyReady = () => {
+                document.querySelectorAll('body *').forEach((element) => {
+                  if (
+                    element.children.length === 0 &&
+                    element.textContent?.trim() === 'Ready' &&
+                    !element.closest('button,[role="button"],[aria-live]')
+                  ) {
+                    element.style.setProperty('display', 'none', 'important');
+                    element.setAttribute('aria-hidden', 'true');
+                  }
+                });
+              };
+              hideLegacyReady();
+              if (!window.__icarusLegacyReadyCleaner) {
+                const observer = new MutationObserver(hideLegacyReady);
+                observer.observe(document.documentElement, {
+                  subtree: true,
+                  childList: true,
+                  characterData: true
+                });
+                window.__icarusLegacyReadyCleaner = observer;
+              }
+            })();
+        """.trimIndent()
+        webView.evaluateJavascript(script, null)
     }
 
     private fun handleNativeMessage(raw: String?) {
