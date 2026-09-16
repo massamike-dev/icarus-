@@ -7,6 +7,7 @@ import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import org.json.JSONObject
@@ -66,7 +67,11 @@ class PlayBillingManager(
                 }
             }
         }
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts()
+                .build()
+        )
         .build()
 
     fun checkSubscription(requestId: String) {
@@ -134,13 +139,13 @@ class PlayBillingManager(
                 .setProductList(listOf(product))
                 .build()
 
-            billingClient.queryProductDetailsAsync(query) { result, details ->
+            billingClient.queryProductDetailsAsync(query) { result, detailsResult ->
                 if (result.responseCode != BillingClient.BillingResponseCode.OK) {
                     dispatchError(requestId, billingError(result))
                     return@queryProductDetailsAsync
                 }
 
-                val productDetails = details.firstOrNull()
+                val productDetails = detailsResult.productDetailsList.firstOrNull()
                 if (productDetails == null) {
                     dispatchError(requestId, "subscription_product_unavailable")
                     return@queryProductDetailsAsync
