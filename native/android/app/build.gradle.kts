@@ -79,7 +79,7 @@ dependencies {
     implementation("com.google.android.play:app-update-ktx:2.1.0")
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.16.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("com.android.billingclient:billing-ktx:8.2.1")
+    implementation("com.android.billingclient:billing-ktx:9.1.0")
     implementation("com.meta.wearable:mwdat-core:0.9.0")
     implementation("com.meta.wearable:mwdat-camera:0.9.0")
     implementation("com.meta.wearable:mwdat-display:0.9.0")
