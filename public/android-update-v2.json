@@ -1,9 +1,9 @@
 {
-  "versionCode": 32,
-  "versionName": "1.4.15",
+  "versionCode": 33,
+  "versionName": "1.6.2",
   "releaseDate": "2026-09-16",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.4.15-test/ICARUS-latest.apk",
-  "sha256": "e8e1c3d266f60dc59de5b255b0bf1d842ba4a8089bbe4a0296f261092ada45a0",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.6.2-test/ICARUS-latest.apk",
+  "sha256": "10b0eba9147e3939c284b56acaf839b87d936e98ebcbeb19aa538d157f8516f7",
   "patchNotes": [
     "Made native/android the canonical ICARUS Android app.",
     "Added unit-tested optional Meta and XREAL integration gating.",
