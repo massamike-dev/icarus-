@@ -35,6 +35,7 @@ object IntegrationPolicy {
         "obd_connect",
         "obd_snapshot",
         "obd_disconnect",
+        "open_driving_hud",
         "find_videos",
         "compose_video_montage",
         "native_tts",
@@ -66,6 +67,7 @@ object IntegrationPolicy {
     private val xrealCapabilities: Set<String> = linkedSetOf(
         "xreal_status",
         "open_xreal_hud",
+        "close_xreal_hud",
         "update_xreal_hud",
     )
 

@@ -97,11 +97,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(rootView)
         configureWebView()
         loadIcarus()
+        ensureWakeListenerRunning()
         PlayUpdateManager.checkOnLaunch(this)
     }
 
     override fun onResume() {
         super.onResume()
+        ensureWakeListenerRunning()
         PlayUpdateManager.resumeIfNeeded(this)
     }
 
@@ -302,6 +304,11 @@ class MainActivity : AppCompatActivity() {
     private fun startWakeWordService() {
         val intent = Intent(this, WakeWordService::class.java)
         ContextCompat.startForegroundService(this, intent)
+    }
+
+    /** Wake listening is native and must not depend on the hosted UI loading first. */
+    private fun ensureWakeListenerRunning() {
+        if (hasMicrophonePermission()) runCatching { startWakeWordService() }
     }
 
     private fun hasMicrophonePermission(): Boolean =
