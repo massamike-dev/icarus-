@@ -46,7 +46,9 @@ jobs:
         working-directory: native/android
         env:
           ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set +e
           set -o pipefail
           gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug \
             -PICARUS_WEB_URL="$ICARUS_WEB_URL" \
