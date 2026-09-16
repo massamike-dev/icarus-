@@ -1,6 +1,6 @@
 # ICARUS Google Play release packet
 
-Release candidate: **1.4.14 (31)**  
+Release candidate: **1.6.3 (34)**
 Package: `com.icarusalmighty.app`  
 Target SDK: 36  
 Support: `wennigworks@gmail.com`
@@ -58,7 +58,7 @@ Record false wakes and missed wakes. Production access requires meaningful teste
 
 - [ ] Independent service deployed and all three public URLs return correctly.
 - [ ] Play App content and Data safety forms completed.
-- [ ] Signed `1.4.14 (31)` AAB uploaded to internal testing.
+- [ ] Signed `1.6.3 (34)` AAB uploaded to internal testing.
 - [ ] Purchase buttons remain disabled unless server-side Play verification passes.
 - [ ] Real-device wake and permission matrix completed.
 - [ ] Two-user isolation and deletion verified against production.
