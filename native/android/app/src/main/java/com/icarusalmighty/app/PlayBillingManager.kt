@@ -67,7 +67,11 @@ class PlayBillingManager(
                 }
             }
         }
-        .enablePendingPurchases(\n            PendingPurchasesParams.newBuilder()\n                .enableOneTimeProducts()\n                .build()\n        )
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts()
+                .build()
+        )
         .build()
 
     fun checkSubscription(requestId: String) {
