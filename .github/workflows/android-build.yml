@@ -55,12 +55,12 @@ jobs:
           if [ "$status" -ne 0 ]; then
             echo "### Gradle failure" >> "$GITHUB_STEP_SUMMARY"
             tail -n 120 "$RUNNER_TEMP/gradle-debug.log" >> "$GITHUB_STEP_SUMMARY"
-            tail -n 120 "$RUNNER_TEMP/gradle-debug.log" > ci-error.txt
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add ci-error.txt
-            git commit -m "Capture Android compile failure" || true
-            git push origin HEAD:release/1.6.4-play-billing
+            tail -n 120 "$RUNNER_TEMP/gradle-debug.log" > "$RUNNER_TEMP/ci-error.txt"
+            encoded="$(base64 -w 0 "$RUNNER_TEMP/ci-error.txt")"
+            gh api --method PUT "repos/$GITHUB_REPOSITORY/contents/native/android/ci-error.txt" \\
+              -f message="Capture Android compile failure" \\
+              -f content="$encoded" \\
+              -f branch="release/1.6.4-play-billing"
           fi
           exit "$status"
 
