@@ -1,7 +1,7 @@
 name: ICARUS Web Build
 on:
   push:
-    branches: [web-migration]
+    branches: [main, web-migration]
     paths: ['web/**','.github/workflows/web-build.yml']
   pull_request:
     paths: ['web/**','.github/workflows/web-build.yml']
