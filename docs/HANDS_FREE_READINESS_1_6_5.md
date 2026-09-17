@@ -1,6 +1,6 @@
 # ICARUS 1.6.5 / build 36 readiness audit
 
-Status: local repair candidate, NOT a verified Android release. Google Play rollout remains paused.
+Status: signed test APK published on September 17, 2026; automated checks pass. Ready for device testing, NOT verified for complete hands-free operation or production rollout. Google Play rollout remains paused.
 
 ## Implemented in this candidate
 
@@ -19,13 +19,15 @@ Status: local repair candidate, NOT a verified Android release. Google Play roll
 
 - Local web/API tests: 11 passing, including authentication, command validation, unsupported actions, range checks, and preventing fabricated execution/confirmation.
 - Production web build: passes.
-- Android parser regression tests added; not run here because Android SDK/Gradle are unavailable locally.
-- Android compile, unit tests, lint, signing, and APK/AAB publication: pending GitHub publication authorization and CI.
+- Android debug compile, unit tests (including command parser regression tests), lint and APK assembly: passed in GitHub Actions before merge.
+- Android release unit tests, lint, APK/AAB assembly and workflow signature verification: passed. Signed APK and AAB published.
+- Downloaded APK: 89,204,742 bytes; ZIP integrity check passed; SHA-256 matches GitHub's asset digest: `f849ee20c1cebb9c04cfb0214848ccbbce8a7691dbf5adbb84b0a0ede5bb9b79`.
+- Live website check after merge still returned the earlier JavaScript bundle without `configure_voice_session` or the new hands-free controls. Deployment of the new web controls and cloud endpoint is not verified.
 - Real-device screen-off wake, microphone handoff, speech recognition, call/navigation launching, contact permissions and battery consumption: NOT verified.
 
 ## Remaining release blockers / limitations
 
-1. Obtain a green Android build and signed installable artifact. Do not describe this source candidate as a tested APK.
+1. Deploy and verify the merged web frontend/backend. The APK loads a hosted web interface, so publishing the APK alone does not deliver the new web controls or prove the cloud endpoint is live.
 2. Test on Michael's actual device: enable, lock screen, wake, battery, flashlight, confirmation accepted/refused, ambiguous contact, disable, reopen, network loss, microphone interruption and process restart.
 3. Android can suppress background activity launches even when startActivity returns normally. Call/navigation/timer intent dispatch is deliberately not labeled successful completion. Default-assistant role or a supported user-visible handoff needs design and device testing.
 4. Speech recognition availability/offline behavior depends on the installed Android recognizer. A fixed offline command parser does not make speech transcription itself offline.
@@ -35,6 +37,11 @@ Status: local repair candidate, NOT a verified Android release. Google Play roll
 8. Existing activity-based bridge actions and legacy capture code remain for compatibility. The repaired wake path bypasses them; they are not evidence of complete hands-free support for every advertised action.
 9. No Play production-readiness claim: privacy/declarations, billing verification, account isolation, Play pre-launch checks and optional glasses gates still apply.
 
-## Publication blocker
+## Published build and evidence
 
-Automatic approval review rejected the attempted push to massamike-dev/icarus- because explicit destination authorization was required. No workaround attempted. Candidate remains local on fix/hands-free-build36, based on the prior local companion-quality commit. Approval is needed to publish, run Android CI and produce the new app link. Build 35 on GitHub/Play does not contain these fixes.
+- User explicitly authorized publication to `massamike-dev/icarus-`, merge after checks, and generation of the signed test APK.
+- [PR #28](https://github.com/massamike-dev/icarus-/pull/28) merged after all three PR workflows passed. Release source commit: `e84af1875dc9559fc6bd6522d5599751292f313e`.
+- [Signed release workflow](https://github.com/massamike-dev/icarus-/actions/runs/35188228603).
+- [ICARUS 1.6.5 test release](https://github.com/massamike-dev/icarus-/releases/tag/v1.6.5-test).
+- [Download signed build 36 APK](https://github.com/massamike-dev/icarus-/releases/download/v1.6.5-test/ICARUS-latest.apk).
+- Build 35 on Play does not contain these fixes. No Play rollout was performed.
