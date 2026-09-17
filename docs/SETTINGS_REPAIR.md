@@ -14,3 +14,15 @@ Verification: 13 tests pass, including bundled React UI regression tests for Mem
 The live app requires sign-in for browser verification. Render's connector requires explicit workspace selection before service inspection/deployment; the available workspace is Mike's workspace (itsmike4you@gmail.com). Deployment and physical-device verification remain pending until confirmed.
 
 Design: reuse web/DESIGN.md and its canonical styles.css tokens; no rebrand. Settings and Overview share VoiceControls. New settings controls use semantic buttons, inline status, and the platform dialog focus model. The static premium audit also found existing form-validation/textarea declarations in main.jsx outside the Settings repair; full-app design compliance is not claimed.
+# Production build follow-up
+
+The production install was reproduced in a clean checkout: with
+`NODE_ENV=production`, `npm ci` omitted `jsdom`, and the navigation test failed
+with `ERR_MODULE_NOT_FOUND`. Added `web/.npmrc` with `include=dev` because the
+existing Render build runs tests before bundling. This works with the existing
+build command and does not require a Blueprint configuration sync. GitHub web
+checks now also run with `NODE_ENV=production`.
+
+Validation: clean production install, all 13 tests, and production bundle passed.
+Render's actual build logs were unavailable; this reproduces a concrete build
+blocker but does not yet establish successful deployment or device verification.
