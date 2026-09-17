@@ -19,9 +19,18 @@ import androidx.core.app.NotificationCompat
  * capture, then ICARUS web/native safety re-arms the listener after the turn.
  */
 class WakeWordService : Service() {
-    private val engine: SherpaWakeWordEngine by lazy { SherpaWakeWordEngine(this) }
+    private val engine: SherpaWakeWordEngine by lazy { SherpaWakeWordEngine(this) { message ->
+        mainHandler.post {
+            lastError = message
+            listenerState = "ERROR"
+            getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(message))
+            stopping = true
+            stopSelf()
+        }
+    } }
     private val mainHandler = Handler(Looper.getMainLooper())
     private var stopping = false
+    private var session: HandsFreeSession? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -30,11 +39,12 @@ class WakeWordService : Service() {
         lastError = null
         createChannel()
         startForeground(NOTIFICATION_ID, notification("Starting wake-word engine…"))
-        armEngine()
+        if (isEnabled(this)) armEngine() else { stopping = true; stopSelf() }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            setEnabled(this, false)
             stopping = true
             stopSelf()
             return START_NOT_STICKY
@@ -43,7 +53,8 @@ class WakeWordService : Service() {
     }
 
     private fun armEngine() {
-        if (stopping) return
+        if (stopping || session != null) return
+        if (!isEnabled(this)) { stopping = true; stopSelf(); return }
         engine.start(::onWakeDetected)
             .onSuccess {
                 listenerState = "LISTENING"
@@ -60,31 +71,30 @@ class WakeWordService : Service() {
     }
 
     private fun onWakeDetected() {
-        val launch = Intent(this, MainActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(MainActivity.EXTRA_WAKE_WORD, true)
-
-        val launched = runCatching { startActivity(launch) }.isSuccess
-        if (launched) {
-            // MainActivity provides the single acknowledgement tone and then
-            // owns the microphone for speech recognition. Stop this service so
-            // the two recognizers never fight over AudioRecord.
-            getSystemService(NotificationManager::class.java)
-                .notify(NOTIFICATION_ID, notification("ICARUS activated"))
-            stopSelf()
-            return
+        mainHandler.post {
+            if (stopping || session != null) return@post
+            engine.stop()
+            runCatching {
+                android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION, 75).apply {
+                    startTone(android.media.ToneGenerator.TONE_PROP_ACK, 150)
+                    mainHandler.postDelayed({ release() }, 250)
+                }
+            }
+            session = HandsFreeSession(this, { value ->
+                listenerState = value
+                getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, notification(value.lowercase().replace('_', ' ')))
+            }, {
+                session = null
+                mainHandler.postDelayed(::armEngine, 350)
+            })
+            mainHandler.postDelayed({ if (!stopping) session?.begin() }, 300)
         }
-
-        // If Android refused to surface the activity, do not silently lose
-        // hands-free mode. The Sherpa worker releases its recorder after this
-        // callback returns, then we arm a fresh stream.
-        getSystemService(NotificationManager::class.java)
-            .notify(NOTIFICATION_ID, notification("Wake detected. Re-arming listener…"))
-        mainHandler.postDelayed(::armEngine, REARM_AFTER_LAUNCH_FAILURE_MS)
     }
 
     override fun onDestroy() {
         mainHandler.removeCallbacksAndMessages(null)
+        session?.close()
+        session = null
         engine.stop()
         activeService = null
         if (listenerState != "ERROR") listenerState = "STOPPED"
@@ -129,6 +139,18 @@ class WakeWordService : Service() {
         private const val NOTIFICATION_ID = 4401
         private const val REARM_AFTER_LAUNCH_FAILURE_MS = 1200L
         const val ACTION_STOP = "com.icarusalmighty.app.STOP_WAKE_WORD"
+        fun isEnabled(context: android.content.Context): Boolean = context.getSharedPreferences("icarus_voice", MODE_PRIVATE).getBoolean("enabled", false)
+        fun setEnabled(context: android.content.Context, enabled: Boolean) {
+            context.getSharedPreferences("icarus_voice", MODE_PRIVATE).edit().putBoolean("enabled", enabled).apply()
+        }
+        fun cancelTurn() {
+            activeService?.let { service -> service.mainHandler.post {
+                service.session?.close()
+                service.session = null
+                service.mainHandler.removeCallbacksAndMessages(null)
+                service.armEngine()
+            } }
+        }
         @Volatile var listenerState: String = "STOPPED"
             private set
         @Volatile var lastError: String? = null

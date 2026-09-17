@@ -18,7 +18,7 @@ import org.json.JSONObject
 import kotlin.math.abs
 import kotlin.concurrent.thread
 
-class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
+class SherpaWakeWordEngine(private val context: Context, private val onFailure: (String) -> Unit = {}) : WakeWordEngine {
     private val running = AtomicBoolean(false)
     private var worker: Thread? = null
     private var recorder: AudioRecord? = null
@@ -107,6 +107,8 @@ class SherpaWakeWordEngine(private val context: Context) : WakeWordEngine {
                     }
                 }
             }
+        } catch (error: Exception) {
+            if (running.getAndSet(false)) onFailure("Wake audio stopped: ${error.message ?: "microphone unavailable"}")
         } finally {
             releaseResources()
         }

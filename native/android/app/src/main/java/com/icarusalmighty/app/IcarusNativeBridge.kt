@@ -97,6 +97,11 @@ class IcarusNativeBridge(
 
         return try {
             when (action) {
+                "configure_voice_session" -> {
+                    context.getSharedPreferences("icarus_session", Context.MODE_PRIVATE).edit()
+                        .putString("token", args.optString("token").take(4096)).apply()
+                    ok(requestId)
+                }
                 "open_app" -> openApp(requestId, args)
                 "set_alarm" -> setAlarm(requestId, args)
                 "set_timer" -> setTimer(requestId, args)
@@ -323,6 +328,7 @@ class IcarusNativeBridge(
             val host = activity as? MainActivity ?: return error(requestId, "native_host_unavailable")
             return host.requestWakePermissionFromDisclosure(requestId)
         } else {
+            WakeWordService.setEnabled(context, false)
             context.stopService(intent)
         }
         return ok(requestId, JSONObject()
@@ -387,12 +393,15 @@ class IcarusNativeBridge(
     }
 
     private fun stopSpeaking(requestId: String?): String {
+        WakeWordService.cancelTurn()
         activity.runOnUiThread { tts?.stop() }
         pendingSpeech = null
         return ok(requestId, JSONObject().put("speaking", false))
     }
 
     private fun sessionLogout(requestId: String?): String {
+        WakeWordService.setEnabled(context, false)
+        context.getSharedPreferences("icarus_session", Context.MODE_PRIVATE).edit().clear().apply()
         context.stopService(Intent(context, WakeWordService::class.java))
         obd.disconnect()
         pendingSpeech = null

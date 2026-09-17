@@ -268,6 +268,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun requestWakePermissionFromDisclosure(requestId: String?): String {
+        WakeWordService.setEnabled(this, true)
         if (hasMicrophonePermission()) {
             startWakeWordService()
             dispatchWakeStatusAfterStart(requestId)
@@ -302,13 +303,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startWakeWordService() {
+        if (!WakeWordService.isEnabled(this)) return
         val intent = Intent(this, WakeWordService::class.java)
         ContextCompat.startForegroundService(this, intent)
     }
 
     /** Wake listening is native and must not depend on the hosted UI loading first. */
     private fun ensureWakeListenerRunning() {
-        if (hasMicrophonePermission()) runCatching { startWakeWordService() }
+        if (hasMicrophonePermission() && WakeWordService.isEnabled(this)) runCatching { startWakeWordService() }
     }
 
     private fun hasMicrophonePermission(): Boolean =
