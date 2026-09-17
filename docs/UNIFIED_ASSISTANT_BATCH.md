@@ -26,9 +26,13 @@ branch is validated. Version reserved: Android 1.6.6 / build 37.
 
 Local web tests cover auth/privacy, navigation, invalid proposals, old hosts,
 read-only search/citations, Android errors/timeouts, and confirm-before-execution
-with duplicate-click protection. Run CI Android unit tests, lint and debug build
-on this branch before declaring native changes verified. No signed release is
-published from the branch.
+with duplicate-click protection. All 19 tests and the production bundle passed.
+At commit 52625bf, GitHub web run 35287896496, Android test/lint/debug run
+35287896441 and canonical debug run 35287896417 all passed. The signed release
+job was skipped. No release has been published from the branch.
+
+The cloud browser refused the local preview with ERR_BLOCKED_BY_CLIENT; DOM
+interaction tests passed, but a real-browser visual check remains unverified.
 
 Still required before production: real-provider search/tool-call smoke tests,
 Android 1.6.6 device checks for permission denial, exact/ambiguous contacts,
