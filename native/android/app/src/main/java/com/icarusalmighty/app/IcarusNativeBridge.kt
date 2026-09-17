@@ -181,16 +181,15 @@ class IcarusNativeBridge(
 
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val matches = context.packageManager.queryIntentActivities(launcher, 0)
-        val best = matches.firstOrNull {
+        val exact = matches.filter {
             it.loadLabel(context.packageManager).toString().lowercase(Locale.US) == target
-        } ?: matches.firstOrNull {
-            it.loadLabel(context.packageManager).toString().lowercase(Locale.US).contains(target)
-        } ?: return error(requestId, "app_not_found")
+        }
+        if (exact.size != 1) return error(requestId, "exact_app_name_required")
+        val best = exact.single()
 
         val launchIntent = context.packageManager.getLaunchIntentForPackage(best.activityInfo.packageName)
             ?: return error(requestId, "app_not_launchable")
-        activity.runOnUiThread { activity.startActivity(launchIntent) }
-        return ok(requestId, JSONObject().put("app", best.loadLabel(context.packageManager).toString()))
+        return launchForResult(requestId, launchIntent, JSONObject().put("app", best.loadLabel(context.packageManager).toString()))
     }
 
     private fun setAlarm(requestId: String?, args: JSONObject): String {
@@ -213,13 +212,12 @@ class IcarusNativeBridge(
             args.has("minutes") -> args.optInt("minutes") * 60
             else -> 0
         }
-        if (seconds <= 0) return error(requestId, "invalid_timer_duration")
+        if (seconds !in 1..86400) return error(requestId, "invalid_timer_duration")
         val intent = Intent(AlarmClock.ACTION_SET_TIMER)
             .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
             .putExtra(AlarmClock.EXTRA_MESSAGE, firstString(args, "label", "message").ifBlank { "ICARUS timer" })
             .putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("seconds", seconds))
+        return launchForResult(requestId, intent, JSONObject().put("seconds", seconds))
     }
 
     private fun setFlashlight(requestId: String?, args: JSONObject): String {
@@ -264,8 +262,7 @@ class IcarusNativeBridge(
         if (destination.isBlank()) return error(requestId, "missing_destination")
         val uri = Uri.parse("geo:0,0?q=${Uri.encode(destination)}")
         val intent = Intent(Intent.ACTION_VIEW, uri)
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("destination", destination))
+        return launchForResult(requestId, intent, JSONObject().put("destination", destination))
     }
 
     private fun battery(requestId: String?): String {
@@ -293,8 +290,7 @@ class IcarusNativeBridge(
         val number = resolvePhone(args) ?: return error(requestId, "contact_not_found")
         requirePermission(Manifest.permission.CALL_PHONE)
         val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${Uri.encode(number)}"))
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("number", number).put("callStarted", true))
+        return launchForResult(requestId, intent, JSONObject().put("number", number).put("requestAccepted", true))
     }
 
     private fun sendSms(requestId: String?, args: JSONObject): String {
@@ -491,7 +487,9 @@ class IcarusNativeBridge(
     }
 
     private fun resolvePhone(args: JSONObject): String? {
-        firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let { return it }
+        firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let {
+            return it.takeIf { number -> Regex("\\+?[0-9 ()-]{3,}").matches(number) }
+        }
         val contact = firstString(args, "recipient", "contact", "contactName", "name")
         if (contact.isBlank()) return null
         requirePermission(Manifest.permission.READ_CONTACTS)
@@ -501,14 +499,33 @@ class IcarusNativeBridge(
             cursor = context.contentResolver.query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?",
-                arrayOf("%$contact%"),
+                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} = ? COLLATE NOCASE",
+                arrayOf(contact),
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
             )
-            if (cursor?.moveToFirst() == true) cursor.getString(0) else null
+            val numbers = mutableSetOf<String>()
+            while (cursor?.moveToNext() == true) {
+                numbers.add(cursor.getString(0).replace(Regex("[^+0-9]"), ""))
+            }
+            numbers.singleOrNull()?.takeIf { Regex("\\+?[0-9]{3,}").matches(it) }
         } finally {
             cursor?.close()
         }
+    }
+
+    private fun launchForResult(requestId: String?, intent: Intent, data: JSONObject): String {
+        activity.runOnUiThread {
+            val result = try {
+                activity.startActivity(intent)
+                ok(requestId, data.put("executionStatus", "request_accepted"))
+            } catch (e: SecurityException) {
+                error(requestId, "permission_required", e.message)
+            } catch (e: Exception) {
+                error(requestId, "target_app_unavailable", e.message)
+            }
+            resultDispatcher(result)
+        }
+        return ""
     }
 
     private fun requirePermission(permission: String) {
@@ -557,6 +574,7 @@ class IcarusNativeBridge(
             .put("connected", true)
             .put("platform", "android")
             .put("version", BuildConfig.VERSION_NAME)
+            .put("actionProtocolVersion", 1)
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
             .put("capabilities", JSONArray(CAPABILITIES))
             .toString()

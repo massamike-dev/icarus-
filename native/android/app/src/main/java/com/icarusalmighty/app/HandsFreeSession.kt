@@ -105,7 +105,7 @@ class HandsFreeSession(private val context: Context, private val state: (String)
         if (token.isBlank()) { say("Sign in to ICARUS for flexible commands. Offline commands include battery, flashlight, volume, timers, call, and navigate to."); return }
         state("INTERPRETING")
         val turn = ++epoch
-        handler.postDelayed(timeout, 25000)
+        handler.postDelayed(timeout, 80000)
         network.execute {
             val result = runCatching {
                 val origin = BuildConfig.ICARUS_WEB_URL.trimEnd('/')
@@ -113,7 +113,7 @@ class HandsFreeSession(private val context: Context, private val state: (String)
                 val c = URL("$origin/api/commands/interpret").openConnection() as HttpURLConnection
                 try {
                     c.instanceFollowRedirects = false
-                    c.requestMethod = "POST"; c.connectTimeout = 10000; c.readTimeout = 15000; c.doOutput = true
+                    c.requestMethod = "POST"; c.connectTimeout = 10000; c.readTimeout = 70000; c.doOutput = true
                     c.setRequestProperty("Authorization", "Bearer $token")
                     c.setRequestProperty("Content-Type", "application/json")
                     c.outputStream.use { it.write(JSONObject().put("command", text.take(1000)).toString().toByteArray()) }

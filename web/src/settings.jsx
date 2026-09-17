@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {ReleaseNotes} from './release-notes';
 
 export class ScreenBoundary extends React.Component {
   state = {failed:false};
@@ -70,6 +71,7 @@ export function VoiceControls() {
 export function Settings({user,onSignOut}) {
   return <section className="workspace settings-workspace">
     <p className="eyebrow">ICARUS SETTINGS</p><h1>Settings</h1>
+    <ReleaseNotes/>
     <section className="settings-section" aria-labelledby="voice-settings"><h2 id="voice-settings">Voice & listening</h2><VoiceControls/></section>
     <section className="settings-section" aria-labelledby="account-settings"><h2 id="account-settings">Your account</h2><p>{user.name}</p><p className="account-email">{user.email}</p><button className="secondary" onClick={onSignOut}>Sign out</button></section>
     <section className="settings-section" aria-labelledby="privacy-settings"><h2 id="privacy-settings">Privacy & support</h2><div className="settings-links"><a href="/privacy-policy">Privacy policy</a><a href="mailto:wennigworks@gmail.com">Contact support</a><a href="/account-deletion">Account deletion options</a></div></section>
