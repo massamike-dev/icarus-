@@ -10,12 +10,15 @@ Status recorded September 18, 2026. This document describes a private phone test
 - The private delivery workflow validates the web application and Android variant before signing. An unset test URL runs validation only and cannot produce a deliverable APK.
 - The Render integration can now read the existing `icarus-assistant` service in its actual workspace. Browser password retries are not needed for Render MCP operations.
 
+## Approved private test service
+
+Michael approved the separate Free Render service on September 18, 2026. **icarus-private-test** was created at `https://icarus-private-test.onrender.com` in the same workspace as the existing ICARUS service. Automatic deploys are disabled. The separate test account, session secret, and data path were configured without copying production user data. Service creation is complete; a successful deployment and signed APK delivery still need verification.
+
 ## Required before an install link exists
 
-1. Approval to create the separate **icarus-private-test** Render web service on the **Free** plan. Automatic approval review rejected the initial creation request because the service has an internet-accessible URL and the public release is on hold. No test service was created by that rejected request.
-2. Deploy the private branch with a new session secret, isolated data path, and private tester credentials. The web URL is reachable on the internet; account data, actions, and APK downloads require authentication.
-3. Record the real service URL in `config/private-test.json`, deploy the same commit used for the APK, and pass the deployment and signed-delivery checks.
-4. Verify the APK signature, test package, test endpoint, disabled updater, and checksum. Retrieve the APK through the private tester account and deliver the file privately.
+1. Deploy the configured private branch. The web URL is reachable on the internet; account data, actions, and APK downloads require authentication.
+2. Deploy the same commit used for the APK and pass the deployment and signed-delivery checks. The real service URL is now recorded in `config/private-test.json`.
+3. Verify the APK signature, test package, test endpoint, disabled updater, and checksum. Retrieve the APK through the private tester account and deliver the file privately.
 
 ## Validation evidence
 
