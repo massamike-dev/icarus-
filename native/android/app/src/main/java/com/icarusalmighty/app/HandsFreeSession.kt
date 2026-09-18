@@ -25,7 +25,6 @@ import androidx.core.content.ContextCompat
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Executors
 
@@ -61,11 +60,11 @@ class HandsFreeSession(
                     speechFailed("Android text-to-speech could not initialize. Check the installed speech engine in Android settings.")
                     return@post
                 }
-                val language = runCatching { tts?.setLanguage(Locale.US) }.getOrNull()
-                if (language == null || language < TextToSpeech.LANG_AVAILABLE) {
-                    speechFailed(if (language == TextToSpeech.LANG_MISSING_DATA)
-                        "English speech voice data is missing. Install it in Android text-to-speech settings."
-                    else "An English speech voice is unavailable. Check Android text-to-speech settings.")
+                runCatching {
+                    val engine = checkNotNull(tts) { "Android speech engine is unavailable." }
+                    VoicePreferences.apply(context, engine)
+                }.onFailure {
+                    speechFailed(it.message ?: "Android could not prepare the saved voice. Check text-to-speech settings.")
                     return@post
                 }
                 runCatching {

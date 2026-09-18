@@ -11,13 +11,17 @@ import android.database.Cursor
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
+import android.media.AudioAttributes
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.AlarmClock
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.driving.DrivingHudActivity
 import com.icarusalmighty.app.spatial.SpatialTelemetryService
@@ -37,33 +41,15 @@ class IcarusNativeBridge(
     private val obd = ObdManager(context)
     private val localModel = LocalModelManager(context)
     private val billing = PlayBillingManager(activity, resultDispatcher)
-    private var tts: TextToSpeech? = null
-    private var pendingSpeech: Triple<String, Float, Float>? = null
-
-    private fun configureIcarusVoice(engine: TextToSpeech, requestedRate: Float, requestedPitch: Float) {
-        val maleMarkers = listOf(
-            "male", "masculine", "david", "james", "john", "george", "ryan",
-            "arthur", "daniel", "mark", "alex", "tom", "oliver", "fred", "iom", "iob"
-        )
-        val femaleMarkers = listOf(
-            "female", "samantha", "victoria", "zira", "susan", "karen", "moira",
-            "tessa", "fiona", "serena", "allison", "ava", "catherine"
-        )
-        val preferred = engine.voices.orEmpty()
-            .filter { it.locale.language.equals("en", ignoreCase = true) }
-            .maxByOrNull { voice ->
-                val name = voice.name.lowercase(Locale.US)
-                val features = voice.features.orEmpty().joinToString(" ").lowercase(Locale.US)
-                var score = 0
-                if (voice.locale.country.equals("US", ignoreCase = true)) score += 40
-                if (!voice.isNetworkConnectionRequired) score += 20
-                if (maleMarkers.any { name.contains(it) || features.contains(it) }) score += 1000
-                if (femaleMarkers.any { name.contains(it) || features.contains(it) }) score -= 1000
-                score
-            }
-        if (preferred != null) engine.voice = preferred
-        engine.setSpeechRate(requestedRate.coerceIn(0.75f, 0.95f))
-        engine.setPitch(requestedPitch.coerceIn(0.68f, 0.84f))
+    private val speechHandler = Handler(Looper.getMainLooper())
+    private var voiceOperation: VoiceOperation? = null
+    @Volatile private var closed = false
+    private class VoiceOperation(val requestId: String, val text: String?, val preview: Boolean) {
+        val utteranceId = UUID.randomUUID().toString()
+        var engine: TextToSpeech? = null
+        var applied: VoicePreferences.Applied? = null
+        var timeout: Runnable? = null
+        var monitor: Runnable? = null
     }
 
     fun getStatus(): String = JSONObject(statusJson(context))
@@ -77,6 +63,7 @@ class IcarusNativeBridge(
             .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             .put("listenerState", WakeWordService.listenerState)
             .put("enabled", WakeWordService.isEnabled(context))
+            .put("sensitivity", context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE).getInt("sensitivity", 60).coerceIn(25, 90))
             .put("lastError", WakeWordService.lastError ?: JSONObject.NULL)
             .apply {
                 val diagnostics = WakeWordService.diagnostics()
@@ -121,6 +108,11 @@ class IcarusNativeBridge(
                     if (WakeWordService.requestTurn()) ok(requestId, JSONObject().put("requestAccepted", true))
                     else error(requestId, "voice_turn_unavailable", "Enable hands-free first and wait for the current voice turn to finish, then try Talk now.")
                 }
+                "get_voice_settings" -> startVoiceOperation(requestId)
+                "set_voice_settings" -> setVoiceSettings(requestId, args)
+                "preview_voice" -> startVoiceOperation(requestId, "Ready when you are. Steady, clear, and here to help.", preview = true)
+                "open_voice_settings" -> launchForResult(requestId, Intent("com.android.settings.TTS_SETTINGS"), JSONObject().put("opened", true))
+                "open_app_settings" -> launchForResult(requestId, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")), JSONObject().put("opened", true))
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
                 "session_logout" -> sessionLogout(requestId)
@@ -170,13 +162,9 @@ class IcarusNativeBridge(
     }
 
     fun close() {
+        closed = true
         obd.disconnect()
-        pendingSpeech = null
-        activity.runOnUiThread {
-            tts?.stop()
-            tts?.shutdown()
-            tts = null
-        }
+        activity.runOnUiThread { cancelVoiceOperation("voice_cancelled", "Speech stopped because the app closed.") }
         billing.close()
     }
 
@@ -339,53 +327,170 @@ class IcarusNativeBridge(
     }
 
     private fun wakeConfig(requestId: String?, args: JSONObject): String {
-        val source = args.optString("microphoneSource", "automatic")
-            .takeIf { it in setOf("automatic", "phone", "bluetooth") } ?: "automatic"
-        val sensitivity = args.optInt("sensitivity", 60).coerceIn(25, 90)
-        context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE).edit()
-            .putString("microphone_source", source)
-            .putInt("sensitivity", sensitivity)
-            .putInt("timeout_seconds", args.optInt("timeoutSeconds", 30).coerceAtLeast(0))
-            .putBoolean("follow_up_mode", args.optBoolean("followUpMode", true))
-            .putBoolean("listen_on_screen_wake", args.optBoolean("listenOnScreenWake", true))
-            .putBoolean("incoming_calls", args.optBoolean("incomingCalls", true))
-            .putBoolean("active_during_calls", args.optBoolean("activeDuringCalls", false))
-            .apply()
-        return ok(requestId, JSONObject().put("saved", true).put("microphoneSource", source).put("sensitivity", sensitivity))
+        val preferences = context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE)
+        val source = if (args.has("microphoneSource")) args.optString("microphoneSource")
+            .takeIf { it in setOf("automatic", "phone", "bluetooth") }
+            ?: return error(requestId, "invalid_microphone_source")
+        else preferences.getString("microphone_source", "automatic") ?: "automatic"
+        val sensitivity = if (args.has("sensitivity")) args.optInt("sensitivity", 60).coerceIn(25, 90)
+            else preferences.getInt("sensitivity", 60).coerceIn(25, 90)
+        val edit = preferences.edit().putString("microphone_source", source).putInt("sensitivity", sensitivity)
+        // Preserve omitted settings. A sensitivity-only change must not reset microphone routing.
+        if (args.has("timeoutSeconds")) edit.putInt("timeout_seconds", args.optInt("timeoutSeconds", 30).coerceAtLeast(0))
+        listOf("followUpMode" to "follow_up_mode", "listenOnScreenWake" to "listen_on_screen_wake",
+            "incomingCalls" to "incoming_calls", "activeDuringCalls" to "active_during_calls").forEach { (argument, key) ->
+            if (args.has(argument)) edit.putBoolean(key, args.optBoolean(argument))
+        }
+        if (!edit.commit()) return error(requestId, "settings_not_saved", "Android could not save listening settings. Try again.")
+        return ok(requestId, JSONObject().put("saved", true).put("microphoneSource", source)
+            .put("sensitivity", sensitivity).put("appliesAfterRestart", WakeWordService.isEnabled(context)))
+    }
+
+    private fun setVoiceSettings(requestId: String?, args: JSONObject): String {
+        val previous = VoicePreferences.read(context)
+        val settings = try {
+            VoiceSettings.create(
+                args.optString("profile", previous.profile),
+                args.optString("voiceName", previous.voiceName),
+                if (args.has("rate")) args.optDouble("rate", Double.NaN).toFloat() else previous.rate,
+                if (args.has("pitch")) args.optDouble("pitch", Double.NaN).toFloat() else previous.pitch,
+            )
+        } catch (e: IllegalArgumentException) {
+            return error(requestId, "invalid_voice_settings", e.message)
+        }
+        if (!VoicePreferences.save(context, settings)) return error(requestId, "settings_not_saved", "Android could not save voice settings. Try again.")
+        return ok(requestId, VoicePreferences.summary(settings).put("saved", true))
     }
 
     private fun speakText(requestId: String?, args: JSONObject): String {
         val text = firstString(args, "text", "content").trim()
         if (text.isBlank()) return error(requestId, "missing_text")
-        val rate = args.optDouble("rate", 1.0).toFloat().coerceIn(0.5f, 1.5f)
-        val pitch = args.optDouble("pitch", 1.0).toFloat().coerceIn(0.5f, 1.5f)
-        pendingSpeech = Triple(text.take(12000), rate, pitch)
+        // The saved profile is authoritative for chat, preview and hands-free replies alike.
+        return startVoiceOperation(requestId, text.take(12000))
+    }
+
+    private fun turnIsBusy(): Boolean = WakeWordService.listenerState in setOf(
+        "PREPARING_VOICE", "INITIALIZING_VOICE", "CAPTURING", "AWAITING_CONFIRMATION", "INTERPRETING", "EXECUTING", "SPEAKING",
+    )
+
+    private fun startVoiceOperation(requestId: String?, text: String? = null, preview: Boolean = false): String {
+        val id = requestId ?: return error(null, "missing_request_id")
         activity.runOnUiThread {
-            val existing = tts
-            if (existing != null) {
-                configureIcarusVoice(existing, rate, pitch)
-                existing.speak(text, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
-            } else {
-                tts = TextToSpeech(context) { status ->
-                    if (status == TextToSpeech.SUCCESS) {
-                        pendingSpeech?.let { (queuedText, queuedRate, queuedPitch) ->
-                            tts?.let { engine ->
-                                configureIcarusVoice(engine, queuedRate, queuedPitch)
-                                engine.speak(queuedText, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
-                            }
-                        }
-                    }
-                    pendingSpeech = null
-                }
+            if (closed) { resultDispatcher(error(id, "voice_unavailable", "The native app is closing.")); return@runOnUiThread }
+            if (voiceOperation != null || (text != null && turnIsBusy())) {
+                resultDispatcher(error(id, "voice_busy", "Wait for the current voice request to finish, then try again."))
+                return@runOnUiThread
             }
+            val operation = VoiceOperation(id, text, preview)
+            voiceOperation = operation
+            setVoiceTimeout(operation, 15000, "Android speech output did not initialize. Check Android text-to-speech settings.")
+            runCatching {
+                operation.engine = TextToSpeech(context) { status -> speechHandler.post {
+                    if (voiceOperation !== operation) return@post
+                    if (status != TextToSpeech.SUCCESS) {
+                        failVoiceOperation(operation, "voice_unavailable", "Android text-to-speech could not initialize. Check the installed speech engine.")
+                        return@post
+                    }
+                    prepareVoiceOperation(operation)
+                } }
+            }.onFailure { failVoiceOperation(operation, "voice_unavailable", "Android speech output could not start. Check text-to-speech settings.") }
         }
-        return ok(
-            requestId,
-            JSONObject()
-                .put("speaking", true)
-                .put("engine", "android_tts")
-                .put("profile", "icarus_deep_male")
-        )
+        return ""
+    }
+
+    private fun prepareVoiceOperation(operation: VoiceOperation) {
+        val engine = operation.engine ?: run {
+            failVoiceOperation(operation, "voice_unavailable", "Android speech engine is unavailable.")
+            return
+        }
+        val applied = runCatching { VoicePreferences.apply(context, engine) }.getOrElse {
+            failVoiceOperation(operation, "voice_unavailable", it.message ?: "Android could not prepare the selected voice.")
+            return
+        }
+        operation.applied = applied
+        if (operation.text == null) {
+            val result = runCatching { VoicePreferences.describe(engine, applied) }.getOrElse {
+                failVoiceOperation(operation, "voice_unavailable", "Android could not list installed voices. Check text-to-speech settings.")
+                return
+            }
+            finishVoiceOperation(operation, ok(operation.requestId, result))
+            return
+        }
+        if (turnIsBusy()) {
+            failVoiceOperation(operation, "voice_busy", "A hands-free command is active. Try the voice preview after it finishes.")
+            return
+        }
+        runCatching {
+            engine.setAudioAttributes(AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+            engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(id: String?) = Unit
+                override fun onDone(id: String?) { speechHandler.post {
+                    if (voiceOperation === operation && id == operation.utteranceId) finishVoiceOperation(operation,
+                        ok(operation.requestId, VoicePreferences.summary(applied.settings).put("spoken", true)
+                            .put("preview", operation.preview).put("engine", engine.defaultEngine ?: "android_tts")
+                            .put("activeVoiceName", applied.activeVoiceName)
+                            .apply { applied.message?.let { put("message", it) } }))
+                } }
+                @Deprecated("Platform callback") override fun onError(id: String?) { speechHandler.post {
+                    if (id == operation.utteranceId) failVoiceOperation(operation, "speech_failed", "Android could not play the voice. Check media volume and audio output.")
+                } }
+                override fun onError(id: String?, errorCode: Int) { speechHandler.post {
+                    if (id == operation.utteranceId) failVoiceOperation(operation, "speech_failed", when (errorCode) {
+                        TextToSpeech.ERROR_NOT_INSTALLED_YET -> "The selected voice has not finished downloading. Open Android text-to-speech settings."
+                        TextToSpeech.ERROR_NETWORK, TextToSpeech.ERROR_NETWORK_TIMEOUT -> "The selected voice needs a working internet connection. Choose an offline voice or reconnect."
+                        else -> "Android could not play the voice. Check media volume and text-to-speech settings."
+                    })
+                } }
+                override fun onStop(id: String?, interrupted: Boolean) { speechHandler.post {
+                    if (id == operation.utteranceId) failVoiceOperation(operation, "speech_interrupted", "Voice playback was interrupted. Try the preview again.")
+                } }
+            })
+            setVoiceTimeout(operation, if (operation.preview) 15000 else 120000, "Voice playback did not finish. Check media volume and text-to-speech settings.")
+            if (engine.speak(operation.text, TextToSpeech.QUEUE_FLUSH, null, operation.utteranceId) != TextToSpeech.SUCCESS) {
+                failVoiceOperation(operation, "speech_failed", "Android could not start voice playback. Check text-to-speech settings.")
+            } else {
+                // A command begun after the preview must keep control of the microphone and its own TTS.
+                operation.monitor = object : Runnable {
+                    override fun run() {
+                        if (voiceOperation !== operation) return
+                        if (turnIsBusy()) failVoiceOperation(operation, "voice_busy", "Preview stopped because a hands-free command started.")
+                        else speechHandler.postDelayed(this, 150)
+                    }
+                }.also { speechHandler.postDelayed(it, 150) }
+            }
+        }.onFailure { failVoiceOperation(operation, "speech_failed", "Android could not prepare voice playback. Check text-to-speech settings.") }
+    }
+
+    private fun setVoiceTimeout(operation: VoiceOperation, duration: Long, message: String) {
+        operation.timeout?.let { speechHandler.removeCallbacks(it) }
+        operation.timeout = Runnable { failVoiceOperation(operation, "voice_timeout", message) }
+            .also { speechHandler.postDelayed(it, duration) }
+    }
+
+    private fun failVoiceOperation(operation: VoiceOperation, code: String, message: String) {
+        val response = if (operation.text == null) ok(operation.requestId,
+            VoicePreferences.summary(VoicePreferences.read(context)).put("available", false)
+                .put("engine", operation.engine?.defaultEngine ?: "android_tts")
+                .put("voices", JSONArray()).put("message", message))
+        else error(operation.requestId, code, message)
+        finishVoiceOperation(operation, response)
+    }
+
+    private fun finishVoiceOperation(operation: VoiceOperation, response: String) {
+        if (voiceOperation !== operation) return
+        voiceOperation = null
+        operation.timeout?.let { speechHandler.removeCallbacks(it) }
+        operation.monitor?.let { speechHandler.removeCallbacks(it) }
+        runCatching { operation.engine?.stop() }
+        runCatching { operation.engine?.shutdown() }
+        operation.engine = null
+        resultDispatcher(response)
+    }
+
+    private fun cancelVoiceOperation(code: String, message: String) {
+        voiceOperation?.let { finishVoiceOperation(it, error(it.requestId, code, message)) }
     }
 
     private fun checkUpdate(requestId: String?): String {
@@ -400,8 +505,7 @@ class IcarusNativeBridge(
 
     private fun stopSpeaking(requestId: String?): String {
         WakeWordService.cancelTurn()
-        activity.runOnUiThread { tts?.stop() }
-        pendingSpeech = null
+        activity.runOnUiThread { cancelVoiceOperation("speech_cancelled", "Speech stopped by you.") }
         return ok(requestId, JSONObject().put("speaking", false))
     }
 
@@ -410,8 +514,7 @@ class IcarusNativeBridge(
         WakeWordService.setEnabled(context, false)
         context.stopService(Intent(context, WakeWordService::class.java))
         obd.disconnect()
-        pendingSpeech = null
-        activity.runOnUiThread { tts?.stop() }
+        activity.runOnUiThread { cancelVoiceOperation("speech_cancelled", "Speech stopped because you signed out.") }
         return ok(requestId, JSONObject().put("nativeSessionCleared", true))
     }
 
@@ -570,7 +673,8 @@ class IcarusNativeBridge(
 
     companion object {
         val CAPABILITIES = listOf(
-            "wake_word", "start_voice_turn", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
+            "wake_word", "wake_config", "wake_audio_test", "start_voice_turn",
+            "get_voice_settings", "set_voice_settings", "preview_voice", "open_voice_settings", "open_app_settings", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
@@ -588,6 +692,7 @@ class IcarusNativeBridge(
             .put("privateTest", BuildConfig.PRIVATE_TEST)
             .put("actionProtocolVersion", 1)
             .put("voiceSession", VoiceSessionStore.status(context))
+            .put("voiceSettings", VoicePreferences.summary(VoicePreferences.read(context)))
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
             .put("capabilities", JSONArray(CAPABILITIES))
             .toString()

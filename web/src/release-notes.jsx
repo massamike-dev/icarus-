@@ -1,6 +1,8 @@
 import React from 'react';
 
-export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Assistant connections update · Android 1.6.7</p><ul>
+export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Voice settings restored · Android 1.6.8</p><ul>
+  <li>Restored saved voice selection, speed, pitch and preview. The Deep & warm profile now applies to hands-free replies and app speech consistently.</li>
+  <li>Restored wake sensitivity and local-model management, with shortcuts to Android voice and app-permission settings.</li>
   <li>A little full-body ICARUS companion is available across the app. Tap him for voice status and Talk now; move or tuck him away when you need the space.</li>
   <li>Voice now acknowledges a wake before capturing the command and keeps microphone, recognition and speech errors visible.</li>
   <li>Talk now tests command capture separately from wake detection. Voice diagnostics show microphone input, wake detections, voice stage and muted media output.</li>
