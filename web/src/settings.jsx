@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import {ReleaseNotes} from './release-notes';
 import {readDeviceStatus,subscribeNative} from './device-actions';
 import {getNativeTransport} from './native-transport.js';
+import {voiceDiagnosticRows} from './voice-status.js';
 
 export class ScreenBoundary extends React.Component {
   state = {failed:false};
@@ -17,17 +18,25 @@ export function VoiceControls() {
   const [message,setMessage]=useState('');
   const [busy,setBusy]=useState(false);
   const [status,setStatus]=useState(null);
-  const dialog=useRef(null), cancel=useRef(null), pending=useRef(null), timeout=useRef(null), active=useRef(false), statusRequest=useRef(0);
+  const dialog=useRef(null), cancel=useRef(null), pending=useRef(null), timeout=useRef(null), pendingAction=useRef(null), active=useRef(false), statusRequest=useRef(0);
   useEffect(()=>{
     active.current=true;
     const refresh=()=>setAvailable(Boolean(getNativeTransport()));
-    const timer=setInterval(refresh,1000);
+    const refreshStatus=()=>{
+      refresh();
+      if(document.visibilityState==='hidden'||!getNativeTransport())return;
+      readDeviceStatus().then(value=>{if(active.current&&value?.wakeWord)setStatus(value);});
+    };
+    refreshStatus();
+    const timer=setInterval(refreshStatus,2000);
     const result=raw=>{
       try {
         const value=typeof raw==='string'?JSON.parse(raw):raw;
         if(pending.current&&value?.requestId===pending.current) {
           clearTimeout(timeout.current);pending.current=null;setBusy(false);
-          setMessage(value.ok===true&&!value.error?'Request received by Android. Check the ICARUS notification for listening status.':'Android could not confirm the request. Check app permissions and the ICARUS notification before retrying.');
+          const success=value.ok===true&&!value.error;
+          setMessage(success?(pendingAction.current==='start_voice_turn'?'Voice turn requested. Wait for ICARUS to acknowledge, then say your command.':'Request received by Android. Check the voice status below.'):(typeof value.message==='string'?value.message:'Android could not confirm the request. Check app permissions and the ICARUS notification before retrying.'));
+          pendingAction.current=null;refreshStatus();
         }
       } catch { /* Uncorrelated malformed responses cannot settle this request. */ }
     };
@@ -41,7 +50,7 @@ export function VoiceControls() {
     if(busy||pending.current)return;
     const bridge=getNativeTransport();
     if(!bridge){setAvailable(false);setMessage('Open the installed Android app to use these controls.');return;}
-    const requestId=crypto.randomUUID();pending.current=requestId;setBusy(true);setMessage('Waiting for Android…');
+    const requestId=crypto.randomUUID();pending.current=requestId;pendingAction.current=action;setBusy(true);setMessage('Waiting for Android…');
     timeout.current=setTimeout(()=>{pending.current=null;setBusy(false);setMessage('Android did not confirm the request. Check its notification, then try again.');},5000);
     try { bridge.postMessage(JSON.stringify({action,arguments:args,requestId})); }
     catch {clearTimeout(timeout.current);pending.current=null;setBusy(false);setMessage('Android connection is unavailable. Reopen ICARUS and try again.');}
@@ -61,10 +70,13 @@ export function VoiceControls() {
       <button className="secondary" disabled={!available||busy} onClick={()=>{dialog.current.showModal();cancel.current.focus();}}>Enable hands-free</button>
       <button className="secondary" disabled={!available||busy} onClick={()=>send('wake_word',{enabled:false})}>Stop listening</button>
       <button className="secondary" disabled={!available||busy} onClick={()=>send('stop_speaking')}>Stop speaking</button>
+      <button className="secondary" disabled={!available||busy||status?.wakeWord?.talkNowSupported!==true} onClick={()=>send('start_voice_turn')}>Talk now</button>
       <button className="secondary" disabled={!available||busy} onClick={check}>Check voice status</button>
     </div>
     <p className="settings-status" role="status">{message}</p>
-    {status&&<p>Listening: {status.wakeWord?.listenerState||'Unknown'}. Microphone: {status.wakeWord?.permissionGranted?'Allowed':'Not allowed'}.{status.wakeWord?.lastError&&` ${status.wakeWord.lastError}`}</p>}
+    {available&&<p className="voice-test-help">Enable hands-free, then try Talk now and say “battery.” This checks command capture and speech without waiting for the wake phrase. Stop listening in the regular ICARUS app while testing ICARUS Test.</p>}
+    {available&&status&&status.wakeWord?.talkNowSupported!==true&&<p>Install the updated ICARUS Test build to use Talk now and full microphone diagnostics.</p>}
+    {status&&<dl className="voice-diagnostics" aria-label="Voice diagnostics">{voiceDiagnosticRows(status).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
     <dialog ref={dialog} className="settings-dialog" aria-labelledby="voice-consent-title" aria-describedby="voice-consent-description">
       <h2 id="voice-consent-title">Enable hands-free listening?</h2>
       <p id="voice-consent-description">ICARUS listens locally for “Hey ICARUS” in the background. Commands after wake may use Android speech recognition and your configured AI provider. You can stop listening here or from the ICARUS notification.</p>

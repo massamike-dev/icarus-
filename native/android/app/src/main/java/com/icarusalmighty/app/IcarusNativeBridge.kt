@@ -76,7 +76,7 @@ class IcarusNativeBridge(
         .put("wakeWord", JSONObject()
             .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             .put("listenerState", WakeWordService.listenerState)
-            .put("enabled", WakeWordService.listenerState == "LISTENING")
+            .put("enabled", WakeWordService.isEnabled(context))
             .put("lastError", WakeWordService.lastError ?: JSONObject.NULL)
             .apply {
                 val diagnostics = WakeWordService.diagnostics()
@@ -117,6 +117,10 @@ class IcarusNativeBridge(
                 "wake_word" -> wakeWord(requestId, args)
                 "wake_config" -> wakeConfig(requestId, args)
                 "wake_audio_test" -> ok(requestId, JSONObject(getStatus()).getJSONObject("wakeWord"))
+                "start_voice_turn" -> {
+                    if (WakeWordService.requestTurn()) ok(requestId, JSONObject().put("requestAccepted", true))
+                    else error(requestId, "voice_turn_unavailable", "Enable hands-free first and wait for the current voice turn to finish, then try Talk now.")
+                }
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
                 "session_logout" -> sessionLogout(requestId)
@@ -566,7 +570,7 @@ class IcarusNativeBridge(
 
     companion object {
         val CAPABILITIES = listOf(
-            "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
+            "wake_word", "start_voice_turn", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",

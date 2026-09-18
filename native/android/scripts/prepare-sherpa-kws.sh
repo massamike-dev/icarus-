@@ -23,4 +23,6 @@ cp "${MODEL_SOURCE}/encoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx" "${ASSET_
 cp "${MODEL_SOURCE}/decoder-epoch-12-avg-2-chunk-16-left-64.int8.onnx" "${ASSET_DIR}/"
 cp "${MODEL_SOURCE}/joiner-epoch-12-avg-2-chunk-16-left-64.int8.onnx" "${ASSET_DIR}/"
 cp "${MODEL_SOURCE}/tokens.txt" "${ASSET_DIR}/"
-printf '%s\n' '▁HE Y ▁I C AR US :1.8 #0.30 @HEY_ICARUS' > "${ASSET_DIR}/keywords.txt"
+# Verified with this model's bpe.model. Leave score/threshold to the user's
+# sensitivity settings; per-keyword overrides would silently disable the slider.
+printf '%s\n' '▁HE Y ▁I C AR US @HEY_ICARUS' > "${ASSET_DIR}/keywords.txt"

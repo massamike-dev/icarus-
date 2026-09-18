@@ -26,8 +26,8 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 37
-        versionName = "1.6.6"
+        versionCode = 38
+        versionName = "1.6.7"
         manifestPlaceholders["mwdat_application_id"] = metaApplicationId
         manifestPlaceholders["mwdat_client_token"] = metaClientToken
         manifestPlaceholders["icarus_link_scheme"] = "icarus"
