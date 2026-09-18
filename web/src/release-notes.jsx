@@ -1,6 +1,7 @@
 import React from 'react';
 
 export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Assistant connections update · Android 1.6.6</p><ul>
+  <li>Contained mobile artwork and adjusted navigation and listening dialogs to prevent sideways page overflow.</li>
   <li>Fixed installed Android apps being incorrectly shown in Web mode with disabled voice controls.</li>
   <li>Chat can propose battery, flashlight, media volume, call, maps, app, timer, and stop-listening actions in the Android app.</li>
   <li>Each Chat action requires your confirmation. Results distinguish an Android acknowledgement from verified completion.</li>
