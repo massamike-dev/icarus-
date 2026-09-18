@@ -6,7 +6,10 @@ import json
 import os
 from pathlib import Path
 import re
+import ssl
 import subprocess
+import time
+import urllib.error
 import urllib.request
 from urllib.parse import urlsplit
 
@@ -37,15 +40,32 @@ class NoRedirects(urllib.request.HTTPRedirectHandler):
         raise ValueError("Private test health checks must not redirect to another service.")
 
 
-def load_config(path, check_health):
+def load_config(path, check_health, expected_commit=None):
     config = json.loads(Path(path).read_text())
     origin = validated_origin(config.get("webUrl"))
     if check_health:
+        if not isinstance(expected_commit, str) or not re.fullmatch(r"[a-f0-9]{40}", expected_commit):
+            raise ValueError("An exact commit SHA is required to verify the test deployment.")
         request = urllib.request.Request(f"{origin}/api/health", headers={"Accept": "application/json"})
-        with urllib.request.build_opener(NoRedirects()).open(request, timeout=30) as response:
-            health = json.load(response)
-        if health.get("privateTest") is not True:
+        opener = urllib.request.build_opener(NoRedirects())
+        for attempt in range(4):
+            try:
+                with opener.open(request, timeout=30) as response:
+                    health = json.load(response)
+                break
+            except urllib.error.HTTPError as error:
+                if attempt == 3 or (error.code != 429 and not 500 <= error.code < 600):
+                    raise
+            except (TimeoutError, urllib.error.URLError) as error:
+                if attempt == 3 or isinstance(getattr(error, "reason", None), ssl.SSLCertVerificationError):
+                    raise
+            # A free Render instance may need time to wake; only transient transport
+            # errors are retried. Redirect, identity, and commit failures fail closed.
+            time.sleep(5)
+        if not isinstance(health, dict) or health.get("privateTest") is not True:
             raise ValueError("The endpoint did not identify itself as the restricted private test service.")
+        if health.get("commitSha") != expected_commit:
+            raise ValueError("The private service is running a different commit. Manually deploy this exact branch commit, then rerun delivery.")
     return origin
 
 
@@ -93,6 +113,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config/private-test.json")
     parser.add_argument("--check-health", action="store_true")
+    parser.add_argument("--expected-commit")
     parser.add_argument("--prepare-workflow", action="store_true")
     parser.add_argument("--github-env", action="store_true")
     parser.add_argument("--apk", type=Path)
@@ -101,7 +122,7 @@ def main():
     if args.prepare_workflow:
         prepare_workflow(args.config)
         return
-    origin = load_config(args.config, args.check_health)
+    origin = load_config(args.config, args.check_health, args.expected_commit)
     if args.apk:
         if not args.apkanalyzer:
             parser.error("--apkanalyzer is required with --apk")

@@ -9,6 +9,7 @@ on:
       - "config/private-test.json"
       - "tests/native-contract.test.mjs"
       - ".github/scripts/validate-private-test.py"
+      - ".github/scripts/upload-private-apk.py"
       - ".github/scripts/test_private_test_validation.py"
       - ".github/workflows/android-private-test.yml"
   workflow_dispatch:
@@ -42,7 +43,7 @@ jobs:
       - name: Verify private delivery boundaries
         working-directory: .
         run: python3 .github/scripts/test_private_test_validation.py
-      - run: npm ci
+      - run: npm ci --include=dev
       - run: npm test
       - name: Verify native bridge source contract
         working-directory: .
@@ -82,7 +83,7 @@ jobs:
       - name: Explain missing delivery configuration on manual runs
         if: github.event_name == 'workflow_dispatch' && steps.target.outputs.ready != 'true'
         run: |
-          echo '::error::Unit tests and lint completed. Set config/private-test.json webUrl to the restricted test service and create the unpublished draft release before requesting an APK.'
+          echo '::error::Unit tests and lint completed. Set config/private-test.json webUrl to the restricted test service and manually deploy this exact commit before requesting an APK.'
           exit 1
 
   signed-private-apk:
@@ -91,28 +92,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
-      contents: write
+      contents: read
+      id-token: write
     env:
       GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
-      PRIVATE_TAG: private-test-${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Verify restricted test service
-        run: python3 .github/scripts/validate-private-test.py --check-health --github-env
-      - name: Verify owner-created draft targets this exact commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release view "$PRIVATE_TAG" --json isDraft,targetCommitish,tagName > "$RUNNER_TEMP/private-release.json"
-          python3 - <<'PY'
-          import json, os
-          from pathlib import Path
-          release = json.loads((Path(os.environ['RUNNER_TEMP']) / 'private-release.json').read_text())
-          if release.get('isDraft') is not True or release.get('targetCommitish') != os.environ['GITHUB_SHA'] or release.get('tagName') != os.environ['PRIVATE_TAG']:
-              raise SystemExit('Delivery requires an existing unpublished draft release targeting this exact commit SHA.')
-          PY
+        run: python3 .github/scripts/validate-private-test.py --check-health --expected-commit "$GITHUB_SHA" --github-env
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -165,21 +154,14 @@ jobs:
           "$APKSIGNER_PATH" verify --verbose "$APK_PATH"
           python3 .github/scripts/validate-private-test.py --apk "$APK_PATH" --apkanalyzer "$APKANALYZER_PATH"
           cp "$APK_PATH" "$RUNNER_TEMP/ICARUS-Test.apk"
-          (cd "$RUNNER_TEMP" && sha256sum ICARUS-Test.apk > ICARUS-Test.apk.sha256)
-      - name: Attach APK only to the verified unpublished draft
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Upload APK to restricted test service using GitHub OIDC
         run: |
-          # Recheck immediately before upload; never create, publish, or edit a release.
-          test "$(gh release view "$PRIVATE_TAG" --json isDraft --jq .isDraft)" = true
-          test "$(gh release view "$PRIVATE_TAG" --json targetCommitish --jq .targetCommitish)" = "$GITHUB_SHA"
-          gh release upload "$PRIVATE_TAG" "$RUNNER_TEMP/ICARUS-Test.apk" "$RUNNER_TEMP/ICARUS-Test.apk.sha256" --clobber
-          test "$(gh release view "$PRIVATE_TAG" --json isDraft --jq .isDraft)" = true
-          echo 'Signed ICARUS Test is attached to the restricted draft release (repository owner and users with write access). No public release or updater was changed.' >> "$GITHUB_STEP_SUMMARY"
+          python3 .github/scripts/upload-private-apk.py \
+            --apk "$RUNNER_TEMP/ICARUS-Test.apk" --commit "$GITHUB_SHA"
       - name: Remove signing material and private build files
         if: always()
         run: |
-          rm -f "$RUNNER_TEMP/icarus-private-signing.jks" "$RUNNER_TEMP/ICARUS-Test.apk" "$RUNNER_TEMP/ICARUS-Test.apk.sha256" "$RUNNER_TEMP/private-release.json"
+          rm -f "$RUNNER_TEMP/icarus-private-signing.jks" "$RUNNER_TEMP/ICARUS-Test.apk"
           rm -rf native/android/app/build/outputs/apk/privateTest
           echo 'ICARUS_KEYSTORE_PASSWORD=' >> "$GITHUB_ENV"
           echo 'ICARUS_KEY_PASSWORD=' >> "$GITHUB_ENV"
