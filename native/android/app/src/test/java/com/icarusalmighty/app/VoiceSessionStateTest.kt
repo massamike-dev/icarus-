@@ -53,4 +53,18 @@ class VoiceSessionStateTest {
         assertEquals(10L, next.revision)
         assertNull(next.acceptConversation(previous, "old-chat"))
     }
+
+    @Test fun explicitNewChatInvalidatesFirstVoiceRequestBeforeItHasAnId() {
+        val request = VoiceSessionState("account", revision = 4)
+        val reset = request.configure("account", hasConversation = true, conversationId = null)
+        assertEquals(5L, reset.revision)
+        assertNull(reset.conversationId)
+        assertNull(reset.acceptConversation(request, "late-first-chat"))
+        assertEquals(reset, reset.configure("account"))
+
+        // The web bridge serializes its explicit empty selection as "".
+        val resetAgain = reset.configure("account", hasConversation = true, conversationId = "")
+        assertEquals(6L, resetAgain.revision)
+        assertNull(resetAgain.acceptConversation(reset, "another-late-chat"))
+    }
 }

@@ -24,7 +24,11 @@ data class VoiceSessionState(
             else -> base.conversationId
         }
         val next = base.copy(conversationId = nextConversation, temporary = token.isNotBlank() && nextTemporary)
-        return if (next != this) next.copy(revision = revision + 1) else this
+        // An explicit new-chat selection cancels the previous turn even if it
+        // had not received its first server conversation ID yet. Token-only
+        // refreshes must not invalidate an otherwise unchanged voice turn.
+        val explicitReset = hasConversation && conversationId.isNullOrBlank()
+        return if (next != this || explicitReset) next.copy(revision = revision + 1) else this
     }
 
     fun acceptConversation(snapshot: VoiceSessionState, returnedId: String?): VoiceSessionState? {

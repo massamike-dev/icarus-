@@ -19,7 +19,7 @@ branch is validated. Version reserved: Android 1.6.6 / build 37.
 - Voice commands fall back to short conversational answers with saved Memory.
   “Search the web …” / “Look up …” explicitly invokes read-only search. Voice
   replies are currently truncated by the native host to 500 characters.
-- Settings contains in-app patch notes. Drafts survive request failure; retries
+- Settings and the Android update manifest contain current patch notes. Drafts survive request failure; retries
   restore a draft and never automatically re-execute an action.
 - Cloud voice turns share the selected Chat conversation. Native session
   snapshots reject late replies after account or conversation changes. The
@@ -41,7 +41,8 @@ auth/privacy, navigation, shared voice/Chat history, private temporary turns,
 atomic persistence, idempotent turn/result retries, deleted conversations,
 invalid proposals, old hosts, read-only search/citations, Android errors/timeouts,
 confirmation, callback cleanup, and late responses after navigation or sign-in
-changes. Five pure Kotlin session-state tests also pass locally.
+changes. Six pure Kotlin session-state tests also pass locally, including an
+explicit empty New chat reset invalidating an in-flight first voice response.
 
 Full Android build/lint and web CI for this revision must pass before release;
 the current results are recorded on the draft PR. At the earlier commit 52625bf,
