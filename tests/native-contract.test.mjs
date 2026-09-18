@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {checkDevice,executeProposal,readDeviceStatus} from '../src/device-actions.js';
+import {checkDevice,executeProposal,readDeviceStatus} from '../web/src/device-actions.js';
 
 // Take the injected property from the real Android host, not a web-only mock
 // name. This catches a cross-layer rename even when each side builds alone.
-const activity=readFileSync(new URL('../../native/android/app/src/main/java/com/icarusalmighty/app/MainActivity.kt',import.meta.url),'utf8');
+const activity=readFileSync(new URL('../native/android/app/src/main/java/com/icarusalmighty/app/MainActivity.kt',import.meta.url),'utf8');
 const channel=activity.match(/\bNATIVE_CHANNEL\s*=\s*"([^"]+)"/)?.[1];
 assert.ok(channel,'Android must declare its injected message channel');
 assert.match(activity,/addWebMessageListener\(\s*webView,\s*NATIVE_CHANNEL,/);

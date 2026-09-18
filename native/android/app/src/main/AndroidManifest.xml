@@ -67,14 +67,14 @@
             android:launchMode="singleTop"
             android:screenOrientation="sensorLandscape">
             <intent-filter>
-                <action android:name="com.icarusalmighty.app.OPEN_DRIVING_HUD" />
+                <action android:name="${applicationId}.OPEN_DRIVING_HUD" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="icarus" android:host="driving" />
+                <data android:scheme="${icarus_link_scheme}" android:host="driving" />
             </intent-filter>
         </activity>
 
@@ -91,7 +91,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="icarus" />
+                <data android:scheme="${icarus_link_scheme}" />
             </intent-filter>
         </activity>
 

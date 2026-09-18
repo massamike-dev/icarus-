@@ -9,6 +9,7 @@ export function hashPassword(password, salt = randomBytes(16).toString('hex')) {
 }
 
 export function verifyPassword(password, encoded) {
+  if (typeof password !== 'string') return false;
   const [salt, expected] = String(encoded).split(':');
   if (!salt || !expected) return false;
   const actual = scryptSync(password, salt, 64);

@@ -121,11 +121,13 @@ class IcarusNativeBridge(
                 "stop_speaking" -> stopSpeaking(requestId)
                 "session_logout" -> sessionLogout(requestId)
                 "check_subscription" -> {
+                    if (BuildConfig.PRIVATE_TEST) return error(requestId, "private_test_billing_disabled", "Google Play billing is unavailable in ICARUS Test.")
                     val id = requestId ?: return error(null, "missing_request_id")
                     billing.checkSubscription(id)
                     ""
                 }
                 "subscribe" -> {
+                    if (BuildConfig.PRIVATE_TEST) return error(requestId, "private_test_billing_disabled", "Google Play billing is unavailable in ICARUS Test.")
                     val id = requestId ?: return error(null, "missing_request_id")
                     val sku = firstString(args, "sku", "productId").trim()
                     if (sku.isBlank()) return error(id, "missing_subscription_product")
@@ -383,6 +385,11 @@ class IcarusNativeBridge(
     }
 
     private fun checkUpdate(requestId: String?): String {
+        if (BuildConfig.PRIVATE_TEST) return ok(requestId, JSONObject()
+            .put("checking", false)
+            .put("enabled", false)
+            .put("source", "private_install")
+            .put("message", "ICARUS Test updates are installed privately. Public updates are disabled."))
         activity.runOnUiThread { PlayUpdateManager.check(activity, silent = false) }
         return ok(requestId, JSONObject().put("checking", true).put("source", "google_play"))
     }
@@ -567,12 +574,14 @@ class IcarusNativeBridge(
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",
             "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_update"
-        )
+        ).filterNot { BuildConfig.PRIVATE_TEST && it in setOf("check_subscription", "subscribe", "check_update") }
 
         fun statusJson(context: Context): String = JSONObject()
             .put("connected", true)
             .put("platform", "android")
             .put("version", BuildConfig.VERSION_NAME)
+            .put("applicationId", BuildConfig.APPLICATION_ID)
+            .put("privateTest", BuildConfig.PRIVATE_TEST)
             .put("actionProtocolVersion", 1)
             .put("voiceSession", VoiceSessionStore.status(context))
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())

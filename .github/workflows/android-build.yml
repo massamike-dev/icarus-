@@ -22,6 +22,8 @@ on:
 
 jobs:
   debug-apk:
+    # Private test builds are delivered only through the restricted draft-release workflow.
+    if: github.ref != 'refs/heads/work/icarus-private-test' && github.head_ref != 'work/icarus-private-test'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:

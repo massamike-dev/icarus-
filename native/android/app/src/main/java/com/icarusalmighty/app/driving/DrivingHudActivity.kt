@@ -22,6 +22,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.icarusalmighty.app.WakeWordService
+import com.icarusalmighty.app.BuildConfig
 import java.util.Locale
 
 class DrivingHudActivity : AppCompatActivity() {
@@ -233,7 +234,7 @@ class DrivingHudActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_OBD_ADDRESS = "obd_address"
-        const val ACTION_OPEN = "com.icarusalmighty.app.OPEN_DRIVING_HUD"
+        const val ACTION_OPEN = BuildConfig.APPLICATION_ID + ".OPEN_DRIVING_HUD"
         private val OBD_NAME_MARKERS = listOf(
             "obd", "elm327", "elm 327", "obdlink", "vgate", "veepeak", "gearworks", "carista", "blue driver"
         )
