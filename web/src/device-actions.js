@@ -1,10 +1,10 @@
 import {validateCommand} from '../server/commands.js';
+import {getNativeTransport} from './native-transport.js';
 
 const subscriptions=new WeakMap(),statusChecks=new WeakMap();
 const channels={status:'ICARUS_NATIVE_STATUS',result:'ICARUS_NATIVE_RESULT'};
 const object=value=>Boolean(value)&&typeof value==='object'&&!Array.isArray(value);
 function payload(raw) {try {const value=typeof raw==='string'?JSON.parse(raw):raw;return object(value)?value:null;}catch{return null;}}
-const connected=host=>typeof host.IcarusNative?.postMessage==='function';
 const supported=status=>status?.actionProtocolVersion===1;
 
 // Each native callback has one dispatcher. Subscribers can leave in any order;
@@ -38,17 +38,19 @@ export function subscribeNative(host,channel,callback) {
 }
 
 export function readDeviceStatus(host=window,timeoutMs=3000) {
-  if(!connected(host))return Promise.resolve(null);
-  if(statusChecks.has(host))return statusChecks.get(host);
-  const bridge=host.IcarusNative;
+  const bridge=getNativeTransport(host);
+  if(!bridge)return Promise.resolve(null);
+  const pending=statusChecks.get(host);
+  if(pending?.bridge===bridge)return pending.promise;
+  const entry={bridge,promise:null};
   const promise=new Promise(resolve=>{
     const requestId=crypto.randomUUID();let settled=false,unsubscribe=()=>{};
     const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);unsubscribe();resolve(value);};
     const timer=setTimeout(()=>finish(null),timeoutMs);
-    unsubscribe=subscribeNative(host,'status',raw=>{const value=payload(raw);if(value?.requestId===requestId)finish(value);});
+    unsubscribe=subscribeNative(host,'status',raw=>{const value=payload(raw);if(value?.requestId===requestId)finish(getNativeTransport(host)===bridge?value:null);});
     try{bridge.postMessage(JSON.stringify({bridgeRequest:'status',requestId}));}catch{finish(null);}
-  }).finally(()=>{if(statusChecks.get(host)===promise)statusChecks.delete(host);});
-  statusChecks.set(host,promise);return promise;
+  }).finally(()=>{if(statusChecks.get(host)===entry)statusChecks.delete(host);});
+  entry.promise=promise;statusChecks.set(host,entry);return promise;
 }
 
 export async function checkDevice(host=window) {return supported(await readDeviceStatus(host));}
@@ -97,11 +99,11 @@ function resultMessage(result,request) {
 export async function executeProposal(proposal,host=window,timeoutMs=10000,{signal}={}) {
   const request=actionRequest(proposal),cancelled='Cancelled before the action was sent to Android. Nothing was sent.';
   if(signal?.aborted)return cancelled;
-  if(!connected(host))return 'Open the installed Android app to perform phone actions. Nothing was sent.';
-  const bridge=host.IcarusNative;
+  const bridge=getNativeTransport(host);
+  if(!bridge)return 'Open the installed Android app to perform phone actions. Nothing was sent.';
   const ready=await checkDevice(host);
   if(signal?.aborted)return cancelled;
-  if(!ready||host.IcarusNative!==bridge||!connected(host))return 'This Android version has not confirmed support for reviewed Chat actions. Update ICARUS before trying again. Nothing was sent.';
+  if(!ready||getNativeTransport(host)!==bridge)return 'This Android version has not confirmed support for reviewed Chat actions. Update ICARUS before trying again. Nothing was sent.';
   return new Promise(resolve=>{
     const requestId=crypto.randomUUID();let settled=false,unsubscribe=()=>{};
     const finish=message=>{if(settled)return;settled=true;clearTimeout(timer);unsubscribe();resolve(message);};

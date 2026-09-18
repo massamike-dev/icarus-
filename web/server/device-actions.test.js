@@ -1,17 +1,36 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {actionRequest,checkDevice,executeProposal,readDeviceStatus,readVoiceSession,subscribeNative} from '../src/device-actions.js';
+import {getNativeTransport} from '../src/native-transport.js';
 
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 function device({automaticStatus=true,version=1}={}) {
   const requests=[];
-  const host={IcarusNative:{postMessage(raw){
+  const host={ICARUS_NATIVE_CHANNEL:{postMessage(raw){
     const request=JSON.parse(raw);requests.push(request);
     if(automaticStatus&&request.bridgeRequest)host.ICARUS_NATIVE_STATUS?.({requestId:request.requestId,actionProtocolVersion:version});
   }}};
   const reply=(request,data,extra={})=>host.ICARUS_NATIVE_RESULT?.({requestId:request.requestId,ok:true,data,...extra});
   return {host,requests,reply};
 }
+
+test('native transport prefers the canonical Android channel over the legacy bridge',()=>{
+  const canonical={postMessage(){}},legacy={postMessage(){}};
+  assert.equal(getNativeTransport({ICARUS_NATIVE_CHANNEL:canonical,IcarusNative:legacy}),canonical);
+});
+
+test('native transport accepts a valid legacy bridge when the canonical channel is absent or invalid',()=>{
+  const legacy={postMessage(){}};
+  for(const canonical of [undefined,null,{}, {postMessage:true},{postMessage:'invalid'}]){
+    assert.equal(getNativeTransport({ICARUS_NATIVE_CHANNEL:canonical,IcarusNative:legacy}),legacy);
+  }
+});
+
+test('native transport rejects missing bridges and non-callable postMessage values',()=>{
+  for(const host of [{},{ICARUS_NATIVE_CHANNEL:{}},{IcarusNative:{postMessage:true}},{ICARUS_NATIVE_CHANNEL:{postMessage:'invalid'},IcarusNative:{postMessage:null}}]){
+    assert.equal(getNativeTransport(host),null);
+  }
+});
 
 test('callback subscribers dispose out of order without retaining unmounted listeners',()=>{
   const received=[];
@@ -45,7 +64,7 @@ test('missing and unsupported protocol versions never dispatch a device action',
   for(const version of [undefined,null,'1',0,2,true]){
     const {host,requests}=device({version});
     // The helper default supplies 1 when version is undefined; explicitly omit it.
-    if(version===undefined)host.IcarusNative.postMessage=raw=>{const p=JSON.parse(raw);requests.push(p);host.ICARUS_NATIVE_STATUS?.({requestId:p.requestId});};
+    if(version===undefined)host.ICARUS_NATIVE_CHANNEL.postMessage=raw=>{const p=JSON.parse(raw);requests.push(p);host.ICARUS_NATIVE_STATUS?.({requestId:p.requestId});};
     const result=await executeProposal({action:'get_battery'},host);
     assert.match(result,/Nothing was sent/);assert.equal(requests.filter(p=>p.action).length,0);
   }
@@ -71,7 +90,7 @@ test('voice session requires valid privacy state and a supported correlated stat
     [{temporary:false},null]
   ]){
     const {host}=device({automaticStatus:false});
-    host.IcarusNative.postMessage=raw=>{const p=JSON.parse(raw);host.ICARUS_NATIVE_STATUS({requestId:p.requestId,actionProtocolVersion:1,voiceSession});};
+    host.ICARUS_NATIVE_CHANNEL.postMessage=raw=>{const p=JSON.parse(raw);host.ICARUS_NATIVE_STATUS({requestId:p.requestId,actionProtocolVersion:1,voiceSession});};
     assert.deepEqual(await readVoiceSession(host),expected);
   }
 });
@@ -143,9 +162,29 @@ test('aborting while support is pending prevents action dispatch; abort after di
 
 test('a replaced bridge cannot inherit an in-flight support check',async()=>{
   const {host,requests}=device({automaticStatus:false});const pending=executeProposal({action:'get_battery'},host);
-  let dispatched=false;host.IcarusNative={postMessage(){dispatched=true;}};
+  let dispatched=false;host.ICARUS_NATIVE_CHANNEL={postMessage(){dispatched=true;}};
   host.ICARUS_NATIVE_STATUS({requestId:requests[0].requestId,actionProtocolVersion:1});
   assert.match(await pending,/Nothing was sent/);assert.equal(dispatched,false);
+});
+
+test('a newly injected canonical bridge gets its own status check and supersedes legacy support',async()=>{
+  const {host,requests}=device({automaticStatus:false}),canonicalRequests=[];
+  host.IcarusNative=host.ICARUS_NATIVE_CHANNEL;delete host.ICARUS_NATIVE_CHANNEL;
+  const legacyAction=executeProposal({action:'get_battery'},host);
+  assert.equal(requests.length,1);
+  host.ICARUS_NATIVE_CHANNEL={postMessage:raw=>canonicalRequests.push(JSON.parse(raw))};
+  const canonicalStatus=readDeviceStatus(host,100);
+  assert.equal(canonicalRequests.length,1);
+  assert.notEqual(canonicalRequests[0].requestId,requests[0].requestId);
+  host.ICARUS_NATIVE_STATUS({requestId:requests[0].requestId,actionProtocolVersion:1});
+  assert.match(await legacyAction,/Nothing was sent/);
+  const sharedCanonicalStatus=readDeviceStatus(host,100);
+  assert.equal(canonicalRequests.length,1);
+  host.ICARUS_NATIVE_STATUS({requestId:canonicalRequests[0].requestId,actionProtocolVersion:1,connected:true});
+  assert.equal((await canonicalStatus).connected,true);
+  assert.deepEqual(await sharedCanonicalStatus,await canonicalStatus);
+  assert.equal([...requests,...canonicalRequests].filter(p=>p.action).length,0);
+  assert.equal(host.ICARUS_NATIVE_STATUS,undefined);
 });
 
 test('invalid proposals fail before bridge access and caller mutation cannot alter the reviewed target',async()=>{

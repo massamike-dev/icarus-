@@ -1,14 +1,16 @@
 // Native voice runs in a foreground service. The web app supplies authentication,
 // explicit opt-in controls, and a compatibility receiver for pre-36 hosts.
 import {readVoiceSession} from './device-actions';
+import {getNativeTransport} from './native-transport.js';
 
 // Selection stays in memory in the web client. Android owns its durable voice
 // selection; temporary messages and credentials are never kept in this object.
 let chatContext={conversationId:undefined,temporary:false,revision:0};
 let contextNeedsSync=false;
 const request = (action, args={}) => {
-  if(!window.IcarusNative?.postMessage)return false;
-  try {window.IcarusNative.postMessage(JSON.stringify({action,arguments:args,requestId:crypto.randomUUID()}));return true;}
+  const bridge=getNativeTransport();
+  if(!bridge)return false;
+  try {bridge.postMessage(JSON.stringify({action,arguments:args,requestId:crypto.randomUUID()}));return true;}
   catch {return false;}
 };
 export function getChatContext() {return {...chatContext};}
@@ -48,5 +50,5 @@ export function installVoiceControls() {
   Storage.prototype.setItem=function(key,value){const previous=this.getItem(key);originalSet.call(this,key,value);if(this===localStorage&&key==='icarus_token'){if(previous!==String(value))selectChatContext({});else syncVoiceSession()}};
   Storage.prototype.removeItem=function(key){originalRemove.call(this,key);if(this===localStorage&&key==='icarus_token'){request('session_logout');selectChatContext({})}};
   // Bridge is installed asynchronously after page load.
-  let tries=0;const timer=setInterval(()=>{if(window.IcarusNative?.postMessage){syncVoiceSession();clearInterval(timer)}else if(++tries>=30)clearInterval(timer)},500);
+  let tries=0;const timer=setInterval(()=>{if(getNativeTransport()){syncVoiceSession();clearInterval(timer)}else if(++tries>=30)clearInterval(timer)},500);
 }

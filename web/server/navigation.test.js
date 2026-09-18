@@ -16,7 +16,7 @@ async function mount(native=false,chat=false){
   w.scrollTo=()=>{};
   w.AbortSignal.timeout=()=>new w.AbortController().signal;
   w.fetch=async url=>({ok:true,json:async()=>url==='/api/me'?{user:{name:'Test User',email:'test@example.invalid'}}:url==='/api/memories'?{memories:[]}:url==='/api/capabilities'?{webSearch:true}:chat&&url==='/api/chat'?{conversationId:'test',reply:'Review this action.',proposal:{action:'get_battery',value:''}}:{conversations:[]}});
-  if(native)w.IcarusNative={postMessage:raw=>{const p=JSON.parse(raw);requests.push(p);if(p.bridgeRequest)setTimeout(()=>w.ICARUS_NATIVE_STATUS?.({requestId:p.requestId,actionProtocolVersion:1}),0);if(p.action)setTimeout(()=>w.ICARUS_NATIVE_RESULT?.(JSON.stringify({ok:true,requestId:p.requestId,data:p.action==='get_battery'?{level:55,charging:false}:{}})),0);}};
+  if(native)w[native==='legacy'?'IcarusNative':'ICARUS_NATIVE_CHANNEL']={postMessage:raw=>{const p=JSON.parse(raw);requests.push(p);if(p.bridgeRequest)setTimeout(()=>w.ICARUS_NATIVE_STATUS?.(JSON.stringify({requestId:p.requestId,actionProtocolVersion:1,connected:true})),0);if(p.action)setTimeout(()=>w.ICARUS_NATIVE_RESULT?.(JSON.stringify({ok:true,requestId:p.requestId,data:p.action==='get_battery'?{level:55,charging:false}:{}})),0);}};
   w.eval(code);
   await waitFor(()=>w.document.querySelector('nav'));
   const click=async label=>{const b=[...w.document.querySelectorAll('button')].find(x=>x.textContent===label);assert.ok(b,`Missing ${label}`);b.click();await new Promise(r=>setTimeout(r,25));};
@@ -40,10 +40,15 @@ test('Memory → Settings and every tab remain navigable without a blank screen'
   }finally{app.dom.window.close();}
 });
 
-test('Settings native controls dispatch once and survive repeated navigation',async()=>{
+test('Settings canonical native controls dispatch once and survive repeated navigation',async()=>{
   const app=await mount(true);
   try{
+    assert.equal(app.w.IcarusNative,undefined);
+    await app.click('Check native link→');
+    await waitFor(()=>app.w.document.body.textContent.includes('Android native link connected.'));
+    assert.ok(app.requests.some(p=>p.bridgeRequest));
     await app.click('Settings');await app.click('Stop listening');
+    assert.equal([...app.w.document.querySelectorAll('button')].find(b=>b.textContent==='Enable hands-free').disabled,false);
     assert.equal(app.requests.filter(p=>p.action==='wake_word').length,1);
     assert.deepEqual(app.requests.find(p=>p.action==='wake_word').arguments,{enabled:false});
     assert.match(app.w.document.body.textContent,/Request received by Android/);
@@ -54,7 +59,7 @@ test('Settings native controls dispatch once and survive repeated navigation',as
 });
 
 test('Chat does not execute a proposal before confirmation and prevents duplicate dispatch',async()=>{
-  const app=await mount(true,true);
+  const app=await mount('legacy',true);
   try{
     await app.click('Chat');await waitFor(()=>app.w.document.body.textContent.includes('Phone actions are connected'));
     const input=app.w.document.querySelector('textarea');

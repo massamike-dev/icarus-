@@ -6,6 +6,13 @@ branch is validated. Version reserved: Android 1.6.6 / build 37.
 
 ## Implemented
 
+- Fixed the native transport name mismatch: Android exposes
+  `ICARUS_NATIVE_CHANNEL`, while the web UI previously checked only
+  `IcarusNative`. A shared accessor connects every control to the actual channel,
+  with compatibility for the historical alias. Origin and main-frame restrictions
+  are unchanged. Regression tests derive the channel name from Android source.
+- Basic native link and voice controls also support the current 1.6.5 host;
+  reviewed Chat actions retain the 1.6.6 protocol gate.
 - Chat uses a validated phone-action proposal tool, visible confirmation, a
   correlated native response, and honest request-accepted/unknown/failure states.
 - New host protocol gate blocks execution on older APKs. Exact contact/app
@@ -36,11 +43,12 @@ branch is validated. Version reserved: Android 1.6.6 / build 37.
 
 ## Verification and release gates
 
-All 47 local web tests and the production bundle pass. Coverage includes
+All 53 local web tests and the production bundle pass. Coverage includes
 auth/privacy, navigation, shared voice/Chat history, private temporary turns,
 atomic persistence, idempotent turn/result retries, deleted conversations,
 invalid proposals, old hosts, read-only search/citations, Android errors/timeouts,
-confirmation, callback cleanup, and late responses after navigation or sign-in
+the Android-declared transport, canonical-only native controls, confirmation,
+callback cleanup, and late responses after navigation or sign-in
 changes. Six pure Kotlin session-state tests also pass locally, including an
 explicit empty New chat reset invalidating an in-flight first voice response.
 

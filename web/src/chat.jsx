@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {actionRequest,executeProposal,checkDevice} from './device-actions';
 import {getChatContext,selectChatContext,restoreChatContext} from './native-session';
+import {getNativeTransport} from './native-transport.js';
 
 async function api(path,options={}) {
   const r=await fetch('/api'+path,{...options,headers:{'content-type':'application/json',authorization:`Bearer ${localStorage.getItem('icarus_token')||''}`},signal:AbortSignal.timeout(70000)});
@@ -116,7 +117,7 @@ export function Chat(){
       <button className="secondary" disabled={busy||Boolean(pending)} onClick={reset}>+ New chat</button>
       <button className="secondary" disabled={busy||Boolean(pending)} aria-pressed={temporary} onClick={()=>changeContext({temporary:!temporary})}>Temporary {temporary?'on':'off'}</button>
     </div></div>
-    <p>{native?'Phone actions are connected. Review each action before sending it to Android.':window.IcarusNative?.postMessage?'Checking Android support. If this persists, update ICARUS to use reviewed Chat actions.':'Open the Android app for phone actions. You can chat here.'}</p>
+    <p>{native?'Phone actions are connected. Review each action before sending it to Android.':getNativeTransport()?'Checking Android support. If this persists, update ICARUS to use reviewed Chat actions.':'Open the Android app for phone actions. You can chat here.'}</p>
     <div className="chat-layout"><aside className="history-panel" aria-label="Conversation history"><b>RECENT</b>{conversations.length===0&&<p>No saved chats yet.</p>}{conversations.map(c=><div key={c.id}><button disabled={busy||Boolean(pending)} className={conversationId===c.id?'current':''} onClick={()=>changeContext({conversationId:c.id,temporary:false},c.messages||[])}>{c.title}</button><button disabled={busy||Boolean(pending)} aria-label={`Delete ${c.title}`} onClick={()=>setDeleteId(c.id)}>Delete</button></div>)}</aside>
     <div className="chat-main"><div className="messages" aria-live="polite">
       {!messages.length&&<div className="empty"><b>{temporary?'TEMPORARY CHAT':'START A CONVERSATION'}</b><p>{temporary?'This conversation will not be saved or use Memory.':'Ask a question or request a phone action. ICARUS uses only memories you explicitly save.'}</p></div>}
