@@ -4,12 +4,14 @@ import { extname, join, normalize } from 'node:path';
 import { hashPassword, issueToken, verifyPassword, verifyToken } from './auth.js';
 import { interpretCommand } from './commands.js';
 import {assistantTurn, capabilities} from './assistant.js';
+import {conversationService} from './conversation-service.js';
 
 const json = (res, status, body) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
 const body = async req => { const chunks=[]; for await (const chunk of req) chunks.push(chunk); if (Buffer.concat(chunks).length > 1_000_000) throw new Error('Request too large'); return JSON.parse(Buffer.concat(chunks).toString() || '{}'); };
 const bearer = req => req.headers.authorization?.replace(/^Bearer\s+/i, '');
 const safeUser = user => ({ id:user.id, email:user.email, name:user.name });
 export function createHandler({ store, env=process.env, publicDir, fetchImpl=fetch }) {
+  const conversations=conversationService(store);
   const secret = env.ICARUS_SESSION_SECRET || (env.NODE_ENV === 'test' ? 'test-secret-at-least-32-characters' : '');
   if (secret.length < 32) throw new Error('ICARUS_SESSION_SECRET must be at least 32 characters.');
   const authenticated = async req => { const id=verifyToken(bearer(req),secret); if(!id) return null; return (await store.read()).users.find(u=>u.id===id)||null; };
@@ -23,25 +25,34 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
       if(path==='/api/capabilities') return json(res,200,capabilities(env));
       if(path==='/api/me') return json(res,200,{user:safeUser(user)});
       if(path==='/api/commands/interpret'&&req.method==='POST') {
-        const input=await body(req); const command=String(input.command||'').trim().slice(0,1000);
-        if(!command) return json(res,400,{error:'command_required'});
-        if(/^(search (the )?(web|internet)|look up)\b/i.test(command)) {
-          const turn=await assistantTurn([{role:'user',content:command}],[],env,fetchImpl,{search:true,voice:true});
-          return json(res,200,{action:'unknown',executionStatus:'not_executed',reply:turn.reply,sources:turn.sources||[]});
-        }
-        const interpreted=await interpretCommand(command,env,fetchImpl);
-        if(interpreted.action!=='unknown')return json(res,200,interpreted);
-        const d=await store.read();
-        const turn=await assistantTurn([{role:'user',content:command}],d.memories.filter(m=>m.userId===user.id),env,fetchImpl,{voice:true});
-        return json(res,200,{...interpreted,reply:turn.reply});
+        const input=await body(req), command=String(input.command||'').trim().slice(0,1000);
+        if(!command)return json(res,400,{error:'command_required'});
+        const produce=async(history,memories)=>{
+          if(/^(search (the )?(web|internet)|look up)\b/i.test(command)){
+            const turn=await assistantTurn(history,memories,env,fetchImpl,{search:true,voice:true});
+            return {...turn,action:'unknown',executionStatus:'not_executed'};
+          }
+          const interpreted=await interpretCommand(command,env,fetchImpl);
+          if(interpreted.action!=='unknown')return {...interpreted,proposal:interpreted,reply:`Requested ${interpreted.action.replaceAll('_',' ')}${interpreted.value?' '+interpreted.value:''}. Execution is not yet confirmed.`};
+          const turn=await assistantTurn(history,memories,env,fetchImpl,{voice:true});
+          return {...turn,...interpreted,reply:turn.reply};
+        };
+        const turn=input.temporary===true?await produce([{role:'user',content:command}],[]):await conversations.savedTurn({userId:user.id,input,text:command,channel:'voice',produce});
+        return json(res,200,turn);
       }
-      if(path==='/api/account'&&req.method==='DELETE') { await store.update(d=>{d.users=d.users.filter(x=>x.id!==user.id);d.conversations=d.conversations.filter(x=>x.userId!==user.id);d.messages=d.messages.filter(x=>x.userId!==user.id);d.memories=d.memories.filter(x=>x.userId!==user.id)}); return json(res,200,{ok:true,deleted:true}); }
+      if(/^\/api\/actions\/[^/]+\/result$/.test(path)&&req.method==='POST')return json(res,200,await conversations.reportResult(user.id,path.split('/')[3],await body(req)));
+      if(path==='/api/account'&&req.method==='DELETE') { await store.update(d=>{d.users=d.users.filter(x=>x.id!==user.id);d.conversations=d.conversations.filter(x=>x.userId!==user.id);d.messages=d.messages.filter(x=>x.userId!==user.id);d.memories=d.memories.filter(x=>x.userId!==user.id);d.turns=(d.turns||[]).filter(x=>x.userId!==user.id);d.actionRequests=(d.actionRequests||[]).filter(x=>x.userId!==user.id)}); return json(res,200,{ok:true,deleted:true}); }
       if(path==='/api/memories'&&req.method==='GET') return json(res,200,{memories:(await store.read()).memories.filter(x=>x.userId===user.id)});
       if(path==='/api/memories'&&req.method==='POST') { const input=await body(req); const content=String(input.content||'').trim().slice(0,4000); if(!content)return json(res,400,{error:'content_required'}); const memory={id:randomUUID(),userId:user.id,content,createdAt:new Date().toISOString()}; await store.update(d=>d.memories.push(memory)); return json(res,201,{memory}); }
       if(path.startsWith('/api/memories/')&&req.method==='DELETE') { const id=path.split('/').pop(); await store.update(d=>{d.memories=d.memories.filter(x=>x.userId!==user.id||x.id!==id)}); return json(res,200,{ok:true}); }
       if(path==='/api/conversations'&&req.method==='GET') { const d=await store.read(); return json(res,200,{conversations:d.conversations.filter(x=>x.userId===user.id).sort((a,b)=>String(b.updatedAt||b.createdAt).localeCompare(String(a.updatedAt||a.createdAt))).map(c=>({...c,messages:d.messages.filter(m=>m.conversationId===c.id)}))}); }
-      if(path.startsWith('/api/conversations/')&&req.method==='DELETE') { const id=path.split('/').pop(); await store.update(d=>{const owned=d.conversations.some(c=>c.id===id&&c.userId===user.id);if(owned){d.conversations=d.conversations.filter(c=>c.id!==id);d.messages=d.messages.filter(m=>m.conversationId!==id)}}); return json(res,200,{ok:true}); }
-      if((path==='/api/chat'||path==='/api/functions/nativeConversationTurn')&&req.method==='POST') { const input=await body(req); const text=String(input.message||input.command||'').trim().slice(0,12000); if(!text)return json(res,400,{error:'message_required'}); let conversationId=input.conversationId; const now=new Date().toISOString(); await store.update(d=>{ const existing=d.conversations.find(c=>c.id===conversationId&&c.userId===user.id); if(!existing){conversationId=randomUUID();d.conversations.push({id:conversationId,userId:user.id,title:text.slice(0,60),createdAt:now,updatedAt:now});}else existing.updatedAt=now; d.messages.push({id:randomUUID(),conversationId,userId:user.id,role:'user',content:text,createdAt:now}); }); const d=await store.read(); const history=d.messages.filter(m=>m.conversationId===conversationId&&m.userId===user.id); const turn=await assistantTurn(history,d.memories.filter(m=>m.userId===user.id),env,fetchImpl,{native:input.native===true,search:input.search===true}); const reply=turn.reply; await store.update(data=>data.messages.push({id:randomUUID(),conversationId,userId:user.id,role:'assistant',content:reply,sources:turn.sources||[],createdAt:new Date().toISOString()})); return json(res,200,{conversationId,...turn}); }
+      if(path.startsWith('/api/conversations/')&&req.method==='DELETE') { const id=path.split('/').pop(); await store.update(d=>{const owned=d.conversations.some(c=>c.id===id&&c.userId===user.id);if(owned){d.conversations=d.conversations.filter(c=>c.id!==id);d.messages=d.messages.filter(m=>m.conversationId!==id);d.turns=(d.turns||[]).map(t=>t.response?.conversationId===id?{userId:t.userId,clientTurnId:t.clientTurnId,fingerprint:t.fingerprint,deleted:true}:t);d.actionRequests=(d.actionRequests||[]).filter(a=>a.conversationId!==id)}}); return json(res,200,{ok:true}); }
+      if((path==='/api/chat'||path==='/api/functions/nativeConversationTurn')&&req.method==='POST') {
+        const input=await body(req), text=String(input.message||input.command||'').trim().slice(0,12000);
+        if(!text)return json(res,400,{error:'message_required'});
+        const turn=await conversations.savedTurn({userId:user.id,input,text,channel:'chat',produce:(history,memories)=>assistantTurn(history,memories,env,fetchImpl,{native:input.native===true,search:input.search===true})});
+        return json(res,200,turn);
+      }
       if(path==='/api/chat/temporary'&&req.method==='POST') { const input=await body(req); const text=String(input.message||'').trim().slice(0,12000); if(!text)return json(res,400,{error:'message_required'}); const history=Array.isArray(input.history)?input.history.slice(-20).map(x=>({role:x.role==='assistant'?'assistant':'user',content:String(x.content||'').slice(0,12000)})):[]; history.push({role:'user',content:text}); const turn=await assistantTurn(history,[],env,fetchImpl,{native:input.native===true,search:input.search===true}); return json(res,200,{temporary:true,...turn}); }
       if(path.startsWith('/api/')) return json(res,404,{error:'not_found'});
       if(!publicDir) return json(res,404,{error:'not_found'});

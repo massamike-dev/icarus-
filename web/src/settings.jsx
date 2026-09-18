@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {ReleaseNotes} from './release-notes';
+import {readDeviceStatus,subscribeNative} from './device-actions';
 
 export class ScreenBoundary extends React.Component {
   state = {failed:false};
@@ -15,40 +16,42 @@ export function VoiceControls() {
   const [message,setMessage]=useState('');
   const [busy,setBusy]=useState(false);
   const [status,setStatus]=useState(null);
-  const dialog=useRef(null), cancel=useRef(null), pending=useRef(null), timeout=useRef(null);
+  const dialog=useRef(null), cancel=useRef(null), pending=useRef(null), timeout=useRef(null), active=useRef(false), statusRequest=useRef(0);
   useEffect(()=>{
+    active.current=true;
     const refresh=()=>setAvailable(Boolean(window.IcarusNative?.postMessage));
     const timer=setInterval(refresh,1000);
-    const previousResult=window.ICARUS_NATIVE_RESULT, previousStatus=window.ICARUS_NATIVE_STATUS;
     const result=raw=>{
       try {
         const value=typeof raw==='string'?JSON.parse(raw):raw;
-        if(value?.requestId===pending.current) {
+        if(pending.current&&value?.requestId===pending.current) {
           clearTimeout(timeout.current);pending.current=null;setBusy(false);
-          setMessage(value.ok===false||value.error?'Android could not complete the request. Check app permissions and try again.':'Request received by Android. Check the ICARUS notification for listening status.');
+          setMessage(value.ok===true&&!value.error?'Request received by Android. Check the ICARUS notification for listening status.':'Android could not confirm the request. Check app permissions and the ICARUS notification before retrying.');
         }
-      } catch { setMessage('Android returned an unreadable response. Try again.'); }
-      if(typeof previousResult==='function')previousResult(raw);
+      } catch { /* Uncorrelated malformed responses cannot settle this request. */ }
     };
     const receiveStatus=raw=>{
-      try { setStatus(typeof raw==='string'?JSON.parse(raw):raw); } catch { setMessage('Could not read Android status. Try again.'); }
-      if(typeof previousStatus==='function')previousStatus(raw);
+      try {const value=typeof raw==='string'?JSON.parse(raw):raw;if(value?.wakeWord&&typeof value.wakeWord.listenerState==='string')setStatus(value);} catch { /* Ignore malformed status broadcasts. */ }
     };
-    window.ICARUS_NATIVE_RESULT=result;window.ICARUS_NATIVE_STATUS=receiveStatus;
-    return ()=>{clearInterval(timer);clearTimeout(timeout.current);if(window.ICARUS_NATIVE_RESULT===result)window.ICARUS_NATIVE_RESULT=previousResult;if(window.ICARUS_NATIVE_STATUS===receiveStatus)window.ICARUS_NATIVE_STATUS=previousStatus;};
+    const removeResult=subscribeNative(window,'result',result),removeStatus=subscribeNative(window,'status',receiveStatus);
+    return ()=>{active.current=false;statusRequest.current++;pending.current=null;clearInterval(timer);clearTimeout(timeout.current);removeResult();removeStatus();};
   },[]);
   const send=(action,args={})=>{
-    if(busy)return;
+    if(busy||pending.current)return;
     if(!window.IcarusNative?.postMessage){setAvailable(false);setMessage('Open the installed Android app to use these controls.');return;}
     const requestId=crypto.randomUUID();pending.current=requestId;setBusy(true);setMessage('Waiting for Android…');
     timeout.current=setTimeout(()=>{pending.current=null;setBusy(false);setMessage('Android did not confirm the request. Check its notification, then try again.');},5000);
     try { window.IcarusNative.postMessage(JSON.stringify({action,arguments:args,requestId})); }
     catch {clearTimeout(timeout.current);pending.current=null;setBusy(false);setMessage('Android connection is unavailable. Reopen ICARUS and try again.');}
   };
-  const check=()=>{
+  const check=async()=>{
+    const revision=++statusRequest.current;
     setStatus(null);
-    try {window.IcarusNative.postMessage(JSON.stringify({bridgeRequest:'status',requestId:crypto.randomUUID()}));setMessage('Status requested. If no status appears, reopen ICARUS and try again.');}
-    catch {setMessage('Android connection is unavailable. Reopen ICARUS and try again.');}
+    setMessage('Checking Android status…');
+    const value=await readDeviceStatus();
+    if(!active.current||revision!==statusRequest.current)return;
+    if(value?.wakeWord&&typeof value.wakeWord.listenerState==='string'){setStatus(value);setMessage('Android status received.');}
+    else setMessage('Android did not provide voice status. Reopen ICARUS and try again.');
   };
   return <div className="voice-controls">
     <p>{available?'Manage listening on this Android device.':'Voice controls are available in the installed Android app.'}</p>

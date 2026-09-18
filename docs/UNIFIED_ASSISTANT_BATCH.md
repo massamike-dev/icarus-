@@ -21,15 +21,33 @@ branch is validated. Version reserved: Android 1.6.6 / build 37.
   replies are currently truncated by the native host to 500 characters.
 - Settings contains in-app patch notes. Drafts survive request failure; retries
   restore a draft and never automatically re-execute an action.
+- Cloud voice turns share the selected Chat conversation. Native session
+  snapshots reject late replies after account or conversation changes. The
+  temporary selection also applies to later wake turns and excludes saved
+  history, Memory, conversation IDs, and result uploads.
+- Server-backed action reports are saved once with their owning conversation
+  and labeled device-reported rather than independently verified. Report-upload
+  retry never repeats device execution. Direct offline commands have no server
+  proposal and remain outside cloud history; uploads are best effort.
+- Completed chat/voice turns are saved atomically and retried with stable IDs.
+  Provider failure does not leave orphan user messages. Conversation deletion
+  retains only a content-free turn-ID/fingerprint tombstone to stop stale retry
+  resurrection; account deletion also removes these tombstones.
 
 ## Verification and release gates
 
-Local web tests cover auth/privacy, navigation, invalid proposals, old hosts,
-read-only search/citations, Android errors/timeouts, and confirm-before-execution
-with duplicate-click protection. All 19 tests and the production bundle passed.
-At commit 52625bf, GitHub web run 35287896496, Android test/lint/debug run
-35287896441 and canonical debug run 35287896417 all passed. The signed release
-job was skipped. No release has been published from the branch.
+All 47 local web tests and the production bundle pass. Coverage includes
+auth/privacy, navigation, shared voice/Chat history, private temporary turns,
+atomic persistence, idempotent turn/result retries, deleted conversations,
+invalid proposals, old hosts, read-only search/citations, Android errors/timeouts,
+confirmation, callback cleanup, and late responses after navigation or sign-in
+changes. Five pure Kotlin session-state tests also pass locally.
+
+Full Android build/lint and web CI for this revision must pass before release;
+the current results are recorded on the draft PR. At the earlier commit 52625bf,
+GitHub web run 35287896496, Android test/lint/debug run 35287896441 and canonical
+debug run 35287896417 all passed. The signed release job was skipped. No release
+has been published from the branch.
 
 The cloud browser refused the local preview with ERR_BLOCKED_BY_CLIENT; DOM
 interaction tests passed, but a real-browser visual check remains unverified.
@@ -42,8 +60,11 @@ not establish these. Review narrow-screen layout on an actual browser/device.
 ## Remaining product gaps (not claimed complete)
 
 - No general account connector registry, email/purchases, or multi-step durable
-  task runner. Device results remain local to the current Chat view.
-- Voice has saved Memory but no shared Chat conversation ID or voice history.
+  task runner. Result upload has no persistent offline delivery queue.
+- Failed Chat report uploads can be retried while Chat remains open. Navigating
+  away or reloading loses that unsaved retry queue. Already-dispatched actions
+  still attempt to save their result after navigation; a failed upload after
+  unmount is not retained for a later retry.
 - This batch does not establish reliable screen-off wake, Bluetooth routing,
   interruption/barge-in, default-assistant behavior, or automatic follow-up.
 - Search is explicit, not automatic for every time-sensitive question.

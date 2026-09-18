@@ -98,8 +98,7 @@ class IcarusNativeBridge(
         return try {
             when (action) {
                 "configure_voice_session" -> {
-                    context.getSharedPreferences("icarus_session", Context.MODE_PRIVATE).edit()
-                        .putString("token", args.optString("token").take(4096)).apply()
+                    VoiceSessionStore.configure(context, args)
                     ok(requestId)
                 }
                 "open_app" -> openApp(requestId, args)
@@ -396,8 +395,8 @@ class IcarusNativeBridge(
     }
 
     private fun sessionLogout(requestId: String?): String {
+        VoiceSessionStore.clear(context)
         WakeWordService.setEnabled(context, false)
-        context.getSharedPreferences("icarus_session", Context.MODE_PRIVATE).edit().clear().apply()
         context.stopService(Intent(context, WakeWordService::class.java))
         obd.disconnect()
         pendingSpeech = null
@@ -575,6 +574,7 @@ class IcarusNativeBridge(
             .put("platform", "android")
             .put("version", BuildConfig.VERSION_NAME)
             .put("actionProtocolVersion", 1)
+            .put("voiceSession", VoiceSessionStore.status(context))
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
             .put("capabilities", JSONArray(CAPABILITIES))
             .toString()
