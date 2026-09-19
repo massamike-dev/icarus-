@@ -9,9 +9,9 @@ const driving=read('native/android/app/src/main/java/com/icarusalmighty/app/driv
 const volumetric=read('native/android/app/src/main/java/com/icarusalmighty/app/driving/VolumetricHudSurface.kt');
 const manifest=read('native/android/app/src/main/AndroidManifest.xml');
 
-test('HUD update is newer than Test 1.6.9 build 40 and preserves the private app identity',()=>{
-  assert.ok(Number(gradle.match(/versionCode\s*=\s*(\d+)/)?.[1])>=41);
-  assert.equal(gradle.match(/versionName\s*=\s*"([^"]+)"/)?.[1],'1.6.10');
+test('animated companion update is Test 1.6.11 build 42 or newer and preserves the private app identity',()=>{
+  assert.ok(Number(gradle.match(/versionCode\s*=\s*(\d+)/)?.[1])>=42);
+  assert.equal(gradle.match(/versionName\s*=\s*"([^"]+)"/)?.[1],'1.6.11');
   assert.match(gradle,/applicationId\s*=\s*"com\.icarusalmighty\.app"/);
   const variant=gradle.split('create("privateTest")')[1]?.split('compileOptions')[0];
   assert.ok(variant,'the existing privateTest variant must remain');
