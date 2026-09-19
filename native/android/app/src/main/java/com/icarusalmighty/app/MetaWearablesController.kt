@@ -39,6 +39,11 @@ class MetaWearablesController(
     private fun xrealPhoneFallback(): JSONObject = JSONObject()
         .put("provider", "xreal")
         .put("enabled", false)
+        .put("target", "bundled")
+        .put("installed", true)
+        .put("tracking", "none")
+        .put("displayMode", "screen_fixed_overlay")
+        .put("glassesConnectionVerified", false)
         .put("runtimeAvailable", false)
         .put("fallback", "phone")
 
@@ -79,20 +84,32 @@ class MetaWearablesController(
             "meta_phone_location" -> phoneLocation(requestId)
             "meta_xreal_status" -> ok(requestId, xreal()?.status() ?: xrealPhoneFallback())
             "meta_xreal_launch" -> {
-                val controller = xreal()
-                    ?: return error(requestId, "integration_disabled", "XREAL Integration is turned off in ICARUS settings.")
-                ok(requestId, controller.launch(args.optString("mode", "vehicle"), args))
+                onUiThread(requestId) {
+                    val controller = xreal()
+                        ?: return@onUiThread error(requestId, "integration_disabled", "Enable XREAL Integration before opening the HUD.")
+                    result(requestId, controller.launch(args.optString("mode", "assistant"), args))
+                }
+            }
+            "meta_xreal_close" -> onUiThread(requestId) {
+                val controller = xrealController ?: XrealWearablesController(activity) { flags().xrealEnabled }
+                ok(requestId, controller.closeHud())
             }
             "meta_xreal_update" -> {
-                val controller = xreal()
-                    ?: return error(requestId, "integration_disabled", "XREAL Integration is turned off in ICARUS settings.")
-                ok(requestId, controller.update(args))
+                onUiThread(requestId) {
+                    val controller = xreal()
+                        ?: return@onUiThread error(requestId, "integration_disabled", "XREAL Integration is turned off in ICARUS settings.")
+                    result(requestId, controller.update(args))
+                }
             }
             else -> executeMetaAction(action, requestId)
         }
     }
 
     private fun setIntegration(requestId: String?, args: JSONObject): String {
+        return onUiThread(requestId) { setIntegrationOnUiThread(requestId, args) }
+    }
+
+    private fun setIntegrationOnUiThread(requestId: String?, args: JSONObject): String {
         val provider = args.optString("provider").trim().lowercase()
         val enabled = args.optBoolean("enabled", false)
         val updated = try {
@@ -100,13 +117,36 @@ class MetaWearablesController(
         } catch (_: IllegalArgumentException) {
             return error(requestId, "unsupported_integration")
         }
-        if (provider == "xreal" && !enabled) xrealController = null
+        if (provider == "xreal" && !enabled) {
+            (xrealController ?: XrealWearablesController(activity) { false }).closeHud()
+            activity.stopService(android.content.Intent(activity, com.icarusalmighty.app.spatial.SpatialTelemetryService::class.java))
+            xrealController = null
+        }
         return ok(requestId, JSONObject()
             .put("provider", provider)
             .put("enabled", enabled)
             .put("metaEnabled", updated.metaEnabled)
             .put("xrealEnabled", updated.xrealEnabled)
             .put("fallback", "phone"))
+    }
+
+    private fun onUiThread(requestId: String?, operation: () -> String): String {
+        activity.runOnUiThread {
+            val response = if (activity.isFinishing || activity.isDestroyed) {
+                error(requestId, "activity_unavailable", "The ICARUS activity is closing.")
+            } else try {
+                operation()
+            } catch (_: Exception) {
+                error(requestId, "xreal_action_failed", "The HUD action could not be completed.")
+            }
+            dispatch(response)
+        }
+        return ""
+    }
+
+    private fun result(requestId: String?, data: JSONObject): String {
+        val code = data.optString("error")
+        return if (code.isNotBlank()) error(requestId, code) else ok(requestId, data)
     }
 
     @SuppressLint("MissingPermission")

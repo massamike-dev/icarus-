@@ -3,33 +3,57 @@ package com.icarusalmighty.xreal
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Looper
 
 class XrealModeController(private val context: Context) {
 
-    fun isRuntimeAvailable(): Boolean =
+    fun isRuntimeAvailable(): Boolean = runCatching {
         buildIntent(XrealMode.ASSISTANT, XrealHudState()).resolveActivity(context.packageManager) != null
+    }.getOrDefault(false)
+
+    fun isOpen(): Boolean = XrealHudActivity.session.activityOpen
+
+    fun isLaunchPending(): Boolean = XrealHudActivity.session.launchPending
 
     fun launch(mode: XrealMode, state: XrealHudState = XrealHudState()): XrealLaunchResult {
+        if (Looper.myLooper() != Looper.getMainLooper()) return XrealLaunchResult.Failed("main_thread_required")
+        if (context is Activity && (context.isFinishing || context.isDestroyed)) {
+            return XrealLaunchResult.Failed("activity_unavailable")
+        }
         val intent = buildIntent(mode, state)
-        if (intent.resolveActivity(context.packageManager) == null) {
+        if (!isRuntimeAvailable()) {
             return XrealLaunchResult.RuntimeUnavailable
         }
         if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-        return XrealLaunchResult.Started
+        XrealHudActivity.session.launchRequested()
+        return try {
+            context.startActivity(intent)
+            XrealLaunchResult.Started
+        } catch (_: Exception) {
+            XrealHudActivity.session.launchFailed()
+            XrealLaunchResult.Failed("xreal_launch_failed")
+        }
     }
 
-    fun update(state: XrealHudState) {
+    /** Returns whether a live or pending activity was actually asked to finish. */
+    fun close(): Boolean {
+        check(Looper.myLooper() == Looper.getMainLooper())
+        return XrealHudActivity.requestClose()
+    }
+
+    fun update(state: XrealHudState): Boolean {
+        if (!isOpen()) return false
         context.sendBroadcast(
             Intent(ACTION_UPDATE_XREAL)
                 .setPackage(context.packageName)
                 .putHudState(state)
         )
+        return true
     }
 
     private fun buildIntent(mode: XrealMode, state: XrealHudState): Intent =
-        Intent(ACTION_OPEN_XREAL)
-            .setPackage(context.packageName)
+        Intent(context, XrealHudActivity::class.java)
+            .setAction(ACTION_OPEN_XREAL)
             .putExtra(EXTRA_MODE, mode.name)
             .putHudState(state)
 
@@ -68,4 +92,5 @@ class XrealModeController(private val context: Context) {
 sealed interface XrealLaunchResult {
     data object Started : XrealLaunchResult
     data object RuntimeUnavailable : XrealLaunchResult
+    data class Failed(val code: String) : XrealLaunchResult
 }

@@ -8,6 +8,7 @@ on:
       - "web/**"
       - "config/private-test.json"
       - "tests/native-contract.test.mjs"
+      - "tests/private-hud-contract.test.mjs"
       - ".github/scripts/validate-private-test.py"
       - ".github/scripts/upload-private-apk.py"
       - ".github/scripts/test_private_test_validation.py"
@@ -47,7 +48,7 @@ jobs:
       - run: npm test
       - name: Verify native bridge source contract
         working-directory: .
-        run: node --test tests/native-contract.test.mjs
+        run: node --test tests/native-contract.test.mjs tests/private-hud-contract.test.mjs
       - run: npm run build
 
   validate:
@@ -151,7 +152,7 @@ jobs:
           APKANALYZER_PATH="$(find "$ANDROID_HOME/cmdline-tools" -name apkanalyzer -type f | sort -V | tail -n 1)"
           test -n "$APKSIGNER_PATH"
           test -n "$APKANALYZER_PATH"
-          "$APKSIGNER_PATH" verify --verbose "$APK_PATH"
+          "$APKSIGNER_PATH" verify --verbose --print-certs "$APK_PATH"
           python3 .github/scripts/validate-private-test.py --apk "$APK_PATH" --apkanalyzer "$APKANALYZER_PATH"
           cp "$APK_PATH" "$RUNNER_TEMP/ICARUS-Test.apk"
       - name: Upload APK to restricted test service using GitHub OIDC

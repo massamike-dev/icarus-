@@ -1,0 +1,15 @@
+.vehicle-workspace{max-width:1160px}
+.vehicle-intro{max-width:660px;color:var(--steel);line-height:1.7}
+.hud-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin-top:28px}
+.hud-option{min-width:0;padding:24px;border:1px solid var(--line);border-top:2px solid var(--sky);background:var(--panel)}
+.hud-option:first-child{border-top-color:var(--ember)}
+.hud-option h2{font-family:'Barlow Condensed',sans-serif;font-size:34px;margin:12px 0}
+.hud-option>p:not(.eyebrow){color:var(--steel);line-height:1.65;overflow-wrap:anywhere}
+.hud-option .hud-availability{color:var(--sky);min-height:3.3em}
+.hud-option button{min-height:48px;max-width:100%;min-width:0;white-space:normal;text-align:left}
+.hud-option .primary{margin-top:10px}
+.hud-option .settings-actions{align-items:stretch;flex-direction:column}
+.hud-feedback{padding-top:12px}
+.hud-feedback .settings-status{min-height:3.3em;max-width:760px;line-height:1.65}
+.vehicle-workspace .settings-error{color:#ff9a85}
+@media(max-width:760px){.hud-options{grid-template-columns:minmax(0,1fr);gap:18px}.hud-option{padding:20px}.hud-option button{width:100%}.hud-option .hud-availability{min-height:0}}

@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 
 
 PRODUCTION_HOSTS = {"icarusassistant.com", "www.icarusassistant.com", "icarus-assistant.onrender.com"}
+ANDROID_APP_GRADLE = Path(__file__).resolve().parents[2] / "native/android/app/build.gradle.kts"
 
 
 def validated_origin(value):
@@ -76,6 +77,32 @@ def smali_string(code, name):
     return json.loads(match.group(1))
 
 
+def expected_apk_version():
+    # Read the exact native app source used by the private workflow, never a root
+    # compatibility project, environment fallback, or hardcoded release number.
+    source = ANDROID_APP_GRADLE.read_text()
+    source = re.sub(r'"(?:\\.|[^"\\])*"|//[^\n]*|/\*[\s\S]*?\*/',
+                    lambda token: token.group() if token.group().startswith('"') else "\n" * token.group().count("\n"), source)
+
+    def literal(name, pattern):
+        assignments = re.findall(r"^\s*" + name + r"\s*=\s*([^\n]*)$", source, re.MULTILINE)
+        if len(assignments) != 1 or not re.fullmatch(pattern, assignments[0].strip()):
+            raise ValueError(f"Cannot unambiguously verify private APK {name} from native Gradle configuration.")
+        return assignments[0].strip()
+
+    version_code = literal("versionCode", r"[1-9][0-9]*")
+    version_name = json.loads(literal("versionName", r'"[A-Za-z0-9._+\-]+"'))
+    suffix_literal = literal("versionNameSuffix", r'"[A-Za-z0-9._+\-]+"')
+    # Fail closed if suffix configuration becomes dynamic or moves to another
+    # build type. This deliberately supports only the repository's literal DSL.
+    private_blocks = re.findall(r'\bcreate\("privateTest"\)\s*\{([^{}]*)\}', source)
+    if len(private_blocks) != 1 or not re.search(
+            r"^\s*versionNameSuffix\s*=\s*" + re.escape(suffix_literal) + r"\s*$",
+            private_blocks[0], re.MULTILINE):
+        raise ValueError("Cannot verify the versionNameSuffix belongs to the privateTest build type.")
+    return version_code, version_name + json.loads(suffix_literal)
+
+
 def validate_apk(apk, analyzer, origin):
     def inspect(*args):
         return subprocess.check_output([analyzer, *args, str(apk)], text=True).strip()
@@ -84,6 +111,11 @@ def validate_apk(apk, analyzer, origin):
         raise ValueError("Refusing to deliver an APK that can replace the public ICARUS app.")
     if inspect("manifest", "debuggable").lower() != "false":
         raise ValueError("Refusing to deliver a debuggable APK.")
+    version_code, version_name = expected_apk_version()
+    if inspect("manifest", "version-code") != version_code:
+        raise ValueError("APK versionCode does not match the native Gradle build; refusing to deliver the wrong version.")
+    if inspect("manifest", "version-name") != version_name:
+        raise ValueError("APK versionName does not match the private Gradle build; refusing to deliver the wrong version.")
     code = inspect("dex", "code", "--class", "com.icarusalmighty.app.BuildConfig")
     if smali_string(code, "ICARUS_WEB_URL") != origin:
         raise ValueError("Compiled APK endpoint does not match the verified private test service.")

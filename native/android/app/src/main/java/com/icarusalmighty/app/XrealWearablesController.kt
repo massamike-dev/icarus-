@@ -8,7 +8,7 @@ import com.icarusalmighty.xreal.XrealModeController
 import org.json.JSONObject
 import kotlin.math.roundToInt
 
-/** XREAL is an optional enhancement. When disabled the runtime controller is never constructed. */
+/** XREAL is opt-in. Cleanup can close the bundled overlay without enabling the integration. */
 class XrealWearablesController(
     private val activity: Activity,
     private val enabledProvider: () -> Boolean,
@@ -26,9 +26,15 @@ class XrealWearablesController(
         return JSONObject()
             .put("provider", "xreal")
             .put("enabled", enabled)
-            .put("sdkVersion", "3.1.0")
+            .put("target", "bundled")
+            .put("installed", true)
             .put("runtimeAvailable", runtimeAvailable)
-            .put("architecture", "native_hud_with_unity_upgrade_path")
+            .put("architecture", "bundled_native_overlay")
+            .put("displayMode", "screen_fixed_overlay")
+            .put("tracking", "none")
+            .put("glassesConnectionVerified", false)
+            .put("isOpen", controller?.isOpen() == true)
+            .put("launchPending", controller?.isLaunchPending() == true)
             .put("hudModes", org.json.JSONArray(listOf("assistant", "vehicle")))
             .put("liveHudUpdates", true)
             .put("fallback", if (runtimeAvailable) "xreal" else "phone")
@@ -37,7 +43,8 @@ class XrealWearablesController(
     fun launch(mode: String, args: JSONObject = JSONObject()): JSONObject {
         val requestedMode = when (mode.trim().lowercase()) {
             "vehicle", "driver", "driving", "navigation" -> XrealMode.VEHICLE
-            else -> XrealMode.ASSISTANT
+            "", "assistant" -> XrealMode.ASSISTANT
+            else -> return JSONObject().put("launched", false).put("error", "invalid_hud_mode")
         }
         val activeController = enabledController()
             ?: return JSONObject()
@@ -50,15 +57,37 @@ class XrealWearablesController(
                 .put("error", "integration_disabled")
 
         val result = activeController.launch(requestedMode, stateFrom(args))
-        val runtimeAvailable = result != XrealLaunchResult.RuntimeUnavailable
+        val runtimeAvailable = activeController.isRuntimeAvailable()
         return JSONObject()
             .put("provider", "xreal")
             .put("enabled", true)
             .put("mode", requestedMode.name.lowercase())
             .put("launched", result == XrealLaunchResult.Started)
+            .put("launchRequested", result == XrealLaunchResult.Started)
+            .put("target", "bundled")
+            .put("displayMode", "screen_fixed_overlay")
+            .put("tracking", "none")
+            .put("glassesConnectionVerified", false)
             .put("runtimeAvailable", runtimeAvailable)
             .put("liveHudUpdates", true)
-            .put("fallback", if (runtimeAvailable) "xreal" else "phone")
+            .put("fallback", if (result == XrealLaunchResult.Started) "xreal" else "phone")
+            .apply {
+                when (result) {
+                    XrealLaunchResult.RuntimeUnavailable -> put("error", "xreal_runtime_unavailable")
+                    is XrealLaunchResult.Failed -> put("error", result.code)
+                    XrealLaunchResult.Started -> Unit
+                }
+            }
+    }
+
+    fun closeHud(): JSONObject {
+        // Closing is allowed after disabling the integration, and never enables it.
+        val closeRequested = (controller ?: XrealModeController(activity)).close()
+        return JSONObject()
+            .put("provider", "xreal")
+            .put("target", "bundled")
+            .put("closeRequested", closeRequested)
+            .put("alreadyClosed", !closeRequested)
     }
 
     fun update(args: JSONObject): JSONObject {
@@ -67,10 +96,13 @@ class XrealWearablesController(
                 .put("provider", "xreal")
                 .put("updated", false)
                 .put("error", "integration_disabled")
-        activeController.update(stateFrom(args))
+        val sent = activeController.update(stateFrom(args))
         return JSONObject()
             .put("provider", "xreal")
-            .put("updated", true)
+            .put("target", "bundled")
+            .put("updateRequested", sent)
+            .put("updated", false) // Broadcast delivery/rendering has no acknowledgement.
+            .apply { if (!sent) put("error", "xreal_hud_not_open") }
     }
 
     private fun stateFrom(args: JSONObject): XrealHudState = XrealHudState(

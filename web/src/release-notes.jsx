@@ -1,6 +1,9 @@
 import React from 'react';
 
-export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Voice settings restored · Android 1.6.8</p><ul>
+export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>HUD controls restored · Android 1.6.9 Test</p><ul>
+  <li>Vehicle now opens the phone Driving HUD and the optional bundled XREAL assistant or vehicle overlay. XREAL stays off until explicitly enabled.</li>
+  <li>HUD controls verify installed support, wait for matching Android acknowledgements, and recover from failed or timed-out requests.</li>
+  <li>The bundled HUD is screen-fixed, not verified tracked AR. The separate Unity companion remains a distinct route; no live readings or navigation are invented.</li>
   <li>Restored saved voice selection, speed, pitch and preview. The Deep & warm profile now applies to hands-free replies and app speech consistently.</li>
   <li>Restored wake sensitivity and local-model management, with shortcuts to Android voice and app-permission settings.</li>
   <li>A little full-body ICARUS companion is available across the app. Tap him for voice status and Talk now; move or tuck him away when you need the space.</li>

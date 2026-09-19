@@ -53,6 +53,7 @@ class IcarusNativeBridge(
     }
 
     fun getStatus(): String = JSONObject(statusJson(context))
+        .put("hudControlVersion", 1)
         .put("installSource", if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             runCatching { context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName }.getOrNull() ?: "sideload"
         } else {
@@ -147,9 +148,9 @@ class IcarusNativeBridge(
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
                 "open_driving_hud" -> openDrivingHud(requestId, args)
-                "xreal_status" -> xrealStatus(requestId)
+                "xreal_status" -> xrealStatus(requestId, args)
                 "open_xreal_hud" -> openXrealHud(requestId, args)
-                "close_xreal_hud" -> closeXrealHud(requestId)
+                "close_xreal_hud" -> closeXrealHud(requestId, args)
                 "update_xreal_hud" -> metaWearables.execute("meta_xreal_update", requestId, args)
                 else -> if (action.startsWith("meta_")) metaWearables.execute(action, requestId, args)
                     else error(requestId, "unsupported_action")
@@ -542,26 +543,41 @@ class IcarusNativeBridge(
         val intent = Intent(context, DrivingHudActivity::class.java).apply {
             if (address.isNotBlank()) putExtra(DrivingHudActivity.EXTRA_OBD_ADDRESS, address)
         }
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject()
+        return launchForResult(requestId, intent, JSONObject()
             .put("opened", true)
             .put("liveTelemetryRequired", true)
             .put("obdAddressProvided", address.isNotBlank()))
     }
 
-    private fun xrealStatus(requestId: String?): String {
+    private fun xrealStatus(requestId: String?, args: JSONObject): String {
+        when (SpatialHudTarget.parse(args.optString("target"))) {
+            SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_status", requestId, args)
+            SpatialHudTarget.COMPANION -> Unit
+            null -> return error(requestId, "invalid_hud_target")
+        }
         val launch = Intent(Intent.ACTION_VIEW, Uri.parse("icarus-spatial://launch"))
             .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
         val installed = context.packageManager.resolveActivity(launch, 0) != null
         return ok(requestId, JSONObject()
+            .put("target", "companion")
+            .put("enabled", IntegrationPreferences(context).snapshot().xrealEnabled)
             .put("installed", installed)
             .put("package", SpatialTelemetryService.COMPANION_PACKAGE)
             .put("host", "beam_pro")
-            .put("tracking", "3dof")
+            .put("tracking", "unverified")
+            .put("glassesConnectionVerified", false)
             .put("liveTelemetryOnly", true))
     }
 
     private fun openXrealHud(requestId: String?, args: JSONObject): String {
+        when (SpatialHudTarget.parse(args.optString("target"))) {
+            SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_launch", requestId, args)
+            SpatialHudTarget.COMPANION -> Unit
+            null -> return error(requestId, "invalid_hud_target")
+        }
+        if (!IntegrationPreferences(context).snapshot().xrealEnabled) {
+            return error(requestId, "integration_disabled", "Enable XREAL Integration before opening the HUD.")
+        }
         if (Build.VERSION.SDK_INT >= 31) {
             requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
             requirePermission(Manifest.permission.BLUETOOTH_SCAN)
@@ -577,26 +593,47 @@ class IcarusNativeBridge(
         if (context.packageManager.resolveActivity(launch, 0) == null) {
             return error(requestId, "xreal_companion_not_installed", "Install the ICARUS XREAL companion on Beam Pro before opening the Spatial HUD.")
         }
-        obd.disconnect()
-        context.stopService(Intent(context, SpatialTelemetryService::class.java).setAction(SpatialTelemetryService.ACTION_STOP))
-        ContextCompat.startForegroundService(context, Intent(context, SpatialTelemetryService::class.java)
-            .setAction(SpatialTelemetryService.ACTION_START)
-            .putExtra(SpatialTelemetryService.EXTRA_OBD_ADDRESS, address)
-            .putExtra(SpatialTelemetryService.EXTRA_TOKEN, token))
-        return try {
-            activity.runOnUiThread { activity.startActivity(launch) }
-            ok(requestId, JSONObject().put("opened", true).put("host", "beam_pro")
-                .put("tracking", "3dof").put("liveTelemetryRequired", true)
-                .put("port", SpatialTelemetryService.PORT))
-        } catch (e: Exception) {
-            context.stopService(Intent(context, SpatialTelemetryService::class.java).setAction(SpatialTelemetryService.ACTION_STOP))
-            error(requestId, "xreal_launch_failed", e.message)
+        activity.runOnUiThread {
+            if (closed || activity.isFinishing || activity.isDestroyed) {
+                resultDispatcher(error(requestId, "activity_unavailable"))
+                return@runOnUiThread
+            }
+            if (!IntegrationPreferences(context).snapshot().xrealEnabled) {
+                resultDispatcher(error(requestId, "integration_disabled"))
+                return@runOnUiThread
+            }
+            val response = try {
+                obd.disconnect()
+                context.stopService(Intent(context, SpatialTelemetryService::class.java))
+                ContextCompat.startForegroundService(context, Intent(context, SpatialTelemetryService::class.java)
+                    .setAction(SpatialTelemetryService.ACTION_START)
+                    .putExtra(SpatialTelemetryService.EXTRA_OBD_ADDRESS, address)
+                    .putExtra(SpatialTelemetryService.EXTRA_TOKEN, token))
+                activity.startActivity(launch)
+                ok(requestId, JSONObject().put("opened", true).put("launched", true)
+                    .put("launchRequested", true).put("target", "companion").put("host", "beam_pro")
+                    .put("tracking", "unverified").put("glassesConnectionVerified", false)
+                    .put("liveTelemetryRequired", true).put("port", SpatialTelemetryService.PORT))
+            } catch (e: Exception) {
+                context.stopService(Intent(context, SpatialTelemetryService::class.java))
+                error(requestId, "xreal_launch_failed", e.message)
+            }
+            resultDispatcher(response)
         }
+        return ""
     }
 
-    private fun closeXrealHud(requestId: String?): String {
-        context.stopService(Intent(context, SpatialTelemetryService::class.java).setAction(SpatialTelemetryService.ACTION_STOP))
-        return ok(requestId, JSONObject().put("telemetryStopped", true))
+    private fun closeXrealHud(requestId: String?, args: JSONObject): String {
+        when (SpatialHudTarget.parse(args.optString("target"))) {
+            SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_close", requestId, args)
+            SpatialHudTarget.COMPANION -> Unit
+            null -> return error(requestId, "invalid_hud_target")
+        }
+        val wasRunning = context.stopService(Intent(context, SpatialTelemetryService::class.java))
+        return ok(requestId, JSONObject().put("target", "companion")
+            .put("telemetryStopRequested", true).put("telemetryWasRunning", wasRunning)
+            .put("closeRequested", false)
+            .put("message", "The telemetry service was stopped. Close the separate companion app on Beam Pro."))
     }
 
     private fun resolvePhone(args: JSONObject): String? {
@@ -628,6 +665,10 @@ class IcarusNativeBridge(
 
     private fun launchForResult(requestId: String?, intent: Intent, data: JSONObject): String {
         activity.runOnUiThread {
+            if (closed || activity.isFinishing || activity.isDestroyed) {
+                resultDispatcher(error(requestId, "activity_unavailable"))
+                return@runOnUiThread
+            }
             val result = try {
                 activity.startActivity(intent)
                 ok(requestId, data.put("executionStatus", "request_accepted"))
@@ -681,7 +722,7 @@ class IcarusNativeBridge(
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",
-            "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_update"
+            "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_close", "meta_xreal_update"
         ).filterNot { BuildConfig.PRIVATE_TEST && it in setOf("check_subscription", "subscribe", "check_update") }
 
         fun statusJson(context: Context): String = JSONObject()

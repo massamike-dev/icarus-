@@ -22,6 +22,42 @@ upload_spec.loader.exec_module(uploader)
 
 
 class PrivateDeliveryTests(unittest.TestCase):
+    def test_expected_version_is_read_from_the_private_native_gradle_source(self):
+        gradle = '''android {
+    defaultConfig {
+        versionCode = 123
+        versionName = "4.5.6"
+    }
+    buildTypes {
+        create("privateTest") {
+            versionNameSuffix = "-test"
+        }
+    }
+}'''
+        self.assertEqual(validation.ANDROID_APP_GRADLE, Path(__file__).resolve().parents[2] / "native/android/app/build.gradle.kts")
+        with patch.object(Path, "read_text", return_value=gradle):
+            self.assertEqual(validation.expected_apk_version(), ("123", "4.5.6-test"))
+        invalid = [
+            gradle.replace("versionCode = 123", "versionCode = nextVersion"),
+            gradle.replace("versionCode = 123", "versionCode = 123\nversionCode = 124"),
+            gradle.replace('versionName = "4.5.6"', ''),
+            gradle.replace('versionNameSuffix = "-test"', '// versionNameSuffix = "-test"'),
+            gradle.replace('versionNameSuffix = "-test"', '/* versionNameSuffix = "-test" */'),
+            gradle.replace('create("privateTest")', 'create("anotherBuild")'),
+            gradle.replace('versionName = "4.5.6"', 'versionName = "$dynamicVersion"'),
+        ]
+        for source in invalid:
+            with self.subTest(source=source), patch.object(Path, "read_text", return_value=source), self.assertRaises(ValueError):
+                validation.expected_apk_version()
+        with patch.object(Path, "read_text", side_effect=FileNotFoundError), self.assertRaises(FileNotFoundError):
+            validation.expected_apk_version()
+
+    def test_wrong_or_unreadable_apk_versions_fail_before_dex_inspection(self):
+        for code, name in (("39", "1.6.9-test"), ("40", "1.6.8-test"), ("40", "1.6.9"), ("", "1.6.9-test")):
+            with self.subTest(code=code, name=name), patch.object(validation, "expected_apk_version", return_value=("40", "1.6.9-test")), patch.object(validation.subprocess, "check_output", side_effect=["com.icarusalmighty.app.test", "false", code, name]) as inspect, self.assertRaises(ValueError):
+                validation.validate_apk("app.apk", "apkanalyzer", "https://private.onrender.com")
+            self.assertFalse(any(call.args[0][1] == "dex" for call in inspect.call_args_list))
+
     def test_only_real_separate_https_origins(self):
         self.assertEqual(validation.validated_origin("https://icarus-private-example.onrender.com/"), "https://icarus-private-example.onrender.com")
         invalid = ["", None, "https://icarusassistant.com", "https://x.icarusassistant.com",
@@ -144,6 +180,7 @@ class PrivateDeliveryTests(unittest.TestCase):
             self.assertEqual(len(requests), 2)
 
     def test_actual_apk_values_must_all_match_private_configuration(self):
+        version_code, version_name = validation.expected_apk_version()
         fields = "\n".join([
             '.field public static final ICARUS_WEB_URL:Ljava/lang/String; = "https://private.onrender.com"',
             '.field public static final UPDATE_NOTES_URL:Ljava/lang/String; = ""',
@@ -164,9 +201,9 @@ class PrivateDeliveryTests(unittest.TestCase):
                 code = code.replace("PRIVATE_TEST:Z = true", "PRIVATE_TEST:Z = false")
             if change == "scheme":
                 code = code.replace('= "icarus-test"', '= "icarus"')
-            with self.subTest(change=change), patch.object(validation.subprocess, "check_output", side_effect=[package, debug, code]), self.assertRaises(ValueError):
+            with self.subTest(change=change), patch.object(validation.subprocess, "check_output", side_effect=[package, debug, version_code, version_name, code]), self.assertRaises(ValueError):
                 validation.validate_apk("app.apk", "apkanalyzer", "https://private.onrender.com")
-        with patch.object(validation.subprocess, "check_output", side_effect=["com.icarusalmighty.app.test", "false", fields]):
+        with patch.object(validation.subprocess, "check_output", side_effect=["com.icarusalmighty.app.test", "false", version_code, version_name, fields]):
             validation.validate_apk("app.apk", "apkanalyzer", "https://private.onrender.com")
 
 

@@ -11,13 +11,16 @@ export function sameVoice(a,b) {return Boolean(a&&b)&&a.profile===b.profile&&a.v
 
 // Settings requests share the same dispatcher as Chat, diagnostics and the companion.
 // Only this request's acknowledgement can settle its UI; timeouts never claim a save.
-export function requestNativeSetting(action,args={},host=window,timeoutMs=35000) {
+export function requestNativeSetting(action,args={},host=window,timeoutMs=35000,{signal}={}) {
+  if(signal?.aborted)return Promise.reject(Error('Native request cancelled.'));
   const bridge=getNativeTransport(host);
   if(!bridge)return Promise.reject(Error('Open the installed Android app to change device settings.'));
   return new Promise((resolve,reject)=>{
     const requestId=crypto.randomUUID();let settled=false,unsubscribe=()=>{};
-    const finish=(data,error)=>{if(settled)return;settled=true;clearTimeout(timer);unsubscribe();error?reject(error):resolve(data);};
+    const finish=(data,error)=>{if(settled)return;settled=true;clearTimeout(timer);unsubscribe();signal?.removeEventListener('abort',abort);error?reject(error):resolve(data);};
+    const abort=()=>finish(null,Error('Native request cancelled. Check Android before retrying an action already sent.'));
     const timer=setTimeout(()=>finish(null,Error('Android did not confirm this request. Check the current settings before trying again.')),timeoutMs);
+    signal?.addEventListener('abort',abort,{once:true});
     unsubscribe=subscribeNative(host,'result',raw=>{
       let value;try{value=typeof raw==='string'?JSON.parse(raw):raw;}catch{return;}
       if(value?.requestId!==requestId)return;

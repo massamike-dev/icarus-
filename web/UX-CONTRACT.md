@@ -23,3 +23,15 @@ Listening requires the existing explicit hands-free consent and Android micropho
 Deleting a local model requires a named confirmation with the consequence and Cancel initially focused. Android's response determines completion. Download progress reflects actual bytes, and downloaded-but-unverified is distinct from ready. These controls do not promise automatic offline Chat or hands-free fallback.
 
 Use visible labels, semantic buttons, native slider/select keyboard behavior, bounded dialogs and inline recoverable errors. Keep the existing visual identity and focus styles. Browser/phone rendering and actual speech remain device acceptance checks, not conclusions inferred from DOM tests.
+
+## HUD controls
+
+`src/vehicle.jsx` uses the same inline status, button and dialog styles as Settings. `src/native-settings.js` owns correlated native requests for both surfaces, including bounded waits and optional cancellation on unmount. `src/hud-controls.js` validates action-specific acknowledgements. No new native callback owner is introduced.
+
+The installed bridge must advertise `hudControlVersion: 1` before these controls send HUD actions. XREAL is opt-in with named enable/disable confirmation; cancellation sends nothing. Enabling does not enable the microphone or confirm glasses connection. A launch acknowledgement confirms only Android accepted a launch, not that glasses rendered it. The bundled screen-fixed overlay and separate tracked Unity companion are distinct targets. Unknown telemetry and navigation never become sample data.
+
+Phone fallback remains independent of the XREAL toggle. A failed status read blocks XREAL launch but does not hide the phone HUD once native support is confirmed. Requests are never retried automatically. Success, malformed acknowledgement, timeout, duplicate input, old host and unmount are covered by HUD tests.
+
+## Private installer download
+
+`/test-download` retains the normal account sign-in gate and uses the existing restricted APK API. `src/private-download.js` verifies private-service identity, deployed commit, complete byte count, APK archive prefix and SHA-256 before offering a browser save. Tokens stay in authorization headers, never links. Cancellation, bounded waits, duplicate protection and unmount cleanup are owned by `src/private-download.jsx`. A browser save request is not an installation or a verified device upgrade. Public mode never offers the private installer.
