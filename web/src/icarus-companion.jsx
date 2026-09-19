@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {readDeviceStatus,subscribeNative} from './device-actions';
 import {getNativeTransport} from './native-transport.js';
+import {LilIcarus3D} from './lil-icarus-3d.jsx';
 import './companion.css';
 
 const preferenceKey='icarus_companion_preferences';
@@ -38,7 +39,7 @@ function voiceView(status,available){
 export function IcarusCompanion({onNavigate}){
   const[prefs,setPrefs]=useState(preferences),[open,setOpen]=useState(false),[tucked,setTucked]=useState(false);
   const[status,setStatus]=useState(null),[available,setAvailable]=useState(Boolean(getNativeTransport()));
-  const[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[imageFailed,setImageFailed]=useState(false);
+  const[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[modelReady,setModelReady]=useState(false),[modelFailed,setModelFailed]=useState(false),[posterFailed,setPosterFailed]=useState(false);
   const dock=useRef(null),figure=useRef(null),restore=useRef(null),pending=useRef(null),timeout=useRef(null),mounted=useRef(false);
   const currentStatus=useRef(null),visible=useRef(false),refresh=useRef(()=>{}),focusAfterHide=useRef(false);
   visible.current=!prefs.hidden&&!tucked;
@@ -118,6 +119,7 @@ export function IcarusCompanion({onNavigate}){
     catch{clearTimeout(timeout.current);pending.current=null;setBusy(false);updateStatus(null);setMessage('The Android connection is unavailable. Open Voice to check it.');}
   };
   const view=voiceView(status,available);
+  const motion=message.startsWith('Android accepted')?'confirm':view.phase;
   const hide=()=>{focusAfterHide.current=true;setOpen(false);setPrefs(p=>({...p,hidden:true}));};
   const show=()=>{focusAfterHide.current=true;setPrefs(p=>({...p,hidden:false}));};
   return <div ref={dock} className={`icarus-companion companion-${prefs.side}`} data-phase={view.phase} hidden={tucked}>
@@ -132,7 +134,9 @@ export function IcarusCompanion({onNavigate}){
         <div className="companion-tools"><button type="button" onClick={()=>setPrefs(p=>({...p,side:'left'}))} disabled={prefs.side==='left'} aria-label="Move ICARUS to the left">← Left</button><button type="button" onClick={()=>setPrefs(p=>({...p,side:'right'}))} disabled={prefs.side==='right'} aria-label="Move ICARUS to the right">Right →</button><button type="button" onClick={hide}>Hide ICARUS</button></div>
       </section>}
       <button ref={figure} type="button" className="companion-figure" onClick={()=>setOpen(value=>!value)} aria-label="Open ICARUS companion" aria-expanded={open} aria-controls="icarus-companion-panel" title="ICARUS companion">
-        {imageFailed?<span className="companion-fallback" aria-hidden="true">W</span>:<img src="/brand/icarus-companion.png" alt="" width="96" height="112" onError={()=>setImageFailed(true)}/>}
+        {!modelFailed&&<LilIcarus3D motion={motion} onReady={()=>setModelReady(true)} onError={()=>setModelFailed(true)}/>}
+        {!posterFailed&&(!modelReady||modelFailed)&&<img className="companion-poster" src="/brand/icarus-companion.png" alt="" width="96" height="112" onError={()=>setPosterFailed(true)}/>}
+        {posterFailed&&<span className="companion-fallback" aria-hidden="true">W</span>}
         <span className="companion-state-dot" aria-hidden="true"/>
       </button>
     </>}
