@@ -1,6 +1,8 @@
 import React from 'react';
 
-export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Glasses HUD stability · Android 1.6.10 Test</p><ul>
+export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Animated Lil ICARUS · Android 1.6.11 Test</p><ul>
+  <li>Replaced the flat companion with the rigged gold-and-blue Lil ICARUS model, optimized from 29 MB to 1.3 MB for mobile use.</li>
+  <li>Lil ICARUS now greets, idles, listens, thinks, speaks, confirms, reacts to errors, and walks while preparing. Reduced-motion and non-WebGL devices retain the static companion fallback.</li>
   <li>Stabilized the mirrored Driving HUD by synchronizing decorative and information-layer redraws, with static presentation between real data updates.</li>
   <li>Moved edge controls into a safer glasses viewing area and removed the repeated disconnected-OBD banner.</li>
   <li>Added parked setup for live Google Maps and Waze maneuver guidance, keeping the next instruction and distance in the central safe view while driving.</li>
