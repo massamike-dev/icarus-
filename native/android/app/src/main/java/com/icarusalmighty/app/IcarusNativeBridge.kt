@@ -148,6 +148,7 @@ class IcarusNativeBridge(
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
                 "open_driving_hud" -> openDrivingHud(requestId, args)
+                "open_navigation_access_settings" -> openNavigationAccessSettings(requestId)
                 "xreal_status" -> xrealStatus(requestId, args)
                 "open_xreal_hud" -> openXrealHud(requestId, args)
                 "close_xreal_hud" -> closeXrealHud(requestId, args)
@@ -549,6 +550,12 @@ class IcarusNativeBridge(
             .put("obdAddressProvided", address.isNotBlank()))
     }
 
+    private fun openNavigationAccessSettings(requestId: String?): String = launchForResult(
+        requestId,
+        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
+        JSONObject().put("opened", true),
+    )
+
     private fun xrealStatus(requestId: String?, args: JSONObject): String {
         when (SpatialHudTarget.parse(args.optString("target"))) {
             SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_status", requestId, args)
@@ -718,7 +725,7 @@ class IcarusNativeBridge(
             "get_voice_settings", "set_voice_settings", "preview_voice", "open_voice_settings", "open_app_settings", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
+            "obd_disconnect", "open_driving_hud", "open_navigation_access_settings", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",

@@ -20,7 +20,7 @@ const hudActions=new Set(['xreal_status','open_driving_hud','open_xreal_hud','cl
 
 // Mount the actual App, not an isolated Vehicle mock: this covers navigation,
 // the permanent companion and the shared native callback dispatcher together.
-async function mount({native=true,version=1,enabled=false,runtimeAvailable=true,reply}={}){
+async function mount({native=true,version=1,enabled=false,runtimeAvailable=true,capabilities=['local_model_status'],reply}={}){
   const dom=new JSDOM('<div id="root"></div>',{url:'https://icarus.test',runScripts:'outside-only',pretendToBeVisual:true});
   const w=dom.window,requests=[],errors=[],legacyRequests=[],observedResults=[];
   const previousResult=raw=>observedResults.push(raw);
@@ -31,7 +31,7 @@ async function mount({native=true,version=1,enabled=false,runtimeAvailable=true,
   w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
   w.addEventListener('error',event=>{errors.push(event.error);event.preventDefault();});
   w.fetch=async url=>({ok:true,json:async()=>url==='/api/me'?{user:{name:'Michael',email:'test@example.invalid'}}:url==='/api/memories'?{memories:[]}:url==='/api/capabilities'?{}:{conversations:[]}});
-  const status={connected:true,actionProtocolVersion:1,...(version==='missing'?{}:{hudControlVersion:version}),voiceSettings:{supported:true},capabilities:['local_model_status'],wakeWord:{enabled:true,permissionGranted:true,listenerState:'LISTENING',talkNowSupported:true,sensitivity:60}};
+  const status={connected:true,actionProtocolVersion:1,...(version==='missing'?{}:{hudControlVersion:version}),voiceSettings:{supported:true},capabilities,wakeWord:{enabled:true,permissionGranted:true,listenerState:'LISTENING',talkNowSupported:true,sensitivity:60}};
   const deliver=(request,result)=>w.ICARUS_NATIVE_RESULT?.(JSON.stringify({requestId:request.requestId,...result}));
   if(native){
     w.IcarusNative={postMessage:raw=>legacyRequests.push(raw)};
@@ -44,6 +44,7 @@ async function mount({native=true,version=1,enabled=false,runtimeAvailable=true,
         let data={};
         if(request.action==='xreal_status')data={provider:'xreal',enabled,runtimeAvailable};
         if(request.action==='open_driving_hud')data={opened:true};
+        if(request.action==='open_navigation_access_settings')data={opened:true};
         if(request.action==='open_xreal_hud')data={launched:true,runtimeAvailable,mode:request.arguments.mode};
         if(request.action==='close_xreal_hud')data={closeRequested:true};
         if(request.action==='meta_integration_set'){enabled=request.arguments.enabled;data={provider:'xreal',enabled};}
@@ -77,6 +78,18 @@ test('Vehicle mounts in App and launches the phone HUD once through the canonica
     await waitFor(()=>app.feedback().includes('accepted the phone HUD launch'));
     assert.match(app.feedback(),/require a connected OBD adapter/);
     assert.equal(open.disabled,false);assert.deepEqual(app.legacyRequests,[]);assert.deepEqual(app.errors,[]);
+  }finally{app.dom.window.close();}
+});
+
+test('route setup is capability-gated and opens Android notification access once',async()=>{
+  const app=await mount({capabilities:['local_model_status','open_navigation_access_settings']});
+  try{
+    assert.ok(app.button('Set up route access'));
+    await app.click('Set up route access');
+    await waitFor(()=>app.feedback().includes('opened notification access'));
+    assert.equal(app.requests.filter(value=>value.action==='open_navigation_access_settings').length,1);
+    assert.match(app.w.document.querySelector('#phone-hud-title').parentElement.textContent,/can expose notifications/);
+    assert.deepEqual(app.errors,[]);
   }finally{app.dom.window.close();}
 });
 

@@ -24,7 +24,10 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
         setEGLContextClientVersion(3)
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         setRenderer(volumeRenderer)
-        renderMode = RENDERMODE_CONTINUOUSLY
+        // A continuously animated GL layer beneath a separately animated Canvas
+        // layer tears and shimmers on mirrored glasses. Redraw only when real
+        // HUD state changes so both layers present a stable frame together.
+        renderMode = RENDERMODE_WHEN_DIRTY
         preserveEGLContextOnPause = true
     }
 
@@ -39,6 +42,7 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
                 rpmPulse = state.rpm?.let { it.coerceIn(0, 6000) / 6000f } ?: 0f
             )
         )
+        requestRender()
     }
 
     private data class VisualState(
@@ -52,7 +56,6 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
         private var program = 0
         private var width = 1
         private var height = 1
-        private var startNanos = System.nanoTime()
         private lateinit var vertices: FloatBuffer
 
         override fun onSurfaceCreated(gl: GL10?, config: EGLConfig?) {
@@ -65,7 +68,6 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .apply { put(QUAD); position(0) }
-            startNanos = System.nanoTime()
         }
 
         override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -79,7 +81,9 @@ class VolumetricHudSurface(context: Context) : GLSurfaceView(context) {
             if (program == 0) return
 
             val visual = state.get()
-            val elapsed = (System.nanoTime() - startNanos) / 1_000_000_000f
+            // Freeze decorative motion between telemetry updates. This is a
+            // display-stability choice, not simulated vehicle information.
+            val elapsed = 0f
             GLES30.glUseProgram(program)
 
             val position = GLES30.glGetAttribLocation(program, "a_position")

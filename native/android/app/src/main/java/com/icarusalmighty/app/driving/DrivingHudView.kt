@@ -8,7 +8,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
-import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.cos
@@ -47,11 +46,6 @@ class DrivingHudView(
         invalidate()
     }
 
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        postInvalidateOnAnimation()
-    }
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val w = width.toFloat()
@@ -68,8 +62,12 @@ class DrivingHudView(
         drawStatusPanel(canvas, w, h)
         drawFooter(canvas, w, h)
 
-        if (state.alertMessage != null) drawAlert(canvas, w, h, state.alertMessage!!)
-        postInvalidateOnAnimation()
+        // The disconnected OBD prompt is already shown once in the header.
+        // Repeating it as a large center alert crowds the optical safe area.
+        val alert = state.alertMessage?.takeIf {
+            state.obdConnected || !it.contains("CONNECT AN OBD ADAPTER", ignoreCase = true)
+        }
+        if (alert != null) drawAlert(canvas, w, h, alert)
     }
 
     private fun drawBackground(canvas: Canvas, w: Float, h: Float) {
@@ -102,7 +100,7 @@ class DrivingHudView(
         drawText(canvas, "SPATIAL HUD", w * .035f, h * .112f, h * .021f, cyan, false)
         drawText(canvas, state.sourceLabel, w * .035f, h * .145f, h * .017f, if (state.obdConnected) cyan else warning, false)
 
-        exitHit.set(w * .91f, h * .03f, w * .98f, h * .12f)
+        exitHit.set(w * .885f, h * .045f, w * .95f, h * .125f)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2f
         paint.color = Color.argb(150, 85, 210, 255)
@@ -141,32 +139,33 @@ class DrivingHudView(
     }
 
     private fun drawNavigation(canvas: Canvas, w: Float, h: Float) {
-        navigationHit.set(w * .35f, h * .055f, w * .68f, h * .25f)
+        // Route guidance owns the centered optical safe area during active driving.
+        navigationHit.set(w * .30f, h * .045f, w * .70f, h * .255f)
         glassPanel(canvas, navigationHit, state.navigationExpanded)
 
-        val distance = state.nextTurnDistanceFt
-        val road = state.nextRoad
-        if (distance != null && !road.isNullOrBlank()) {
+        val instruction = state.navigationInstruction ?: state.nextRoad
+        val distance = state.navigationDistance ?: state.nextTurnDistanceFt?.let { "$it ft" }
+        if (!instruction.isNullOrBlank()) {
             drawText(canvas, "NEXT TURN", navigationHit.left + w * .02f, navigationHit.top + h * .045f, h * .018f, dim, false)
-            drawText(canvas, "↱  $distance ft", navigationHit.left + w * .02f, navigationHit.top + h * .102f, h * .04f, white, true)
-            drawText(canvas, road, navigationHit.left + w * .02f, navigationHit.top + h * .145f, h * .021f, cyan, false)
+            drawFittedText(canvas, instruction.uppercase(), navigationHit.left + w * .02f, navigationHit.top + h * .105f, navigationHit.width() - w * .04f, h * .038f, h * .024f, white, true)
+            drawText(canvas, distance ?: "DISTANCE UNAVAILABLE", navigationHit.left + w * .02f, navigationHit.top + h * .158f, h * .024f, gold, true)
+            drawText(canvas, state.navigationSource ?: "LIVE NAVIGATION", navigationHit.right - w * .02f, navigationHit.top + h * .158f, h * .015f, cyan, false, Paint.Align.RIGHT)
             if (state.navigationExpanded) drawRouteRibbon(canvas, w, h)
         } else {
             drawText(canvas, "NAVIGATION", navigationHit.left + w * .02f, navigationHit.top + h * .052f, h * .019f, dim, false)
-            drawText(canvas, "NOT ACTIVE", navigationHit.left + w * .02f, navigationHit.top + h * .11f, h * .035f, white, true)
-            drawText(canvas, "Route data appears only from a live navigation source", navigationHit.left + w * .02f, navigationHit.top + h * .153f, h * .016f, dim, false)
+            drawText(canvas, if (state.navigationAccessGranted) "ROUTE STANDBY" else "ACCESS REQUIRED", navigationHit.left + w * .02f, navigationHit.top + h * .11f, h * .035f, white, true)
+            drawText(canvas, if (state.navigationAccessGranted) "Start guidance in Google Maps or Waze" else "Tap while parked to enable live route access", navigationHit.left + w * .02f, navigationHit.top + h * .158f, h * .016f, if (state.navigationAccessGranted) dim else warning, false)
         }
     }
 
     private fun drawRouteRibbon(canvas: Canvas, w: Float, h: Float) {
-        val pulse = ((SystemClock.uptimeMillis() % 1800L) / 1800f)
         paint.style = Paint.Style.STROKE
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeWidth = h * .016f
         paint.color = Color.argb(145, 35, 197, 255)
         path.reset()
         path.moveTo(w * .5f, h * .92f)
-        path.cubicTo(w * (.49f + pulse * .01f), h * .72f, w * .56f, h * .59f, w * .53f, h * .40f)
+        path.cubicTo(w * .5f, h * .72f, w * .56f, h * .59f, w * .53f, h * .40f)
         canvas.drawPath(path, paint)
         paint.strokeWidth = h * .004f
         paint.color = gold
@@ -179,7 +178,7 @@ class DrivingHudView(
         val cx = diagnosticsHit.centerX()
         val cy = diagnosticsHit.centerY()
         val radius = min(diagnosticsHit.width(), diagnosticsHit.height()) * .42f
-        val phase = (SystemClock.uptimeMillis() % 3200L) / 3200f * 360f
+        val phase = 215f
 
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2f
@@ -225,7 +224,7 @@ class DrivingHudView(
     }
 
     private fun drawEnginePanel(canvas: Canvas, w: Float, h: Float) {
-        val panel = RectF(w * .72f, h * .27f, w * .965f, h * .57f)
+        val panel = RectF(w * .71f, h * .28f, w * .94f, h * .55f)
         glassPanel(canvas, panel, state.diagnosticsExpanded)
         drawText(canvas, "ENGINE", panel.left + w * .018f, panel.top + h * .045f, h * .018f, dim, false)
         drawText(canvas, state.engineTempF?.let { "$it°F" } ?: "—", panel.left + w * .018f, panel.top + h * .11f, h * .052f, white, true)
@@ -238,7 +237,7 @@ class DrivingHudView(
     }
 
     private fun drawStatusPanel(canvas: Canvas, w: Float, h: Float) {
-        val panel = RectF(w * .72f, h * .62f, w * .965f, h * .83f)
+        val panel = RectF(w * .71f, h * .60f, w * .94f, h * .79f)
         glassPanel(canvas, panel, false)
         drawText(canvas, state.roadStatus, panel.left + w * .018f, panel.top + h * .06f, h * .025f, if (state.obdConnected) cyan else white, true)
         drawText(canvas, state.roadDetail, panel.left + w * .018f, panel.top + h * .11f, h * .016f, dim, false)
@@ -247,18 +246,18 @@ class DrivingHudView(
     }
 
     private fun drawFooter(canvas: Canvas, w: Float, h: Float) {
-        voiceHit.set(w * .76f, h * .87f, w * .95f, h * .96f)
+        voiceHit.set(w * .75f, h * .83f, w * .93f, h * .91f)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2.5f
         paint.color = if (state.listening) gold else cyan
         canvas.drawRoundRect(voiceHit, h * .03f, h * .03f, paint)
         drawText(canvas, if (state.listening) "LISTENING…" else "VOICE", voiceHit.centerX(), voiceHit.centerY() + h * .007f, h * .021f, if (state.listening) gold else white, true, Paint.Align.CENTER)
 
-        drawText(canvas, "LIVE DATA ONLY • NO SIMULATED TELEMETRY", w * .035f, h * .955f, h * .015f, dim, false)
+        drawText(canvas, "LIVE DATA ONLY • NO SIMULATED TELEMETRY", w * .05f, h * .93f, h * .014f, dim, false)
     }
 
     private fun drawAlert(canvas: Canvas, w: Float, h: Float, message: String) {
-        val box = RectF(w * .26f, h * .285f, w * .70f, h * .37f)
+        val box = RectF(w * .29f, h * .285f, w * .67f, h * .355f)
         paint.style = Paint.Style.FILL
         paint.color = Color.argb(215, 12, 22, 34)
         canvas.drawRoundRect(box, 18f, 18f, paint)
@@ -294,6 +293,27 @@ class DrivingHudView(
         textPaint.textAlign = align
         textPaint.typeface = android.graphics.Typeface.create("sans-serif", if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
         canvas.drawText(text, x, y, textPaint)
+    }
+
+    private fun drawFittedText(
+        canvas: Canvas,
+        text: String,
+        x: Float,
+        y: Float,
+        maxWidth: Float,
+        preferredSize: Float,
+        minimumSize: Float,
+        color: Int,
+        bold: Boolean,
+    ) {
+        var size = preferredSize
+        textPaint.typeface = android.graphics.Typeface.create("sans-serif", if (bold) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+        textPaint.textSize = size
+        while (size > minimumSize && textPaint.measureText(text) > maxWidth) {
+            size -= 1f
+            textPaint.textSize = size
+        }
+        drawText(canvas, text, x, y, size, color, bold)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
