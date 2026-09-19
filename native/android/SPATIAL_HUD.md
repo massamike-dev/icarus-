@@ -21,7 +21,8 @@ and an explicitly selected separate Unity/Beam Pro companion path.
 - Missing or unsupported PIDs render as an em dash (`—`).
 - There is no simulated or generated vehicle telemetry fallback.
 - OBD access remains read-only. The HUD does not issue ECU control, write, flash, or reprogramming commands.
-- Navigation values remain unavailable until a live navigation source is integrated; the HUD does not invent route or road-status data.
+- Navigation uses active Google Maps or Waze notification guidance after the driver grants Android notification access while parked. Missing, revoked, or unparsable guidance stays unavailable; the HUD never invents route or road-status data.
+- Rendering is event-driven. Decorative motion does not redraw continuously, keeping route text stable while real telemetry changes still request a frame.
 
 ## Interaction contract
 

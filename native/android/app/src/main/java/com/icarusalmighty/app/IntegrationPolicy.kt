@@ -36,6 +36,7 @@ object IntegrationPolicy {
         "obd_snapshot",
         "obd_disconnect",
         "open_driving_hud",
+        "open_navigation_access_settings",
         "find_videos",
         "compose_video_montage",
         "native_tts",

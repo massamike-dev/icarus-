@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -49,8 +50,8 @@ class DrivingHudActivity : AppCompatActivity() {
 
         volumeSurface = VolumetricHudSurface(this)
         hud = DrivingHudView(this, ::handleHudAction).apply {
-            // The Canvas HUD remains crisp while allowing the GPU volume field to read through it.
-            alpha = 0.90f
+            // Full opacity keeps text edges stable on mirrored optical displays.
+            alpha = 1f
         }
         val root = FrameLayout(this).apply {
             addView(
@@ -75,6 +76,7 @@ class DrivingHudActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         volumeSurface.onResume()
+        telemetry?.refreshNavigationAccess()
         WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
     }
 
@@ -132,7 +134,10 @@ class DrivingHudActivity : AppCompatActivity() {
             }
             HudAction.TOGGLE_NAVIGATION -> {
                 // Navigation remains glanceable while moving. Expansion requires a confirmed stopped speed.
-                if (!parkedControlsAllowed) parkedOnlyLockout() else controller.toggleNavigation()
+                if (!parkedControlsAllowed) parkedOnlyLockout()
+                else if (!latestState.navigationAccessGranted) {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } else controller.toggleNavigation()
             }
         }
     }

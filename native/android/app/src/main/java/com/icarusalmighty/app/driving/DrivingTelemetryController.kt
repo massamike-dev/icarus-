@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.ObdManager
 import java.util.concurrent.Executors
@@ -20,9 +21,12 @@ class DrivingTelemetryController(
     private val executor = Executors.newSingleThreadExecutor()
     private val running = AtomicBoolean(false)
     @Volatile private var state = DrivingHudState()
+    private var navigationSubscription: AutoCloseable? = null
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
+        navigationSubscription = NavigationFeed.subscribe(::applyNavigation)
+        refreshNavigationAccess()
         when {
             obdAddress.isNullOrBlank() -> mutate {
                 copy(
@@ -46,11 +50,26 @@ class DrivingTelemetryController(
         running.set(false)
         mainHandler.removeCallbacksAndMessages(null)
         executor.shutdownNow()
+        navigationSubscription?.close()
+        navigationSubscription = null
     }
 
     fun toggleDiagnostics() = mutate { copy(diagnosticsExpanded = !diagnosticsExpanded) }
     fun toggleNavigation() = mutate { copy(navigationExpanded = !navigationExpanded) }
     fun setListening(value: Boolean) = mutate { copy(listening = value) }
+
+    fun refreshNavigationAccess() = mutate {
+        val granted = NotificationManagerCompat.getEnabledListenerPackages(context).contains(context.packageName)
+        copy(
+            navigationAccessGranted = granted,
+            navigationInstruction = navigationInstruction.takeIf { granted },
+            navigationDistance = navigationDistance.takeIf { granted },
+            navigationSource = navigationSource.takeIf { granted },
+            nextRoad = nextRoad.takeIf { granted },
+            roadStatus = when { granted && navigationInstruction != null -> "ROUTE ACTIVE"; granted -> "ROUTE STANDBY"; else -> "NAVIGATION ACCESS OFF" },
+            roadDetail = when { granted && navigationInstruction != null -> navigationSource ?: "LIVE NAVIGATION"; granted -> "START GOOGLE MAPS OR WAZE NAVIGATION"; else -> "ENABLE IN ICARUS BEFORE DRIVING" },
+        )
+    }
 
     fun showEngineDetails() = mutate {
         val temp = engineTempF?.let { "$it°F" } ?: "—"
@@ -152,6 +171,18 @@ class DrivingTelemetryController(
     private fun hasBluetoothPermission(): Boolean =
         android.os.Build.VERSION.SDK_INT < 31 ||
             ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+
+    private fun applyNavigation(snapshot: NavigationSnapshot) = mutate {
+        copy(
+            navigationInstruction = snapshot.instruction,
+            navigationDistance = snapshot.distance,
+            navigationSource = snapshot.source,
+            nextRoad = snapshot.instruction,
+            roadStatus = if (snapshot.active) "ROUTE ACTIVE" else if (navigationAccessGranted) "ROUTE STANDBY" else "NAVIGATION ACCESS OFF",
+            roadDetail = if (snapshot.active) snapshot.source ?: "LIVE NAVIGATION" else if (navigationAccessGranted) "START GOOGLE MAPS OR WAZE NAVIGATION" else "ENABLE IN ICARUS BEFORE DRIVING",
+            navigationExpanded = snapshot.active || navigationExpanded,
+        )
+    }
 
     @Synchronized
     private fun mutate(block: DrivingHudState.() -> DrivingHudState) {

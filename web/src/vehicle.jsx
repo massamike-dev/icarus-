@@ -7,6 +7,7 @@ import './vehicle.css';
 
 export function VehicleControls(){
   const [link,setLink]=useState('checking'),[xreal,setXreal]=useState(null);
+  const [routeSetup,setRouteSetup]=useState(false);
   const [busy,setBusy]=useState(false),[feedback,setFeedback]=useState({text:'Checking HUD support on this device…',error:false});
   const [change,setChange]=useState(null);
   const life=useRef(null),inFlight=useRef(false),dialog=useRef(null),cancel=useRef(null),trigger=useRef(null);
@@ -21,6 +22,7 @@ export function VehicleControls(){
       if(session.signal.aborted)return;
       if(!status){setLink('unavailable');throw Error('Android did not confirm HUD support. Reopen ICARUS Test or refresh status.');}
       if(status.hudControlVersion!==1){setLink('older');setFeedback({text:'Install ICARUS Test 1.6.9 or later for these HUD controls. Your voice and companion controls remain available.',error:false});return;}
+      setRouteSetup(Array.isArray(status.capabilities)&&status.capabilities.includes('open_navigation_access_settings'));
       setLink('ready');
       const data=await requestNativeSetting('xreal_status',{},window,8000,{signal:session.signal});
       if(!validHudStatus(data))throw Error('XREAL status was incomplete. Refresh before opening the bundled HUD.');
@@ -63,7 +65,7 @@ export function VehicleControls(){
     <p className="eyebrow">VEHICLE & DISPLAY</p><h1 id="vehicle-title">Your HUD, within reach.</h1>
     <p className="vehicle-intro">Set up while parked. Choose the phone cockpit or ICARUS’s bundled display overlay.</p>
     <div className="hud-options" aria-busy={busy}>
-      <section className="hud-option" aria-labelledby="phone-hud-title"><p className="eyebrow">PHONE</p><h2 id="phone-hud-title">Driving HUD</h2><p>Open the landscape cockpit. Vehicle readings require a paired, connected OBD adapter; unavailable readings stay unavailable.</p><button className="primary" disabled={unavailable} onClick={()=>run('open_driving_hud')}>Open phone HUD</button></section>
+      <section className="hud-option" aria-labelledby="phone-hud-title"><p className="eyebrow">PHONE</p><h2 id="phone-hud-title">Driving HUD</h2><p>Open the landscape cockpit. The next maneuver, distance and road stay in the central safe view. Vehicle readings require a paired OBD adapter.</p>{routeSetup&&<><p className="hud-availability">Set up route access while parked. Android notification access can expose notifications to ICARUS; this route bridge filters for active Google Maps and Waze guidance.</p><div className="settings-actions"><button className="primary" disabled={unavailable} onClick={()=>run('open_driving_hud')}>Open phone HUD</button><button className="secondary" disabled={unavailable} onClick={()=>run('open_navigation_access_settings')}>Set up route access</button></div></>}{!routeSetup&&<button className="primary" disabled={unavailable} onClick={()=>run('open_driving_hud')}>Open phone HUD</button>}</section>
       <section className="hud-option" aria-labelledby="spatial-hud-title"><p className="eyebrow">XREAL · BUNDLED OVERLAY</p><h2 id="spatial-hud-title">Spatial HUD</h2><p>A screen-fixed assistant or vehicle display. This is not the separate tracked Unity companion, and does not verify glasses connection or provide live navigation by itself.</p><p className="hud-availability">{!xreal?'XREAL status not confirmed.':!xreal.enabled?'XREAL is off.':xreal.runtimeAvailable?'Bundled display available.':'Bundled display unavailable. Use the phone HUD.'}</p><div className="settings-actions"><button className="primary" disabled={!canLaunch} onClick={()=>run('open_xreal_hud',{mode:'assistant'})}>Open assistant HUD</button><button className="secondary" disabled={!canLaunch} onClick={()=>run('open_xreal_hud',{mode:'vehicle'})}>Open vehicle overlay</button><button className="secondary" disabled={unavailable} onClick={()=>run('close_xreal_hud')}>Close bundled HUD</button><button className="secondary" disabled={unavailable||!xreal} onClick={requestToggle}>{xreal?.enabled?'Disable XREAL':'Enable XREAL'}</button></div></section>
     </div>
     <div className="hud-feedback"><p className={`settings-status${feedback.error?' settings-error':''}`} role={feedback.error?'alert':'status'}>{feedback.text}</p><button className="secondary" disabled={busy} onClick={refresh}>Refresh HUD status</button></div>
