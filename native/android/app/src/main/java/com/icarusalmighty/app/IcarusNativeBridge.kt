@@ -20,12 +20,10 @@ import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.driving.DrivingHudActivity
-import com.icarusalmighty.app.spatial.SpatialTelemetryService
 import com.icarusalmighty.app.update.PlayUpdateManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
-import java.util.UUID
 import kotlin.math.roundToInt
 
 class IcarusNativeBridge(
@@ -441,53 +439,15 @@ class IcarusNativeBridge(
     }
 
     private fun xrealStatus(requestId: String?): String {
-        val launch = Intent(Intent.ACTION_VIEW, Uri.parse("icarus-spatial://launch"))
-            .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
-        val installed = context.packageManager.resolveActivity(launch, 0) != null
-        return ok(requestId, JSONObject()
-            .put("installed", installed)
-            .put("package", SpatialTelemetryService.COMPANION_PACKAGE)
-            .put("host", "beam_pro")
-            .put("tracking", "3dof")
-            .put("liveTelemetryOnly", true))
+        return metaWearables.execute("meta_xreal_status", requestId, JSONObject())
     }
 
     private fun openXrealHud(requestId: String?, args: JSONObject): String {
-        if (Build.VERSION.SDK_INT >= 31) {
-            requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
-            requirePermission(Manifest.permission.BLUETOOTH_SCAN)
-        }
-        val address = firstString(args, "obdAddress", "address").trim()
-        if (address.isBlank()) return error(requestId, "missing_device_address", "Select a live OBD adapter before opening the XREAL HUD.")
-        val token = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "")
-        val launch = Intent(Intent.ACTION_VIEW, Uri.Builder()
-            .scheme("icarus-spatial").authority("launch")
-            .appendQueryParameter("port", SpatialTelemetryService.PORT.toString())
-            .appendQueryParameter("token", token).build())
-            .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
-        if (context.packageManager.resolveActivity(launch, 0) == null) {
-            return error(requestId, "xreal_companion_not_installed", "Install the ICARUS XREAL companion on Beam Pro before opening the Spatial HUD.")
-        }
-        obd.disconnect()
-        context.stopService(Intent(context, SpatialTelemetryService::class.java).setAction(SpatialTelemetryService.ACTION_STOP))
-        ContextCompat.startForegroundService(context, Intent(context, SpatialTelemetryService::class.java)
-            .setAction(SpatialTelemetryService.ACTION_START)
-            .putExtra(SpatialTelemetryService.EXTRA_OBD_ADDRESS, address)
-            .putExtra(SpatialTelemetryService.EXTRA_TOKEN, token))
-        return try {
-            activity.runOnUiThread { activity.startActivity(launch) }
-            ok(requestId, JSONObject().put("opened", true).put("host", "beam_pro")
-                .put("tracking", "3dof").put("liveTelemetryRequired", true)
-                .put("port", SpatialTelemetryService.PORT))
-        } catch (e: Exception) {
-            context.stopService(Intent(context, SpatialTelemetryService::class.java).setAction(SpatialTelemetryService.ACTION_STOP))
-            error(requestId, "xreal_launch_failed", e.message)
-        }
+        return metaWearables.execute("meta_xreal_launch", requestId, args)
     }
 
     private fun closeXrealHud(requestId: String?): String {
-        context.stopService(Intent(context, SpatialTelemetryService::class.java).setAction(SpatialTelemetryService.ACTION_STOP))
-        return ok(requestId, JSONObject().put("telemetryStopped", true))
+        return ok(requestId, JSONObject().put("closed", true))
     }
 
     private fun resolvePhone(args: JSONObject): String? {

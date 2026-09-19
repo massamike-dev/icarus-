@@ -1,6 +1,8 @@
 // Native voice runs in a foreground service. The web app supplies authentication,
 // explicit opt-in controls, and a compatibility receiver for pre-36 hosts.
-const request = (action, args={}) => window.IcarusNative?.postMessage(JSON.stringify({action,arguments:args,requestId:crypto.randomUUID()}));
+import {getNativeTransport} from './native-transport.js';
+
+const request = (action, args={}) => getNativeTransport()?.postMessage(JSON.stringify({action,arguments:args,requestId:crypto.randomUUID()}));
 export function syncVoiceSession() { request('configure_voice_session',{token:localStorage.getItem('icarus_token')||''}); }
 export function installVoiceControls() {
   window.addEventListener('icarus-native-command', async event => {
@@ -14,5 +16,5 @@ export function installVoiceControls() {
   Storage.prototype.setItem=function(key,value){originalSet.call(this,key,value);if(this===localStorage&&key==='icarus_token')syncVoiceSession()};
   Storage.prototype.removeItem=function(key){originalRemove.call(this,key);if(this===localStorage&&key==='icarus_token'){request('session_logout');syncVoiceSession()}};
   // Bridge is installed asynchronously after page load.
-  let tries=0;const timer=setInterval(()=>{if(window.IcarusNative?.postMessage){syncVoiceSession();clearInterval(timer)}else if(++tries>=30)clearInterval(timer)},500);
+  let tries=0;const timer=setInterval(()=>{if(getNativeTransport()){syncVoiceSession();clearInterval(timer)}else if(++tries>=30)clearInterval(timer)},500);
 }

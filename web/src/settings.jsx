@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {getNativeTransport} from './native-transport.js';
 
 export class ScreenBoundary extends React.Component {
   state = {failed:false};
@@ -10,13 +11,13 @@ export class ScreenBoundary extends React.Component {
 }
 
 export function VoiceControls() {
-  const [available,setAvailable]=useState(Boolean(window.IcarusNative?.postMessage));
+  const [available,setAvailable]=useState(Boolean(getNativeTransport()));
   const [message,setMessage]=useState('');
   const [busy,setBusy]=useState(false);
   const [status,setStatus]=useState(null);
   const dialog=useRef(null), cancel=useRef(null), pending=useRef(null), timeout=useRef(null);
   useEffect(()=>{
-    const refresh=()=>setAvailable(Boolean(window.IcarusNative?.postMessage));
+    const refresh=()=>setAvailable(Boolean(getNativeTransport()));
     const timer=setInterval(refresh,1000);
     const previousResult=window.ICARUS_NATIVE_RESULT, previousStatus=window.ICARUS_NATIVE_STATUS;
     const result=raw=>{
@@ -38,15 +39,16 @@ export function VoiceControls() {
   },[]);
   const send=(action,args={})=>{
     if(busy)return;
-    if(!window.IcarusNative?.postMessage){setAvailable(false);setMessage('Open the installed Android app to use these controls.');return;}
+    const transport=getNativeTransport();
+    if(!transport){setAvailable(false);setMessage('Open the installed Android app to use these controls.');return;}
     const requestId=crypto.randomUUID();pending.current=requestId;setBusy(true);setMessage('Waiting for Android…');
     timeout.current=setTimeout(()=>{pending.current=null;setBusy(false);setMessage('Android did not confirm the request. Check its notification, then try again.');},5000);
-    try { window.IcarusNative.postMessage(JSON.stringify({action,arguments:args,requestId})); }
+    try { transport.postMessage(JSON.stringify({action,arguments:args,requestId})); }
     catch {clearTimeout(timeout.current);pending.current=null;setBusy(false);setMessage('Android connection is unavailable. Reopen ICARUS and try again.');}
   };
   const check=()=>{
     setStatus(null);
-    try {window.IcarusNative.postMessage(JSON.stringify({bridgeRequest:'status',requestId:crypto.randomUUID()}));setMessage('Status requested. If no status appears, reopen ICARUS and try again.');}
+    try {getNativeTransport()?.postMessage(JSON.stringify({bridgeRequest:'status',requestId:crypto.randomUUID()}));setMessage('Status requested. If no status appears, reopen ICARUS and try again.');}
     catch {setMessage('Android connection is unavailable. Reopen ICARUS and try again.');}
   };
   return <div className="voice-controls">
