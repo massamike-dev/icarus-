@@ -1,14 +1,17 @@
 {
-  "versionCode": 37,
-  "versionName": "1.6.6",
+  "versionCode": 42,
+  "versionName": "1.6.11",
   "releaseDate": "2026-09-19",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.6.6-test/ICARUS-latest.apk",
-  "sha256": "c348e7943fb33214ef1c718cbecac2bae26ad9e6fd440384866d4813ada88b7f",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.6.11-test/ICARUS-latest.apk",
+  "sha256": "0936b1cbea1e2bb93bb428d80092a58ac72d37f65a5685de2d4711d7bd44e054",
   "patchNotes": [
-    "Made native/android the canonical ICARUS Android app.",
-    "Added unit-tested optional Meta and XREAL integration gating.",
-    "Kept phone Driving Mode available when wearables are disabled or unavailable.",
-    "Added phone GPS capability and documented privacy/permission behavior.",
-    "Preserved signed in-place updates without uninstalling."
+    "Fixed installed Android apps incorrectly reporting Web mode and disabling voice controls.",
+    "Added reviewed Chat phone actions with clear Android results and exact target matching.",
+    "Connected cloud voice turns to the selected Chat conversation; temporary mode excludes saved history and Memory.",
+    "Added read-only web search with source links when supported by the configured provider.",
+    "Saved device-reported action outcomes and made completed or cancelled turn retries non-executable.",
+    "Fixed Settings navigation, reduced empty Chat space, and retained failed request drafts.",
+    "Hardened session changes and late callbacks so old replies cannot restore an abandoned conversation.",
+    "Failed result uploads can remain unconfirmed; offline voice commands are outside cloud history."
   ]
 }
