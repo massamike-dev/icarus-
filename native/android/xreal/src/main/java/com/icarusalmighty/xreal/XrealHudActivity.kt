@@ -16,6 +16,8 @@ import android.os.Bundle
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import androidx.core.content.ContextCompat
+import java.lang.ref.WeakReference
 import kotlin.math.min
 
 /**
@@ -44,12 +46,9 @@ class XrealHudActivity : Activity() {
         enterImmersiveMode()
 
         val filter = IntentFilter(XrealModeController.ACTION_UPDATE_XREAL)
-        if (Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(stateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("DEPRECATION")
-            registerReceiver(stateReceiver, filter)
-        }
+        ContextCompat.registerReceiver(this, stateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        currentActivity = WeakReference(this)
+        if (session.activityCreated()) finish()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -57,11 +56,28 @@ class XrealHudActivity : Activity() {
         setIntent(intent)
         hudView.mode = intent.toMode()
         hudView.update(intent.toHudState())
+        if (session.activityCreated()) finish()
     }
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(stateReceiver) }
+        if (currentActivity?.get() === this) {
+            currentActivity = null
+            session.activityDestroyed()
+        }
         super.onDestroy()
+    }
+
+    companion object {
+        internal val session = XrealHudSession()
+        private var currentActivity: WeakReference<XrealHudActivity>? = null
+
+        /** Called only on the main thread; never retains an Activity past destruction. */
+        internal fun requestClose(): Boolean {
+            val requested = session.requestClose()
+            currentActivity?.get()?.takeUnless { it.isFinishing || it.isDestroyed }?.finish()
+            return requested
+        }
     }
 
     private fun enterImmersiveMode() {
@@ -168,8 +184,8 @@ private class XrealHudView(context: Context) : View(context) {
     }
 
     private fun drawVehicle(canvas: Canvas, w: Float, h: Float) {
-        val instruction = state.navigationInstruction?.takeIf { it.isNotBlank() } ?: "ROUTE READY"
-        drawTurnCue(canvas, instruction, w / 2f - 355f, 216f)
+        val instruction = state.navigationInstruction?.takeIf { it.isNotBlank() } ?: "NAVIGATION UNAVAILABLE"
+        if (!state.navigationInstruction.isNullOrBlank()) drawTurnCue(canvas, instruction, w / 2f - 355f, 216f)
         drawFittedText(canvas, instruction.uppercase(), w / 2f, 205f, w * 0.55f, 40f, 28f, cyan)
         state.navigationDistance?.takeIf { it.isNotBlank() }?.let {
             label(canvas, it.uppercase(), w / 2f, 260f, 26f, gold, Paint.Align.CENTER)
@@ -178,7 +194,7 @@ private class XrealHudView(context: Context) : View(context) {
             label(canvas, "ETA ${it.uppercase()}", w / 2f, 298f, 20f, dimCyan, Paint.Align.CENTER)
         }
 
-        drawHeadingTape(canvas, state.heading, w / 2f, 350f)
+        if (!state.heading.isNullOrBlank()) drawHeadingTape(canvas, state.heading, w / 2f, 350f)
 
         val speed = state.speedMph?.coerceIn(0, 199)
         label(canvas, speed?.toString() ?: "—", w / 2f, h / 2f + 105f, 178f, Color.WHITE, Paint.Align.CENTER)
@@ -272,7 +288,7 @@ private class XrealHudView(context: Context) : View(context) {
 
     private fun drawHeadingTape(canvas: Canvas, heading: String?, centerX: Float, baseline: Float) {
         val labels = listOf("W", "NW", "N", "NE", "E", "SE", "S", "SW")
-        val selected = heading?.trim()?.uppercase()?.let { value -> labels.indexOfFirst { it == value } }?.takeIf { it >= 0 } ?: 2
+        val selected = heading?.trim()?.uppercase()?.let { value -> labels.indexOfFirst { it == value } }?.takeIf { it >= 0 } ?: return
         val spacing = 78f
         for (offset in -2..2) {
             val index = (selected + offset + labels.size) % labels.size

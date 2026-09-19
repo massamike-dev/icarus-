@@ -1,0 +1,40 @@
+/* Foreground companion uses the app's canonical color tokens; the figure itself
+   carries the gold identity. Native top-layer consent dialogs stay above it. */
+.icarus-companion{--companion-layer:3;position:fixed;z-index:var(--companion-layer);bottom:max(18px,env(safe-area-inset-bottom));width:96px;max-width:calc(100vw - 24px);isolation:isolate;pointer-events:none;color:var(--white)}
+.icarus-companion[hidden]{display:none}
+.companion-right{right:max(12px,env(safe-area-inset-right))}
+.companion-left{left:max(248px,env(safe-area-inset-left))}
+.icarus-companion button,.companion-panel{pointer-events:auto}
+.icarus-companion button{font:inherit;min-height:44px;max-width:100%;border-radius:8px;cursor:pointer;touch-action:manipulation}
+.icarus-companion button:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.icarus-companion button:disabled{cursor:default;opacity:.55}
+.companion-figure{position:relative;display:grid;place-items:center;width:96px;height:112px;padding:0;border:0;background:transparent}
+.companion-model{position:absolute;inset:0;display:block;filter:drop-shadow(0 3px 7px var(--ink));transition:filter .18s ease}
+.companion-canvas{display:block;width:100%;height:100%;object-fit:contain}
+.companion-poster{display:block;width:auto;max-width:96px;height:112px;object-fit:contain;filter:drop-shadow(0 3px 7px var(--ink));transform-origin:center bottom}
+.companion-figure:hover .companion-model,.companion-figure:hover .companion-poster{filter:drop-shadow(0 0 7px var(--sky))}
+.companion-fallback{display:grid;place-items:center;width:52px;height:62px;border:1px solid var(--focus);border-radius:20px 20px 26px 26px;background:var(--panel);color:var(--focus);font-family:'Barlow Condensed',sans-serif;font-size:34px}
+.companion-state-dot{position:absolute;width:8px;height:8px;border:1px solid var(--ink);border-radius:50%;right:12px;bottom:8px;background:var(--steel)}
+.icarus-companion[data-phase="listening"] .companion-state-dot,.icarus-companion[data-phase="speaking"] .companion-state-dot{background:var(--sky)}
+.icarus-companion[data-phase="error"] .companion-state-dot{background:var(--ember)}
+.companion-panel{position:absolute;bottom:calc(100% + 8px);width:min(286px,calc(100vw - 24px));max-height:calc(100dvh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--focus);border-radius:12px;padding:12px;box-shadow:0 12px 36px var(--ink);overflow-wrap:anywhere}
+.companion-right .companion-panel{right:0}
+.companion-left .companion-panel{left:0}
+.companion-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.companion-heading h2{font-family:'Barlow Condensed',sans-serif;letter-spacing:.12em;font-size:24px;margin:0;color:var(--focus)}
+.companion-close{width:44px;border:0;background:transparent;color:var(--steel);font-size:24px!important}
+.companion-close:hover,.companion-voice:hover{color:var(--white);background:var(--panel2)}
+.companion-status,.companion-feedback,.companion-help{font-size:13px;line-height:1.5;margin:8px 0 12px}
+.companion-help{color:var(--steel)}
+.companion-talk{display:block;width:100%;padding:10px 14px;border:1px solid var(--focus);background:var(--focus);color:var(--ink);font-weight:700!important}
+.companion-talk:hover:enabled{background:var(--white)}
+.companion-voice{display:block;width:100%;margin-top:4px;border:0;background:transparent;color:var(--sky);font-size:13px!important}
+.companion-tools{display:flex;flex-wrap:wrap;gap:4px;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.companion-tools button{flex:1 1 auto;padding:6px 8px;border:1px solid var(--line);background:var(--panel2);color:var(--white);font-size:11px}
+.companion-tools button:hover:enabled{border-color:var(--steel)}
+.companion-restore{display:block;width:92px;min-height:44px;border:1px solid var(--line);background:var(--panel);color:var(--focus);font-family:'Barlow Condensed',sans-serif!important;letter-spacing:.1em;font-size:14px!important}
+.companion-restore:hover{border-color:var(--focus)}
+@media(max-width:850px){.icarus-companion{bottom:calc(80px + env(safe-area-inset-bottom))}.companion-left{left:max(12px,env(safe-area-inset-left))}.companion-panel{max-height:calc(100dvh - 222px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
+@media(max-height:500px){.companion-figure,.companion-poster{height:64px}.companion-panel{max-height:calc(100dvh - 174px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){.companion-model,.companion-poster{transition:none}}
+@media(forced-colors:active){.companion-panel,.companion-restore,.companion-fallback{border:1px solid CanvasText}.companion-state-dot{forced-color-adjust:none}}

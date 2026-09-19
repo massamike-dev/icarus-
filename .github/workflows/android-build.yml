@@ -22,6 +22,8 @@ on:
 
 jobs:
   debug-apk:
+    # Private test builds are delivered only through the restricted draft-release workflow.
+    if: github.ref != 'refs/heads/work/icarus-private-test' && github.head_ref != 'work/icarus-private-test'
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -191,11 +193,14 @@ jobs:
               "downloadUrl": os.environ["APK_URL"],
               "sha256": os.environ["SHA256"],
               "patchNotes": [
-                  "Made native/android the canonical ICARUS Android app.",
-                  "Added unit-tested optional Meta and XREAL integration gating.",
-                  "Kept phone Driving Mode available when wearables are disabled or unavailable.",
-                  "Added phone GPS capability and documented privacy/permission behavior.",
-                  "Preserved signed in-place updates without uninstalling."
+                  "Fixed installed Android apps incorrectly reporting Web mode and disabling voice controls.",
+                  "Added reviewed Chat phone actions with clear Android results and exact target matching.",
+                  "Connected cloud voice turns to the selected Chat conversation; temporary mode excludes saved history and Memory.",
+                  "Added read-only web search with source links when supported by the configured provider.",
+                  "Saved device-reported action outcomes and made completed or cancelled turn retries non-executable.",
+                  "Fixed Settings navigation, reduced empty Chat space, and retained failed request drafts.",
+                  "Hardened session changes and late callbacks so old replies cannot restore an abandoned conversation.",
+                  "Failed result uploads can remain unconfirmed; offline voice commands are outside cloud history."
               ]
           }
 

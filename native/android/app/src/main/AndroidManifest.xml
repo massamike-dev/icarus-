@@ -5,6 +5,7 @@
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -25,6 +26,7 @@
 
     <queries>
         <intent><action android:name="android.speech.RecognitionService" /></intent>
+        <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -67,14 +69,14 @@
             android:launchMode="singleTop"
             android:screenOrientation="sensorLandscape">
             <intent-filter>
-                <action android:name="com.icarusalmighty.app.OPEN_DRIVING_HUD" />
+                <action android:name="${applicationId}.OPEN_DRIVING_HUD" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="icarus" android:host="driving" />
+                <data android:scheme="${icarus_link_scheme}" android:host="driving" />
             </intent-filter>
         </activity>
 
@@ -91,7 +93,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="icarus" />
+                <data android:scheme="${icarus_link_scheme}" />
             </intent-filter>
         </activity>
 
@@ -104,5 +106,15 @@
             android:name=".spatial.SpatialTelemetryService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <service
+            android:name=".driving.NavigationNotificationService"
+            android:exported="true"
+            android:label="ICARUS live route display"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

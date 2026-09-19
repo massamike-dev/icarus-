@@ -1,0 +1,168 @@
+name: Validate and privately deliver ICARUS Test
+
+on:
+  push:
+    branches: [work/icarus-private-test]
+    paths:
+      - "native/android/**"
+      - "web/**"
+      - "config/private-test.json"
+      - "tests/native-contract.test.mjs"
+      - "tests/private-hud-contract.test.mjs"
+      - ".github/scripts/validate-private-test.py"
+      - ".github/scripts/upload-private-apk.py"
+      - ".github/scripts/test_private_test_validation.py"
+      - ".github/workflows/android-private-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icarus-private-test-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-web:
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-private-test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Verify private delivery boundaries
+        working-directory: .
+        run: python3 .github/scripts/test_private_test_validation.py
+      - run: npm ci --include=dev
+      - run: npm test
+      - name: Verify native bridge source contract
+        working-directory: .
+        run: node --test tests/native-contract.test.mjs tests/private-hud-contract.test.mjs
+      - run: npm run build
+
+  validate:
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-private-test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    outputs:
+      ready: ${{ steps.target.outputs.ready }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Select validation target without inventing a deployment
+        id: target
+        run: python3 .github/scripts/validate-private-test.py --prepare-workflow
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+          cache-disabled: true
+      - name: Prepare account-free wake-word engine
+        run: bash native/android/scripts/prepare-sherpa-kws.sh
+      - name: Test and lint isolated Android variant without producing an APK
+        working-directory: native/android
+        run: |
+          gradle --no-daemon :app:testPrivateTestUnitTest :app:lintPrivateTest \
+            -PICARUS_TEST_WEB_URL="$ICARUS_TEST_WEB_URL" --stacktrace
+      - name: Explain missing delivery configuration on manual runs
+        if: github.event_name == 'workflow_dispatch' && steps.target.outputs.ready != 'true'
+        run: |
+          echo '::error::Unit tests and lint completed. Set config/private-test.json webUrl to the restricted test service and manually deploy this exact commit before requesting an APK.'
+          exit 1
+
+  signed-private-apk:
+    needs: [validate, validate-web]
+    if: needs.validate.outputs.ready == 'true' && github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-private-test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify restricted test service
+        run: python3 .github/scripts/validate-private-test.py --check-health --expected-commit "$GITHUB_SHA" --github-env
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+          cache-disabled: true
+      - name: Decode signing material without logging secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.ICARUS_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD_B64: ${{ secrets.ICARUS_SIGNING_PASSWORD_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
+        run: |
+          python3 - <<'PY'
+          import base64, os
+          from pathlib import Path
+          if not all(os.environ.get(name) for name in ('KEYSTORE_B64', 'SIGNING_PASSWORD_B64', 'KEY_ALIAS')):
+              raise SystemExit('Required ICARUS signing secrets are missing.')
+          def decode_secret(name):
+              return base64.b64decode(''.join(os.environ[name].split()), validate=True)
+          password = decode_secret('SIGNING_PASSWORD_B64').decode()
+          if not password or any(char in password for char in '\r\n\0'):
+              raise SystemExit('Signing password must be nonempty and contain no line breaks or NUL characters.')
+          print('::add-mask::' + password.replace('%', '%25'))
+          signing_file = Path(os.environ['RUNNER_TEMP']) / 'icarus-private-signing.jks'
+          signing_file.touch(mode=0o600, exist_ok=False)
+          signing_file.write_bytes(decode_secret('KEYSTORE_B64'))
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write('ICARUS_KEYSTORE_PASSWORD=' + password + '\n')
+              output.write('ICARUS_KEY_PASSWORD=' + password + '\n')
+          PY
+      - name: Prepare account-free wake-word engine
+        run: bash native/android/scripts/prepare-sherpa-kws.sh
+      - name: Assemble signed private test APK after successful validation
+        working-directory: native/android
+        env:
+          ICARUS_KEYSTORE_FILE: ${{ runner.temp }}/icarus-private-signing.jks
+          ICARUS_KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
+        run: |
+          gradle --no-daemon :app:assemblePrivateTest \
+            -PICARUS_TEST_WEB_URL="$ICARUS_TEST_WEB_URL" --stacktrace
+      - name: Verify APK signature, package, endpoint, and isolation
+        run: |
+          APK_PATH="native/android/app/build/outputs/apk/privateTest/app-privateTest.apk"
+          APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          APKANALYZER_PATH="$(find "$ANDROID_HOME/cmdline-tools" -name apkanalyzer -type f | sort -V | tail -n 1)"
+          test -n "$APKSIGNER_PATH"
+          test -n "$APKANALYZER_PATH"
+          "$APKSIGNER_PATH" verify --verbose --print-certs "$APK_PATH"
+          python3 .github/scripts/validate-private-test.py --apk "$APK_PATH" --apkanalyzer "$APKANALYZER_PATH"
+          cp "$APK_PATH" "$RUNNER_TEMP/ICARUS-Test.apk"
+      - name: Upload APK to restricted test service using GitHub OIDC
+        run: |
+          python3 .github/scripts/upload-private-apk.py \
+            --apk "$RUNNER_TEMP/ICARUS-Test.apk" --commit "$GITHUB_SHA"
+      - name: Remove signing material and private build files
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/icarus-private-signing.jks" "$RUNNER_TEMP/ICARUS-Test.apk"
+          rm -rf native/android/app/build/outputs/apk/privateTest
+          echo 'ICARUS_KEYSTORE_PASSWORD=' >> "$GITHUB_ENV"
+          echo 'ICARUS_KEY_PASSWORD=' >> "$GITHUB_ENV"

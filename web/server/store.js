@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-export const emptyStore = () => ({ users: [], sessions: [], conversations: [], messages: [], memories: [] });
+export const emptyStore = () => ({ users: [], sessions: [], conversations: [], messages: [], memories: [], turns: [], actionRequests: [] });
 
 export class JsonStore {
   constructor(file) { this.file = file; this.queue = Promise.resolve(); }

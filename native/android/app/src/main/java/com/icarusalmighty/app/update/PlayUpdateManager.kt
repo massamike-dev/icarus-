@@ -32,6 +32,10 @@ object PlayUpdateManager {
     fun checkOnLaunch(activity: Activity) = check(activity, silent = true)
 
     fun check(activity: Activity, silent: Boolean = false) {
+        if (BuildConfig.PRIVATE_TEST) {
+            if (!silent) toast(activity, "ICARUS Test updates are installed privately. Public updates are disabled.")
+            return
+        }
         val updateManager = obtainManager(activity)
         updateManager.appUpdateInfo
             .addOnSuccessListener { info ->
@@ -56,6 +60,7 @@ object PlayUpdateManager {
     }
 
     fun resumeIfNeeded(activity: Activity) {
+        if (BuildConfig.PRIVATE_TEST) return
         val updateManager = obtainManager(activity)
         updateManager.appUpdateInfo.addOnSuccessListener { info ->
             when {

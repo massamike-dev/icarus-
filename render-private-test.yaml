@@ -1,0 +1,33 @@
+# Separate test service. Do not apply this file to the production Blueprint.
+# Free test storage is ephemeral: a restart/redeploy can reset test history.
+services:
+  - type: web
+    name: icarus-private-test
+    runtime: node
+    plan: free
+    region: oregon
+    branch: work/icarus-private-test
+    rootDir: web
+    buildCommand: npm ci && npm test && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ICARUS_PRIVATE_TEST
+        value: "true"
+      - key: ICARUS_SESSION_SECRET
+        generateValue: true
+      - key: ICARUS_DATA_FILE
+        value: /tmp/icarus-private-test/icarus.json
+      - key: ICARUS_TEST_EMAIL
+        sync: false
+      - key: ICARUS_TEST_PASSWORD_HASH
+        sync: false
+      - key: ICARUS_AI_API_KEY
+        sync: false
+      - key: ICARUS_AI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: ICARUS_AI_MODEL
+        value: gpt-5-mini

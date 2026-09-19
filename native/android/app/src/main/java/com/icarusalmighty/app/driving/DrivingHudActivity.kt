@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -22,6 +23,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.icarusalmighty.app.WakeWordService
+import com.icarusalmighty.app.BuildConfig
 import java.util.Locale
 
 class DrivingHudActivity : AppCompatActivity() {
@@ -48,8 +50,8 @@ class DrivingHudActivity : AppCompatActivity() {
 
         volumeSurface = VolumetricHudSurface(this)
         hud = DrivingHudView(this, ::handleHudAction).apply {
-            // The Canvas HUD remains crisp while allowing the GPU volume field to read through it.
-            alpha = 0.90f
+            // Full opacity keeps text edges stable on mirrored optical displays.
+            alpha = 1f
         }
         val root = FrameLayout(this).apply {
             addView(
@@ -74,6 +76,7 @@ class DrivingHudActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         volumeSurface.onResume()
+        telemetry?.refreshNavigationAccess()
         WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
     }
 
@@ -131,7 +134,10 @@ class DrivingHudActivity : AppCompatActivity() {
             }
             HudAction.TOGGLE_NAVIGATION -> {
                 // Navigation remains glanceable while moving. Expansion requires a confirmed stopped speed.
-                if (!parkedControlsAllowed) parkedOnlyLockout() else controller.toggleNavigation()
+                if (!parkedControlsAllowed) parkedOnlyLockout()
+                else if (!latestState.navigationAccessGranted) {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } else controller.toggleNavigation()
             }
         }
     }
@@ -233,7 +239,7 @@ class DrivingHudActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_OBD_ADDRESS = "obd_address"
-        const val ACTION_OPEN = "com.icarusalmighty.app.OPEN_DRIVING_HUD"
+        const val ACTION_OPEN = BuildConfig.APPLICATION_ID + ".OPEN_DRIVING_HUD"
         private val OBD_NAME_MARKERS = listOf(
             "obd", "elm327", "elm 327", "obdlink", "vgate", "veepeak", "gearworks", "carista", "blue driver"
         )

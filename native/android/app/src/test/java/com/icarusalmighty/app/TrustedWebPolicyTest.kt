@@ -34,4 +34,13 @@ class TrustedWebPolicyTest {
         assertFalse(TrustedWebPolicy.isTrustedUrl("", base))
         assertFalse(TrustedWebPolicy.isTrustedUrl("https://icarusassistant.com", "not a url"))
     }
+
+    @Test fun privateOriginNeverGrantsProductionPagesNativeAccess() {
+        val testOrigin = "https://icarus-private-test.example"
+        assertTrue(TrustedWebPolicy.isTrustedUrl("$testOrigin/settings", testOrigin))
+        assertFalse(TrustedWebPolicy.isTrustedUrl(base, testOrigin))
+        assertFalse(TrustedWebPolicy.isTrustedUrl(testOrigin, base))
+        assertFalse(TrustedWebPolicy.isTrustedUrl("https://sub.icarus-private-test.example", testOrigin))
+        assertFalse(TrustedWebPolicy.isTrustedUrl("https://icarus-private-test.example.attacker.example", testOrigin))
+    }
 }

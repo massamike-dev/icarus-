@@ -11,19 +11,25 @@ import android.database.Cursor
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
+import android.media.AudioAttributes
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.AlarmClock
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.driving.DrivingHudActivity
+import com.icarusalmighty.app.spatial.SpatialTelemetryService
 import com.icarusalmighty.app.update.PlayUpdateManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Locale
+import java.util.UUID
 import kotlin.math.roundToInt
 
 class IcarusNativeBridge(
@@ -35,36 +41,19 @@ class IcarusNativeBridge(
     private val obd = ObdManager(context)
     private val localModel = LocalModelManager(context)
     private val billing = PlayBillingManager(activity, resultDispatcher)
-    private var tts: TextToSpeech? = null
-    private var pendingSpeech: Triple<String, Float, Float>? = null
-
-    private fun configureIcarusVoice(engine: TextToSpeech, requestedRate: Float, requestedPitch: Float) {
-        val maleMarkers = listOf(
-            "male", "masculine", "david", "james", "john", "george", "ryan",
-            "arthur", "daniel", "mark", "alex", "tom", "oliver", "fred", "iom", "iob"
-        )
-        val femaleMarkers = listOf(
-            "female", "samantha", "victoria", "zira", "susan", "karen", "moira",
-            "tessa", "fiona", "serena", "allison", "ava", "catherine"
-        )
-        val preferred = engine.voices.orEmpty()
-            .filter { it.locale.language.equals("en", ignoreCase = true) }
-            .maxByOrNull { voice ->
-                val name = voice.name.lowercase(Locale.US)
-                val features = voice.features.orEmpty().joinToString(" ").lowercase(Locale.US)
-                var score = 0
-                if (voice.locale.country.equals("US", ignoreCase = true)) score += 40
-                if (!voice.isNetworkConnectionRequired) score += 20
-                if (maleMarkers.any { name.contains(it) || features.contains(it) }) score += 1000
-                if (femaleMarkers.any { name.contains(it) || features.contains(it) }) score -= 1000
-                score
-            }
-        if (preferred != null) engine.voice = preferred
-        engine.setSpeechRate(requestedRate.coerceIn(0.75f, 0.95f))
-        engine.setPitch(requestedPitch.coerceIn(0.68f, 0.84f))
+    private val speechHandler = Handler(Looper.getMainLooper())
+    private var voiceOperation: VoiceOperation? = null
+    @Volatile private var closed = false
+    private class VoiceOperation(val requestId: String, val text: String?, val preview: Boolean) {
+        val utteranceId = UUID.randomUUID().toString()
+        var engine: TextToSpeech? = null
+        var applied: VoicePreferences.Applied? = null
+        var timeout: Runnable? = null
+        var monitor: Runnable? = null
     }
 
     fun getStatus(): String = JSONObject(statusJson(context))
+        .put("hudControlVersion", 1)
         .put("installSource", if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             runCatching { context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName }.getOrNull() ?: "sideload"
         } else {
@@ -74,7 +63,8 @@ class IcarusNativeBridge(
         .put("wakeWord", JSONObject()
             .put("permissionGranted", ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
             .put("listenerState", WakeWordService.listenerState)
-            .put("enabled", WakeWordService.listenerState == "LISTENING")
+            .put("enabled", WakeWordService.isEnabled(context))
+            .put("sensitivity", context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE).getInt("sensitivity", 60).coerceIn(25, 90))
             .put("lastError", WakeWordService.lastError ?: JSONObject.NULL)
             .apply {
                 val diagnostics = WakeWordService.diagnostics()
@@ -96,8 +86,7 @@ class IcarusNativeBridge(
         return try {
             when (action) {
                 "configure_voice_session" -> {
-                    context.getSharedPreferences("icarus_session", Context.MODE_PRIVATE).edit()
-                        .putString("token", args.optString("token").take(4096)).apply()
+                    VoiceSessionStore.configure(context, args)
                     ok(requestId)
                 }
                 "open_app" -> openApp(requestId, args)
@@ -116,15 +105,26 @@ class IcarusNativeBridge(
                 "wake_word" -> wakeWord(requestId, args)
                 "wake_config" -> wakeConfig(requestId, args)
                 "wake_audio_test" -> ok(requestId, JSONObject(getStatus()).getJSONObject("wakeWord"))
+                "start_voice_turn" -> {
+                    if (WakeWordService.requestTurn()) ok(requestId, JSONObject().put("requestAccepted", true))
+                    else error(requestId, "voice_turn_unavailable", "Enable hands-free first and wait for the current voice turn to finish, then try Talk now.")
+                }
+                "get_voice_settings" -> startVoiceOperation(requestId)
+                "set_voice_settings" -> setVoiceSettings(requestId, args)
+                "preview_voice" -> startVoiceOperation(requestId, "Ready when you are. Steady, clear, and here to help.", preview = true)
+                "open_voice_settings" -> launchForResult(requestId, Intent("com.android.settings.TTS_SETTINGS"), JSONObject().put("opened", true))
+                "open_app_settings" -> launchForResult(requestId, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")), JSONObject().put("opened", true))
                 "speak_text" -> speakText(requestId, args)
                 "stop_speaking" -> stopSpeaking(requestId)
                 "session_logout" -> sessionLogout(requestId)
                 "check_subscription" -> {
+                    if (BuildConfig.PRIVATE_TEST) return error(requestId, "private_test_billing_disabled", "Google Play billing is unavailable in ICARUS Test.")
                     val id = requestId ?: return error(null, "missing_request_id")
                     billing.checkSubscription(id)
                     ""
                 }
                 "subscribe" -> {
+                    if (BuildConfig.PRIVATE_TEST) return error(requestId, "private_test_billing_disabled", "Google Play billing is unavailable in ICARUS Test.")
                     val id = requestId ?: return error(null, "missing_request_id")
                     val sku = firstString(args, "sku", "productId").trim()
                     if (sku.isBlank()) return error(id, "missing_subscription_product")
@@ -148,9 +148,10 @@ class IcarusNativeBridge(
                 "obd_snapshot" -> obdSnapshot(requestId)
                 "obd_disconnect" -> obdDisconnect(requestId)
                 "open_driving_hud" -> openDrivingHud(requestId, args)
-                "xreal_status" -> xrealStatus(requestId)
+                "open_navigation_access_settings" -> openNavigationAccessSettings(requestId)
+                "xreal_status" -> xrealStatus(requestId, args)
                 "open_xreal_hud" -> openXrealHud(requestId, args)
-                "close_xreal_hud" -> closeXrealHud(requestId)
+                "close_xreal_hud" -> closeXrealHud(requestId, args)
                 "update_xreal_hud" -> metaWearables.execute("meta_xreal_update", requestId, args)
                 else -> if (action.startsWith("meta_")) metaWearables.execute(action, requestId, args)
                     else error(requestId, "unsupported_action")
@@ -163,13 +164,9 @@ class IcarusNativeBridge(
     }
 
     fun close() {
+        closed = true
         obd.disconnect()
-        pendingSpeech = null
-        activity.runOnUiThread {
-            tts?.stop()
-            tts?.shutdown()
-            tts = null
-        }
+        activity.runOnUiThread { cancelVoiceOperation("voice_cancelled", "Speech stopped because the app closed.") }
         billing.close()
     }
 
@@ -179,16 +176,15 @@ class IcarusNativeBridge(
 
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val matches = context.packageManager.queryIntentActivities(launcher, 0)
-        val best = matches.firstOrNull {
+        val exact = matches.filter {
             it.loadLabel(context.packageManager).toString().lowercase(Locale.US) == target
-        } ?: matches.firstOrNull {
-            it.loadLabel(context.packageManager).toString().lowercase(Locale.US).contains(target)
-        } ?: return error(requestId, "app_not_found")
+        }
+        if (exact.size != 1) return error(requestId, "exact_app_name_required")
+        val best = exact.single()
 
         val launchIntent = context.packageManager.getLaunchIntentForPackage(best.activityInfo.packageName)
             ?: return error(requestId, "app_not_launchable")
-        activity.runOnUiThread { activity.startActivity(launchIntent) }
-        return ok(requestId, JSONObject().put("app", best.loadLabel(context.packageManager).toString()))
+        return launchForResult(requestId, launchIntent, JSONObject().put("app", best.loadLabel(context.packageManager).toString()))
     }
 
     private fun setAlarm(requestId: String?, args: JSONObject): String {
@@ -211,13 +207,12 @@ class IcarusNativeBridge(
             args.has("minutes") -> args.optInt("minutes") * 60
             else -> 0
         }
-        if (seconds <= 0) return error(requestId, "invalid_timer_duration")
+        if (seconds !in 1..86400) return error(requestId, "invalid_timer_duration")
         val intent = Intent(AlarmClock.ACTION_SET_TIMER)
             .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
             .putExtra(AlarmClock.EXTRA_MESSAGE, firstString(args, "label", "message").ifBlank { "ICARUS timer" })
             .putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("seconds", seconds))
+        return launchForResult(requestId, intent, JSONObject().put("seconds", seconds))
     }
 
     private fun setFlashlight(requestId: String?, args: JSONObject): String {
@@ -262,8 +257,7 @@ class IcarusNativeBridge(
         if (destination.isBlank()) return error(requestId, "missing_destination")
         val uri = Uri.parse("geo:0,0?q=${Uri.encode(destination)}")
         val intent = Intent(Intent.ACTION_VIEW, uri)
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("destination", destination))
+        return launchForResult(requestId, intent, JSONObject().put("destination", destination))
     }
 
     private fun battery(requestId: String?): String {
@@ -291,8 +285,7 @@ class IcarusNativeBridge(
         val number = resolvePhone(args) ?: return error(requestId, "contact_not_found")
         requirePermission(Manifest.permission.CALL_PHONE)
         val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${Uri.encode(number)}"))
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject().put("number", number).put("callStarted", true))
+        return launchForResult(requestId, intent, JSONObject().put("number", number).put("requestAccepted", true))
     }
 
     private fun sendSms(requestId: String?, args: JSONObject): String {
@@ -336,74 +329,194 @@ class IcarusNativeBridge(
     }
 
     private fun wakeConfig(requestId: String?, args: JSONObject): String {
-        val source = args.optString("microphoneSource", "automatic")
-            .takeIf { it in setOf("automatic", "phone", "bluetooth") } ?: "automatic"
-        val sensitivity = args.optInt("sensitivity", 60).coerceIn(25, 90)
-        context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE).edit()
-            .putString("microphone_source", source)
-            .putInt("sensitivity", sensitivity)
-            .putInt("timeout_seconds", args.optInt("timeoutSeconds", 30).coerceAtLeast(0))
-            .putBoolean("follow_up_mode", args.optBoolean("followUpMode", true))
-            .putBoolean("listen_on_screen_wake", args.optBoolean("listenOnScreenWake", true))
-            .putBoolean("incoming_calls", args.optBoolean("incomingCalls", true))
-            .putBoolean("active_during_calls", args.optBoolean("activeDuringCalls", false))
-            .apply()
-        return ok(requestId, JSONObject().put("saved", true).put("microphoneSource", source).put("sensitivity", sensitivity))
+        val preferences = context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE)
+        val source = if (args.has("microphoneSource")) args.optString("microphoneSource")
+            .takeIf { it in setOf("automatic", "phone", "bluetooth") }
+            ?: return error(requestId, "invalid_microphone_source")
+        else preferences.getString("microphone_source", "automatic") ?: "automatic"
+        val sensitivity = if (args.has("sensitivity")) args.optInt("sensitivity", 60).coerceIn(25, 90)
+            else preferences.getInt("sensitivity", 60).coerceIn(25, 90)
+        val edit = preferences.edit().putString("microphone_source", source).putInt("sensitivity", sensitivity)
+        // Preserve omitted settings. A sensitivity-only change must not reset microphone routing.
+        if (args.has("timeoutSeconds")) edit.putInt("timeout_seconds", args.optInt("timeoutSeconds", 30).coerceAtLeast(0))
+        listOf("followUpMode" to "follow_up_mode", "listenOnScreenWake" to "listen_on_screen_wake",
+            "incomingCalls" to "incoming_calls", "activeDuringCalls" to "active_during_calls").forEach { (argument, key) ->
+            if (args.has(argument)) edit.putBoolean(key, args.optBoolean(argument))
+        }
+        if (!edit.commit()) return error(requestId, "settings_not_saved", "Android could not save listening settings. Try again.")
+        return ok(requestId, JSONObject().put("saved", true).put("microphoneSource", source)
+            .put("sensitivity", sensitivity).put("appliesAfterRestart", WakeWordService.isEnabled(context)))
+    }
+
+    private fun setVoiceSettings(requestId: String?, args: JSONObject): String {
+        val previous = VoicePreferences.read(context)
+        val settings = try {
+            VoiceSettings.create(
+                args.optString("profile", previous.profile),
+                args.optString("voiceName", previous.voiceName),
+                if (args.has("rate")) args.optDouble("rate", Double.NaN).toFloat() else previous.rate,
+                if (args.has("pitch")) args.optDouble("pitch", Double.NaN).toFloat() else previous.pitch,
+            )
+        } catch (e: IllegalArgumentException) {
+            return error(requestId, "invalid_voice_settings", e.message)
+        }
+        if (!VoicePreferences.save(context, settings)) return error(requestId, "settings_not_saved", "Android could not save voice settings. Try again.")
+        return ok(requestId, VoicePreferences.summary(settings).put("saved", true))
     }
 
     private fun speakText(requestId: String?, args: JSONObject): String {
         val text = firstString(args, "text", "content").trim()
         if (text.isBlank()) return error(requestId, "missing_text")
-        val rate = args.optDouble("rate", 1.0).toFloat().coerceIn(0.5f, 1.5f)
-        val pitch = args.optDouble("pitch", 1.0).toFloat().coerceIn(0.5f, 1.5f)
-        pendingSpeech = Triple(text.take(12000), rate, pitch)
+        // The saved profile is authoritative for chat, preview and hands-free replies alike.
+        return startVoiceOperation(requestId, text.take(12000))
+    }
+
+    private fun turnIsBusy(): Boolean = WakeWordService.listenerState in setOf(
+        "PREPARING_VOICE", "INITIALIZING_VOICE", "CAPTURING", "AWAITING_CONFIRMATION", "INTERPRETING", "EXECUTING", "SPEAKING",
+    )
+
+    private fun startVoiceOperation(requestId: String?, text: String? = null, preview: Boolean = false): String {
+        val id = requestId ?: return error(null, "missing_request_id")
         activity.runOnUiThread {
-            val existing = tts
-            if (existing != null) {
-                configureIcarusVoice(existing, rate, pitch)
-                existing.speak(text, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
-            } else {
-                tts = TextToSpeech(context) { status ->
-                    if (status == TextToSpeech.SUCCESS) {
-                        pendingSpeech?.let { (queuedText, queuedRate, queuedPitch) ->
-                            tts?.let { engine ->
-                                configureIcarusVoice(engine, queuedRate, queuedPitch)
-                                engine.speak(queuedText, TextToSpeech.QUEUE_FLUSH, null, "icarus-native-speech")
-                            }
-                        }
-                    }
-                    pendingSpeech = null
-                }
+            if (closed) { resultDispatcher(error(id, "voice_unavailable", "The native app is closing.")); return@runOnUiThread }
+            if (voiceOperation != null || (text != null && turnIsBusy())) {
+                resultDispatcher(error(id, "voice_busy", "Wait for the current voice request to finish, then try again."))
+                return@runOnUiThread
             }
+            val operation = VoiceOperation(id, text, preview)
+            voiceOperation = operation
+            setVoiceTimeout(operation, 15000, "Android speech output did not initialize. Check Android text-to-speech settings.")
+            runCatching {
+                operation.engine = TextToSpeech(context) { status -> speechHandler.post {
+                    if (voiceOperation !== operation) return@post
+                    if (status != TextToSpeech.SUCCESS) {
+                        failVoiceOperation(operation, "voice_unavailable", "Android text-to-speech could not initialize. Check the installed speech engine.")
+                        return@post
+                    }
+                    prepareVoiceOperation(operation)
+                } }
+            }.onFailure { failVoiceOperation(operation, "voice_unavailable", "Android speech output could not start. Check text-to-speech settings.") }
         }
-        return ok(
-            requestId,
-            JSONObject()
-                .put("speaking", true)
-                .put("engine", "android_tts")
-                .put("profile", "icarus_deep_male")
-        )
+        return ""
+    }
+
+    private fun prepareVoiceOperation(operation: VoiceOperation) {
+        val engine = operation.engine ?: run {
+            failVoiceOperation(operation, "voice_unavailable", "Android speech engine is unavailable.")
+            return
+        }
+        val applied = runCatching { VoicePreferences.apply(context, engine) }.getOrElse {
+            failVoiceOperation(operation, "voice_unavailable", it.message ?: "Android could not prepare the selected voice.")
+            return
+        }
+        operation.applied = applied
+        if (operation.text == null) {
+            val result = runCatching { VoicePreferences.describe(engine, applied) }.getOrElse {
+                failVoiceOperation(operation, "voice_unavailable", "Android could not list installed voices. Check text-to-speech settings.")
+                return
+            }
+            finishVoiceOperation(operation, ok(operation.requestId, result))
+            return
+        }
+        if (turnIsBusy()) {
+            failVoiceOperation(operation, "voice_busy", "A hands-free command is active. Try the voice preview after it finishes.")
+            return
+        }
+        runCatching {
+            engine.setAudioAttributes(AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+            engine.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(id: String?) = Unit
+                override fun onDone(id: String?) { speechHandler.post {
+                    if (voiceOperation === operation && id == operation.utteranceId) finishVoiceOperation(operation,
+                        ok(operation.requestId, VoicePreferences.summary(applied.settings).put("spoken", true)
+                            .put("preview", operation.preview).put("engine", engine.defaultEngine ?: "android_tts")
+                            .put("activeVoiceName", applied.activeVoiceName)
+                            .apply { applied.message?.let { put("message", it) } }))
+                } }
+                @Deprecated("Platform callback") override fun onError(id: String?) { speechHandler.post {
+                    if (id == operation.utteranceId) failVoiceOperation(operation, "speech_failed", "Android could not play the voice. Check media volume and audio output.")
+                } }
+                override fun onError(id: String?, errorCode: Int) { speechHandler.post {
+                    if (id == operation.utteranceId) failVoiceOperation(operation, "speech_failed", when (errorCode) {
+                        TextToSpeech.ERROR_NOT_INSTALLED_YET -> "The selected voice has not finished downloading. Open Android text-to-speech settings."
+                        TextToSpeech.ERROR_NETWORK, TextToSpeech.ERROR_NETWORK_TIMEOUT -> "The selected voice needs a working internet connection. Choose an offline voice or reconnect."
+                        else -> "Android could not play the voice. Check media volume and text-to-speech settings."
+                    })
+                } }
+                override fun onStop(id: String?, interrupted: Boolean) { speechHandler.post {
+                    if (id == operation.utteranceId) failVoiceOperation(operation, "speech_interrupted", "Voice playback was interrupted. Try the preview again.")
+                } }
+            })
+            setVoiceTimeout(operation, if (operation.preview) 15000 else 120000, "Voice playback did not finish. Check media volume and text-to-speech settings.")
+            if (engine.speak(operation.text, TextToSpeech.QUEUE_FLUSH, null, operation.utteranceId) != TextToSpeech.SUCCESS) {
+                failVoiceOperation(operation, "speech_failed", "Android could not start voice playback. Check text-to-speech settings.")
+            } else {
+                // A command begun after the preview must keep control of the microphone and its own TTS.
+                operation.monitor = object : Runnable {
+                    override fun run() {
+                        if (voiceOperation !== operation) return
+                        if (turnIsBusy()) failVoiceOperation(operation, "voice_busy", "Preview stopped because a hands-free command started.")
+                        else speechHandler.postDelayed(this, 150)
+                    }
+                }.also { speechHandler.postDelayed(it, 150) }
+            }
+        }.onFailure { failVoiceOperation(operation, "speech_failed", "Android could not prepare voice playback. Check text-to-speech settings.") }
+    }
+
+    private fun setVoiceTimeout(operation: VoiceOperation, duration: Long, message: String) {
+        operation.timeout?.let { speechHandler.removeCallbacks(it) }
+        operation.timeout = Runnable { failVoiceOperation(operation, "voice_timeout", message) }
+            .also { speechHandler.postDelayed(it, duration) }
+    }
+
+    private fun failVoiceOperation(operation: VoiceOperation, code: String, message: String) {
+        val response = if (operation.text == null) ok(operation.requestId,
+            VoicePreferences.summary(VoicePreferences.read(context)).put("available", false)
+                .put("engine", operation.engine?.defaultEngine ?: "android_tts")
+                .put("voices", JSONArray()).put("message", message))
+        else error(operation.requestId, code, message)
+        finishVoiceOperation(operation, response)
+    }
+
+    private fun finishVoiceOperation(operation: VoiceOperation, response: String) {
+        if (voiceOperation !== operation) return
+        voiceOperation = null
+        operation.timeout?.let { speechHandler.removeCallbacks(it) }
+        operation.monitor?.let { speechHandler.removeCallbacks(it) }
+        runCatching { operation.engine?.stop() }
+        runCatching { operation.engine?.shutdown() }
+        operation.engine = null
+        resultDispatcher(response)
+    }
+
+    private fun cancelVoiceOperation(code: String, message: String) {
+        voiceOperation?.let { finishVoiceOperation(it, error(it.requestId, code, message)) }
     }
 
     private fun checkUpdate(requestId: String?): String {
+        if (BuildConfig.PRIVATE_TEST) return ok(requestId, JSONObject()
+            .put("checking", false)
+            .put("enabled", false)
+            .put("source", "private_install")
+            .put("message", "ICARUS Test updates are installed privately. Public updates are disabled."))
         activity.runOnUiThread { PlayUpdateManager.check(activity, silent = false) }
         return ok(requestId, JSONObject().put("checking", true).put("source", "google_play"))
     }
 
     private fun stopSpeaking(requestId: String?): String {
         WakeWordService.cancelTurn()
-        activity.runOnUiThread { tts?.stop() }
-        pendingSpeech = null
+        activity.runOnUiThread { cancelVoiceOperation("speech_cancelled", "Speech stopped by you.") }
         return ok(requestId, JSONObject().put("speaking", false))
     }
 
     private fun sessionLogout(requestId: String?): String {
+        VoiceSessionStore.clear(context)
         WakeWordService.setEnabled(context, false)
-        context.getSharedPreferences("icarus_session", Context.MODE_PRIVATE).edit().clear().apply()
         context.stopService(Intent(context, WakeWordService::class.java))
         obd.disconnect()
-        pendingSpeech = null
-        activity.runOnUiThread { tts?.stop() }
+        activity.runOnUiThread { cancelVoiceOperation("speech_cancelled", "Speech stopped because you signed out.") }
         return ok(requestId, JSONObject().put("nativeSessionCleared", true))
     }
 
@@ -431,27 +544,109 @@ class IcarusNativeBridge(
         val intent = Intent(context, DrivingHudActivity::class.java).apply {
             if (address.isNotBlank()) putExtra(DrivingHudActivity.EXTRA_OBD_ADDRESS, address)
         }
-        activity.runOnUiThread { activity.startActivity(intent) }
-        return ok(requestId, JSONObject()
+        return launchForResult(requestId, intent, JSONObject()
             .put("opened", true)
             .put("liveTelemetryRequired", true)
             .put("obdAddressProvided", address.isNotBlank()))
     }
 
-    private fun xrealStatus(requestId: String?): String {
-        return metaWearables.execute("meta_xreal_status", requestId, JSONObject())
+    private fun openNavigationAccessSettings(requestId: String?): String = launchForResult(
+        requestId,
+        Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
+        JSONObject().put("opened", true),
+    )
+
+    private fun xrealStatus(requestId: String?, args: JSONObject): String {
+        when (SpatialHudTarget.parse(args.optString("target"))) {
+            SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_status", requestId, args)
+            SpatialHudTarget.COMPANION -> Unit
+            null -> return error(requestId, "invalid_hud_target")
+        }
+        val launch = Intent(Intent.ACTION_VIEW, Uri.parse("icarus-spatial://launch"))
+            .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
+        val installed = context.packageManager.resolveActivity(launch, 0) != null
+        return ok(requestId, JSONObject()
+            .put("target", "companion")
+            .put("enabled", IntegrationPreferences(context).snapshot().xrealEnabled)
+            .put("installed", installed)
+            .put("package", SpatialTelemetryService.COMPANION_PACKAGE)
+            .put("host", "beam_pro")
+            .put("tracking", "unverified")
+            .put("glassesConnectionVerified", false)
+            .put("liveTelemetryOnly", true))
     }
 
     private fun openXrealHud(requestId: String?, args: JSONObject): String {
-        return metaWearables.execute("meta_xreal_launch", requestId, args)
+        when (SpatialHudTarget.parse(args.optString("target"))) {
+            SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_launch", requestId, args)
+            SpatialHudTarget.COMPANION -> Unit
+            null -> return error(requestId, "invalid_hud_target")
+        }
+        if (!IntegrationPreferences(context).snapshot().xrealEnabled) {
+            return error(requestId, "integration_disabled", "Enable XREAL Integration before opening the HUD.")
+        }
+        if (Build.VERSION.SDK_INT >= 31) {
+            requirePermission(Manifest.permission.BLUETOOTH_CONNECT)
+            requirePermission(Manifest.permission.BLUETOOTH_SCAN)
+        }
+        val address = firstString(args, "obdAddress", "address").trim()
+        if (address.isBlank()) return error(requestId, "missing_device_address", "Select a live OBD adapter before opening the XREAL HUD.")
+        val token = UUID.randomUUID().toString().replace("-", "") + UUID.randomUUID().toString().replace("-", "")
+        val launch = Intent(Intent.ACTION_VIEW, Uri.Builder()
+            .scheme("icarus-spatial").authority("launch")
+            .appendQueryParameter("port", SpatialTelemetryService.PORT.toString())
+            .appendQueryParameter("token", token).build())
+            .setPackage(SpatialTelemetryService.COMPANION_PACKAGE)
+        if (context.packageManager.resolveActivity(launch, 0) == null) {
+            return error(requestId, "xreal_companion_not_installed", "Install the ICARUS XREAL companion on Beam Pro before opening the Spatial HUD.")
+        }
+        activity.runOnUiThread {
+            if (closed || activity.isFinishing || activity.isDestroyed) {
+                resultDispatcher(error(requestId, "activity_unavailable"))
+                return@runOnUiThread
+            }
+            if (!IntegrationPreferences(context).snapshot().xrealEnabled) {
+                resultDispatcher(error(requestId, "integration_disabled"))
+                return@runOnUiThread
+            }
+            val response = try {
+                obd.disconnect()
+                context.stopService(Intent(context, SpatialTelemetryService::class.java))
+                ContextCompat.startForegroundService(context, Intent(context, SpatialTelemetryService::class.java)
+                    .setAction(SpatialTelemetryService.ACTION_START)
+                    .putExtra(SpatialTelemetryService.EXTRA_OBD_ADDRESS, address)
+                    .putExtra(SpatialTelemetryService.EXTRA_TOKEN, token))
+                activity.startActivity(launch)
+                ok(requestId, JSONObject().put("opened", true).put("launched", true)
+                    .put("launchRequested", true).put("target", "companion").put("host", "beam_pro")
+                    .put("tracking", "unverified").put("glassesConnectionVerified", false)
+                    .put("liveTelemetryRequired", true).put("port", SpatialTelemetryService.PORT))
+            } catch (e: Exception) {
+                context.stopService(Intent(context, SpatialTelemetryService::class.java))
+                error(requestId, "xreal_launch_failed", e.message)
+            }
+            resultDispatcher(response)
+        }
+        return ""
     }
 
-    private fun closeXrealHud(requestId: String?): String {
-        return ok(requestId, JSONObject().put("closed", true))
+    private fun closeXrealHud(requestId: String?, args: JSONObject): String {
+        when (SpatialHudTarget.parse(args.optString("target"))) {
+            SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_close", requestId, args)
+            SpatialHudTarget.COMPANION -> Unit
+            null -> return error(requestId, "invalid_hud_target")
+        }
+        val wasRunning = context.stopService(Intent(context, SpatialTelemetryService::class.java))
+        return ok(requestId, JSONObject().put("target", "companion")
+            .put("telemetryStopRequested", true).put("telemetryWasRunning", wasRunning)
+            .put("closeRequested", false)
+            .put("message", "The telemetry service was stopped. Close the separate companion app on Beam Pro."))
     }
 
     private fun resolvePhone(args: JSONObject): String? {
-        firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let { return it }
+        firstString(args, "phone", "number").takeIf { it.isNotBlank() }?.let {
+            return it.takeIf { number -> Regex("\\+?[0-9 ()-]{3,}").matches(number) }
+        }
         val contact = firstString(args, "recipient", "contact", "contactName", "name")
         if (contact.isBlank()) return null
         requirePermission(Manifest.permission.READ_CONTACTS)
@@ -461,14 +656,37 @@ class IcarusNativeBridge(
             cursor = context.contentResolver.query(
                 ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                 arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER),
-                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} LIKE ?",
-                arrayOf("%$contact%"),
+                "${ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME} = ? COLLATE NOCASE",
+                arrayOf(contact),
                 ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
             )
-            if (cursor?.moveToFirst() == true) cursor.getString(0) else null
+            val numbers = mutableSetOf<String>()
+            while (cursor?.moveToNext() == true) {
+                numbers.add(cursor.getString(0).replace(Regex("[^+0-9]"), ""))
+            }
+            numbers.singleOrNull()?.takeIf { Regex("\\+?[0-9]{3,}").matches(it) }
         } finally {
             cursor?.close()
         }
+    }
+
+    private fun launchForResult(requestId: String?, intent: Intent, data: JSONObject): String {
+        activity.runOnUiThread {
+            if (closed || activity.isFinishing || activity.isDestroyed) {
+                resultDispatcher(error(requestId, "activity_unavailable"))
+                return@runOnUiThread
+            }
+            val result = try {
+                activity.startActivity(intent)
+                ok(requestId, data.put("executionStatus", "request_accepted"))
+            } catch (e: SecurityException) {
+                error(requestId, "permission_required", e.message)
+            } catch (e: Exception) {
+                error(requestId, "target_app_unavailable", e.message)
+            }
+            resultDispatcher(result)
+        }
+        return ""
     }
 
     private fun requirePermission(permission: String) {
@@ -503,20 +721,26 @@ class IcarusNativeBridge(
 
     companion object {
         val CAPABILITIES = listOf(
-            "wake_word", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
+            "wake_word", "wake_config", "wake_audio_test", "start_voice_turn",
+            "get_voice_settings", "set_voice_settings", "preview_voice", "open_voice_settings", "open_app_settings", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "open_driving_hud", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
+            "obd_disconnect", "open_driving_hud", "open_navigation_access_settings", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",
-            "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_update"
-        )
+            "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_close", "meta_xreal_update"
+        ).filterNot { BuildConfig.PRIVATE_TEST && it in setOf("check_subscription", "subscribe", "check_update") }
 
         fun statusJson(context: Context): String = JSONObject()
             .put("connected", true)
             .put("platform", "android")
             .put("version", BuildConfig.VERSION_NAME)
+            .put("applicationId", BuildConfig.APPLICATION_ID)
+            .put("privateTest", BuildConfig.PRIVATE_TEST)
+            .put("actionProtocolVersion", 1)
+            .put("voiceSession", VoiceSessionStore.status(context))
+            .put("voiceSettings", VoicePreferences.summary(VoicePreferences.read(context)))
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
             .put("capabilities", JSONArray(CAPABILITIES))
             .toString()

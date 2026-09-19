@@ -1,0 +1,8 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["src"],
+  "locale": "en-US",
+  "ownership": {
+    "Select/Listbox": "native"
+  }
+}
