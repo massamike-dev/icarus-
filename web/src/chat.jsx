@@ -51,7 +51,7 @@ export function Chat(){
     const onVisible=()=>{if(document.visibilityState!=='hidden')refresh()};
     refresh();const timer=setInterval(refresh,5000);
     window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',onVisible);
-    return()=>{mounted.current=false;actionAbort.current?.abort();clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',onVisible);};
+    return()=>{mounted.current=false;animateCompanion(null);actionAbort.current?.abort();clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',onVisible);};
   },[]);
   const changeContext=(next,selectedMessages=[])=>{
     const context=selectChatContext(next);
@@ -71,7 +71,7 @@ export function Chat(){
       if(context.revision!==getChatContext().revision){animateCompanion(null);return;}
       if(!temporary)selectChatContext({conversationId:r.conversationId,temporary:false});
       retryTurn.current=null;
-      if(!mounted.current)return;
+      if(!mounted.current){animateCompanion(null);return;}
       if(!temporary)setConversationId(r.conversationId);
       setMessages([...prior,{role:'user',content:text},{role:'assistant',content:r.reply,sources:r.sources||[]}]);setDraft('');
       if(r.proposal){try{actionRequest(r.proposal);setProposal({...r.proposal,temporary});animateCompanion('listening');}catch{setNotice('The proposed action was invalid. Nothing was sent to Android.');animateCompanion('error',1600);}}
