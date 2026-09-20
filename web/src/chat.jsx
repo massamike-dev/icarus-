@@ -3,6 +3,8 @@ import {actionRequest,executeProposal,checkDevice} from './device-actions';
 import {getChatContext,selectChatContext,restoreChatContext} from './native-session';
 import {getNativeTransport} from './native-transport.js';
 
+const animateCompanion=(motion,duration=0)=>window.dispatchEvent(new CustomEvent('icarus-companion-motion',{detail:{motion,duration}}));
+
 async function api(path,options={}) {
   const r=await fetch('/api'+path,{...options,headers:{'content-type':'application/json',authorization:`Bearer ${localStorage.getItem('icarus_token')||''}`},signal:AbortSignal.timeout(70000)});
   if(!r.ok){const error=Error('Request failed. Check your connection and sign-in.');error.status=r.status;throw error;}
@@ -57,7 +59,7 @@ export function Chat(){
   };
   const reset=()=>changeContext({temporary});
   const send=async e=>{
-    e.preventDefault();const text=draft.trim();if(!text||lock.current||actionLock.current||pending)return;lock.current=true;setBusy(true);setNotice('');
+    e.preventDefault();const text=draft.trim();if(!text||lock.current||actionLock.current||pending)return;lock.current=true;setBusy(true);setNotice('');animateCompanion('thinking');
     // Retain the complete failed request, not only its ID: a late bridge check
     // must not change the payload of an idempotent retry.
     const turn=retryTurn.current||{path:temporary?'/chat/temporary':'/chat',prior:messages,body:{message:text,conversationId,history:temporary?messages:undefined,native,search,clientTurnId:crypto.randomUUID()}};
@@ -66,15 +68,16 @@ export function Chat(){
     const prior=turn.prior;setMessages([...prior,{role:'user',content:text}]);
     try{
       const r=await api(turn.path,{method:'POST',body:JSON.stringify(turn.body)});
-      if(context.revision!==getChatContext().revision)return;
+      if(context.revision!==getChatContext().revision){animateCompanion(null);return;}
       if(!temporary)selectChatContext({conversationId:r.conversationId,temporary:false});
       retryTurn.current=null;
       if(!mounted.current)return;
       if(!temporary)setConversationId(r.conversationId);
       setMessages([...prior,{role:'user',content:text},{role:'assistant',content:r.reply,sources:r.sources||[]}]);setDraft('');
-      if(r.proposal){try{actionRequest(r.proposal);setProposal({...r.proposal,temporary});}catch{setNotice('The proposed action was invalid. Nothing was sent to Android.');}}
+      if(r.proposal){try{actionRequest(r.proposal);setProposal({...r.proposal,temporary});animateCompanion('listening');}catch{setNotice('The proposed action was invalid. Nothing was sent to Android.');animateCompanion('error',1600);}}
+      else animateCompanion('confirm',1200);
       if(!temporary)loadHistory();
-    }catch(error){if(mounted.current){setMessages(prior);if(error.status===404||error.status===410){retryTurn.current=null;setNotice('This conversation is no longer available. Choose + New chat to continue. Nothing was sent to Android.');}else setNotice('ICARUS could not finish this request. Your draft is retained. Sending the unchanged draft again safely retries this request.');}}
+    }catch(error){animateCompanion('error',1600);if(mounted.current){setMessages(prior);if(error.status===404||error.status===410){retryTurn.current=null;setNotice('This conversation is no longer available. Choose + New chat to continue. Nothing was sent to Android.');}else setNotice('ICARUS could not finish this request. Your draft is retained. Sending the unchanged draft again safely retries this request.');}}
     finally{lock.current=false;if(mounted.current)setBusy(false);}
   };
   const saveResult=async report=>{
@@ -91,11 +94,12 @@ export function Chat(){
     }
   };
   const confirmAction=async()=>{
-    if(actionLock.current||!pending)return;actionLock.current=true;setBusy(true);const proposal=pending,sessionToken=localStorage.getItem('icarus_token')||'';setProposal(null);
+    if(actionLock.current||!pending)return;actionLock.current=true;setBusy(true);animateCompanion('preparing');const proposal=pending,sessionToken=localStorage.getItem('icarus_token')||'';setProposal(null);
     const controller=new AbortController();actionAbort.current=controller;
     let result,status='reported';
     try {result=await executeProposal(proposal,window,10000,{signal:controller.signal});}
     catch {status='unknown';result='The Android result is unknown. Check your phone before trying the action again.';}
+    animateCompanion(status==='unknown'?'error':'confirm',status==='unknown'?1800:1400);
     if(mounted.current)setMessages(m=>[...m,{role:'assistant',content:result}]);
     // Keep recording an already-dispatched action after navigation. Never send
     // temporary results or retry device execution because persistence failed.
@@ -106,7 +110,7 @@ export function Chat(){
   const cancelAction=async()=>{
     if(actionLock.current||!pending)return;
     const proposal=pending,summary='Cancelled. Nothing was sent to Android.',sessionToken=localStorage.getItem('icarus_token')||'';
-    actionLock.current=true;setBusy(true);setProposal(null);setMessages(m=>[...m,{role:'assistant',content:summary}]);setNotice(summary);
+    actionLock.current=true;setBusy(true);animateCompanion('confirm',900);setProposal(null);setMessages(m=>[...m,{role:'assistant',content:summary}]);setNotice(summary);
     if(proposal.id&&!proposal.temporary)await saveResult({id:proposal.id,status:'cancelled',summary,conversationId,sessionToken});
     actionLock.current=false;if(mounted.current)setBusy(false);
   };
