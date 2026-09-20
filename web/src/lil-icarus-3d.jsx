@@ -2,6 +2,7 @@ import React,{useEffect,useRef} from 'react';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import {rigTargetForBoneName} from './lil-icarus-rig.js';
 
 const MODEL='/models/lil-icarus/lil-icarus-web.glb';
 const WALK='/models/lil-icarus/walking_glb.glb';
@@ -10,6 +11,7 @@ const rest={LeftArm:[0,0,-1.16],RightArm:[0,0,1.16],LeftForeArm:[0,0,-.12],Right
 function offsets(motion,time){
   const breathe=Math.sin(time*2.2),gesture=Math.sin(time*5.4);
   const pose={...rest,Spine02:[breathe*.018,0,0],Head:[0,breathe*.025,0]};
+  if(motion==='preparing')Object.assign(pose,{Head:[-.03,0,.03],LeftArm:[0,.04,-1.02],RightArm:[0,-.04,1.02],LeftForeArm:[0,.12,-.3],RightForeArm:[0,-.12,.3]});
   if(motion==='listening')Object.assign(pose,{Head:[0,.08,.13],RightForeArm:[0,-.25,.72],RightArm:[0,.08,.92]});
   if(motion==='thinking')Object.assign(pose,{Head:[-.08,.16,-.08],RightArm:[0,.12,.72],RightForeArm:[0,-.9,1.35]});
   if(motion==='speaking')Object.assign(pose,{LeftArm:[0,.12,-.72-gesture*.08],RightArm:[0,-.12,.72+gesture*.08],LeftForeArm:[0,.2,-.7],RightForeArm:[0,-.2,.7]});
@@ -17,6 +19,19 @@ function offsets(motion,time){
   if(motion==='confirm')Object.assign(pose,{Head:[.12+Math.abs(gesture)*.1,0,0],LeftForeArm:[0,.1,-.48],RightForeArm:[0,-.1,.48]});
   if(motion==='error')Object.assign(pose,{Head:[0,0,-.08],LeftArm:[0,0,-.88],RightArm:[0,0,.88],LeftForeArm:[0,.3,-1.05],RightForeArm:[0,-.3,1.05]});
   return pose;
+}
+
+function disposeObject(root){
+  root?.traverse?.(object=>{
+    if(object.geometry)object.geometry.dispose();
+    if(object.material){
+      const materials=Array.isArray(object.material)?object.material:[object.material];
+      for(const material of materials){
+        for(const value of Object.values(material))if(value?.isTexture)value.dispose();
+        material.dispose();
+      }
+    }
+  });
 }
 
 export function LilIcarus3D({motion='idle',onReady,onError}){
@@ -46,7 +61,7 @@ export function LilIcarus3D({motion='idle',onReady,onError}){
       if(stopped)return;
       const t=(now-start)/1000,active=t<2.4?'greeting':motionRef.current;
       if(model&&!reduced){
-        const walking=active==='preparing';
+        const walking=active==='preparing'&&Boolean(walkAction);
         if(walkAction)walkAction.paused=!walking;
         mixer?.update(Math.min(.05,(render.last?now-render.last:16)/1000));
         if(!walking){
@@ -56,25 +71,40 @@ export function LilIcarus3D({motion='idle',onReady,onError}){
             bone.quaternion.copy(base[name]).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)));
           }
         }
-        model.position.y=-.84+Math.sin(t*2.2)*.008;
-        model.rotation.y=Math.sin(t*.55)*.045;
+        const bounce=active==='speaking'?.014:active==='confirm'?.012:.008;
+        const sway=active==='thinking'?.075:active==='speaking'?.045:.03;
+        model.position.y=-.84+Math.sin(t*2.2)*bounce;
+        model.rotation.y=Math.sin(t*(active==='thinking'?1.65:.55))*sway;
+        model.rotation.z=active==='error'?-.035:active==='listening'?Math.sin(t*1.25)*.012:0;
       }
       renderer.render(scene,camera);render.last=now;
       if(!reduced)frame=requestAnimationFrame(render);
     };
-    Promise.all([loader.loadAsync(MODEL),loader.loadAsync(WALK)]).then(([character,walking])=>{
-      if(stopped)return;
+    loader.loadAsync(MODEL).then(character=>{
+      if(stopped){disposeObject(character.scene);return;}
       model=character.scene;model.scale.setScalar(1.03);scene.add(model);
-      model.traverse(object=>{if(object.isBone){bones[object.name]=object;base[object.name]=object.quaternion.clone();}if(object.isMesh){object.frustumCulled=false;}});
+      model.traverse(object=>{
+        if(object.isBone){
+          const target=rigTargetForBoneName(object.name);
+          if(target&&!bones[target]){bones[target]=object;base[target]=object.quaternion.clone();}
+        }
+        if(object.isMesh)object.frustumCulled=false;
+      });
       mixer=new THREE.AnimationMixer(model);
-      const clip=walking.animations.find(item=>item.duration>.2);
-      if(clip){walkAction=mixer.clipAction(clip);walkAction.setLoop(THREE.LoopRepeat,Infinity);walkAction.play();walkAction.paused=true;}
-      readyRef.current?.();start=performance.now();render(start);
+      readyRef.current?.({rigBones:Object.keys(bones),walkAnimation:false});
+      start=performance.now();render(start);
+      loader.loadAsync(WALK).then(walking=>{
+        if(stopped){disposeObject(walking.scene);return;}
+        const clip=walking.animations.find(item=>item.duration>.2);
+        if(clip&&mixer){
+          walkAction=mixer.clipAction(clip);walkAction.setLoop(THREE.LoopRepeat,Infinity);walkAction.play();walkAction.paused=true;
+        }
+        disposeObject(walking.scene);
+      }).catch(()=>{/* Walking is an enhancement; the rigged fallback poses keep Lil ICARUS alive. */});
     }).catch(error=>{if(!stopped)errorRef.current?.(error);});
     return()=>{
       stopped=true;cancelAnimationFrame(frame);observer?.disconnect();mixer?.stopAllAction();
-      model?.traverse(object=>{if(object.geometry)object.geometry.dispose();if(object.material){const materials=Array.isArray(object.material)?object.material:[object.material];for(const material of materials){for(const value of Object.values(material))if(value?.isTexture)value.dispose();material.dispose();}}});
-      renderer.dispose();renderer.domElement.remove();
+      disposeObject(model);renderer.dispose();renderer.domElement.remove();
     };
   },[]);
   return <span ref={host} className="companion-model" aria-hidden="true"/>;
