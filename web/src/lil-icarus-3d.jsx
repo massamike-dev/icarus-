@@ -41,7 +41,7 @@ export function LilIcarus3D({motion='idle',onReady,onError}){
     const container=host.current;
     if(!container)return;
     if(typeof window.WebGLRenderingContext==='undefined'){errorRef.current?.(new Error('WebGL is unavailable.'));return;}
-    let stopped=false,frame=0,mixer=null,walkAction=null,model=null,bones={},base={},start=performance.now();
+    let stopped=false,frame=0,mixer=null,walkAction=null,walkPlaying=false,model=null,bones={},base={},start=performance.now();
     const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(26,1,.1,20);
@@ -62,7 +62,8 @@ export function LilIcarus3D({motion='idle',onReady,onError}){
       const t=(now-start)/1000,active=t<2.4?'greeting':motionRef.current;
       if(model&&!reduced){
         const walking=active==='preparing'&&Boolean(walkAction);
-        if(walkAction)walkAction.paused=!walking;
+        if(walkAction&&walking&&!walkPlaying){walkAction.reset().play();walkPlaying=true;}
+        else if(walkAction&&!walking&&walkPlaying){walkAction.stop();walkPlaying=false;}
         mixer?.update(Math.min(.05,(render.last?now-render.last:16)/1000));
         if(!walking){
           const pose=offsets(active,t);
@@ -97,7 +98,7 @@ export function LilIcarus3D({motion='idle',onReady,onError}){
         if(stopped){disposeObject(walking.scene);return;}
         const clip=walking.animations.find(item=>item.duration>.2);
         if(clip&&mixer){
-          walkAction=mixer.clipAction(clip);walkAction.setLoop(THREE.LoopRepeat,Infinity);walkAction.play();walkAction.paused=true;
+          walkAction=mixer.clipAction(clip);walkAction.setLoop(THREE.LoopRepeat,Infinity);
         }
         disposeObject(walking.scene);
       }).catch(()=>{/* Walking is an enhancement; the rigged fallback poses keep Lil ICARUS alive. */});
