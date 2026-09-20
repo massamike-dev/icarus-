@@ -6,6 +6,7 @@ import './companion.css';
 
 const preferenceKey='icarus_companion_preferences';
 const activeStages=new Set(['STARTING','PREPARING_VOICE','INITIALIZING_VOICE','ACKNOWLEDGING','CAPTURING','AWAITING_CONFIRMATION','INTERPRETING','EXECUTING','SPEAKING']);
+const companionMotions=new Set(['idle','preparing','listening','thinking','speaking','confirm','error']);
 const stages={
   STARTING:['preparing','Starting the wake listener.'],
   LISTENING:['idle','Waiting for “Hey ICARUS.”'],
@@ -39,13 +40,26 @@ function voiceView(status,available){
 export function IcarusCompanion({onNavigate}){
   const[prefs,setPrefs]=useState(preferences),[open,setOpen]=useState(false),[tucked,setTucked]=useState(false);
   const[status,setStatus]=useState(null),[available,setAvailable]=useState(Boolean(getNativeTransport()));
-  const[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[modelReady,setModelReady]=useState(false),[modelFailed,setModelFailed]=useState(false),[posterFailed,setPosterFailed]=useState(false);
-  const dock=useRef(null),figure=useRef(null),restore=useRef(null),pending=useRef(null),timeout=useRef(null),mounted=useRef(false);
+  const[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[modelReady,setModelReady]=useState(false),[modelFailed,setModelFailed]=useState(false),[posterFailed,setPosterFailed]=useState(false),[activityMotion,setActivityMotion]=useState(null);
+  const dock=useRef(null),figure=useRef(null),restore=useRef(null),pending=useRef(null),timeout=useRef(null),activityTimeout=useRef(null),mounted=useRef(false);
   const currentStatus=useRef(null),visible=useRef(false),refresh=useRef(()=>{}),focusAfterHide=useRef(false);
   visible.current=!prefs.hidden&&!tucked;
   const updateStatus=value=>{currentStatus.current=value;setStatus(value);};
 
   useEffect(()=>{try{localStorage.setItem(preferenceKey,JSON.stringify(prefs));}catch{/* Preferences remain usable for this session. */}},[prefs]);
+  useEffect(()=>{
+    const activity=event=>{
+      clearTimeout(activityTimeout.current);
+      const next=event.detail?.motion;
+      if(next==null){setActivityMotion(null);return;}
+      if(!companionMotions.has(next))return;
+      setActivityMotion(next);
+      const duration=Number(event.detail?.duration)||0;
+      if(duration>0)activityTimeout.current=setTimeout(()=>setActivityMotion(null),duration);
+    };
+    window.addEventListener('icarus-companion-motion',activity);
+    return()=>{clearTimeout(activityTimeout.current);window.removeEventListener('icarus-companion-motion',activity);};
+  },[]);
   useEffect(()=>{if(focusAfterHide.current){(prefs.hidden?restore:figure).current?.focus();focusAfterHide.current=false;}},[prefs.hidden]);
   useEffect(()=>{
     mounted.current=true;
@@ -119,7 +133,7 @@ export function IcarusCompanion({onNavigate}){
     catch{clearTimeout(timeout.current);pending.current=null;setBusy(false);updateStatus(null);setMessage('The Android connection is unavailable. Open Voice to check it.');}
   };
   const view=voiceView(status,available);
-  const motion=message.startsWith('Android accepted')?'confirm':view.phase;
+  const motion=activityMotion||(message.startsWith('Android accepted')?'confirm':view.phase);
   const hide=()=>{focusAfterHide.current=true;setOpen(false);setPrefs(p=>({...p,hidden:true}));};
   const show=()=>{focusAfterHide.current=true;setPrefs(p=>({...p,hidden:false}));};
   return <div ref={dock} className={`icarus-companion companion-${prefs.side}`} data-phase={view.phase} hidden={tucked}>
