@@ -17,6 +17,7 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.Environment
 import android.provider.AlarmClock
 import android.provider.ContactsContract
 import android.provider.Settings
@@ -149,6 +150,8 @@ class IcarusNativeBridge(
                 "obd_disconnect" -> obdDisconnect(requestId)
                 "open_driving_hud" -> openDrivingHud(requestId, args)
                 "open_navigation_access_settings" -> openNavigationAccessSettings(requestId)
+                "all_files_access_status" -> allFilesAccessStatus(requestId)
+                "open_all_files_access_settings" -> openAllFilesAccessSettings(requestId)
                 "xreal_status" -> xrealStatus(requestId, args)
                 "open_xreal_hud" -> openXrealHud(requestId, args)
                 "close_xreal_hud" -> closeXrealHud(requestId, args)
@@ -556,6 +559,34 @@ class IcarusNativeBridge(
         JSONObject().put("opened", true),
     )
 
+    private fun allFilesAccessStatus(requestId: String?): String {
+        if (!BuildConfig.PRIVATE_TEST) return error(requestId, "unsupported_action")
+        val supported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+        val granted = supported && Environment.isExternalStorageManager()
+        return ok(requestId, JSONObject()
+            .put("supported", supported)
+            .put("granted", granted)
+            .put("testOnly", true))
+    }
+
+    private fun openAllFilesAccessSettings(requestId: String?): String {
+        if (!BuildConfig.PRIVATE_TEST) return error(requestId, "unsupported_action")
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            return error(requestId, "unsupported_android_version", "All files access requires Android 11 or newer.")
+        }
+        return launchForResult(
+            requestId,
+            Intent(
+                Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                Uri.parse("package:${context.packageName}")
+            ),
+            JSONObject()
+                .put("opened", true)
+                .put("granted", Environment.isExternalStorageManager())
+                .put("testOnly", true),
+        )
+    }
+
     private fun xrealStatus(requestId: String?, args: JSONObject): String {
         when (SpatialHudTarget.parse(args.optString("target"))) {
             SpatialHudTarget.BUNDLED -> return metaWearables.execute("meta_xreal_status", requestId, args)
@@ -725,12 +756,12 @@ class IcarusNativeBridge(
             "get_voice_settings", "set_voice_settings", "preview_voice", "open_voice_settings", "open_app_settings", "bluetooth_audio", "list_bluetooth", "open_app", "toggle_flashlight",
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
-            "obd_disconnect", "open_driving_hud", "open_navigation_access_settings", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
+            "obd_disconnect", "open_driving_hud", "open_navigation_access_settings", "all_files_access_status", "open_all_files_access_settings", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
             "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",
             "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_close", "meta_xreal_update"
-        ).filterNot { BuildConfig.PRIVATE_TEST && it in setOf("check_subscription", "subscribe", "check_update") }
+        ).filterNot { (BuildConfig.PRIVATE_TEST && it in setOf("check_subscription", "subscribe", "check_update")) || (!BuildConfig.PRIVATE_TEST && it in setOf("all_files_access_status", "open_all_files_access_settings")) }
 
         fun statusJson(context: Context): String = JSONObject()
             .put("connected", true)
@@ -739,6 +770,10 @@ class IcarusNativeBridge(
             .put("applicationId", BuildConfig.APPLICATION_ID)
             .put("privateTest", BuildConfig.PRIVATE_TEST)
             .put("actionProtocolVersion", 1)
+            .put("allFilesAccess", JSONObject()
+                .put("supported", BuildConfig.PRIVATE_TEST && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+                .put("granted", BuildConfig.PRIVATE_TEST && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager())
+                .put("testOnly", BuildConfig.PRIVATE_TEST))
             .put("voiceSession", VoiceSessionStore.status(context))
             .put("voiceSettings", VoicePreferences.summary(VoicePreferences.read(context)))
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())
