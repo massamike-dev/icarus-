@@ -1,7 +1,10 @@
 package com.icarusalmighty.app.driving
 
+import kotlin.math.roundToInt
+
 data class DrivingHudState(
     val speedMph: Int? = null,
+    val heading: String? = null,
     val rpm: Int? = null,
     val fuelPercent: Int? = null,
     val engineTempF: Int? = null,
@@ -20,7 +23,7 @@ data class DrivingHudState(
     val listening: Boolean = false,
     val vehicleMoving: Boolean? = null,
     val obdConnected: Boolean = false,
-    val sourceLabel: String = "NO LIVE VEHICLE DATA",
+    val sourceLabel: String = "PHONE GPS WAITING",
     val alertMessage: String? = null,
     val lastVoiceCommand: String? = null
 ) {
@@ -33,4 +36,16 @@ enum class HudAction {
     SHOW_ENGINE,
     VOICE,
     EXIT
+}
+
+object DrivingTelemetryMath {
+    private val headings = arrayOf("N", "NE", "E", "SE", "S", "SW", "W", "NW")
+
+    fun speedMph(metersPerSecond: Float): Int =
+        (metersPerSecond.coerceAtLeast(0f) * 2.2369363f).roundToInt()
+
+    fun cardinalHeading(degrees: Float): String {
+        val normalized = ((degrees % 360f) + 360f) % 360f
+        return headings[((normalized + 22.5f) / 45f).toInt() % headings.size]
+    }
 }
