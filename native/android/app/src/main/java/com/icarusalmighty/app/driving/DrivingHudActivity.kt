@@ -1,8 +1,6 @@
 package com.icarusalmighty.app.driving
 
 import android.Manifest
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothManager
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -29,7 +27,7 @@ import java.util.Locale
 class DrivingHudActivity : AppCompatActivity() {
     private lateinit var volumeSurface: VolumetricHudSurface
     private lateinit var hud: DrivingHudView
-    private var telemetry: DrivingTelemetryController? = null
+    private var telemetry: DrivingTelemetrySession.Lease? = null
     private var latestState = DrivingHudState()
     private var speechRecognizer: SpeechRecognizer? = null
     private var initialized = false
@@ -88,7 +86,7 @@ class DrivingHudActivity : AppCompatActivity() {
     override fun onDestroy() {
         speechRecognizer?.destroy()
         speechRecognizer = null
-        telemetry?.stop()
+        telemetry?.close()
         telemetry = null
         restartWakeListenerIfAllowed()
         super.onDestroy()
@@ -102,6 +100,12 @@ class DrivingHudActivity : AppCompatActivity() {
             if (ContextCompat.checkSelfPermission(this@DrivingHudActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                 add(Manifest.permission.RECORD_AUDIO)
             }
+            val fineLocation = ContextCompat.checkSelfPermission(this@DrivingHudActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            val coarseLocation = ContextCompat.checkSelfPermission(this@DrivingHudActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            if (!fineLocation && !coarseLocation) {
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+                add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
         }
         if (missing.isEmpty()) initializeTelemetryOnce() else permissions.launch(missing.toTypedArray())
     }
@@ -112,12 +116,12 @@ class DrivingHudActivity : AppCompatActivity() {
         val address = intent.getStringExtra(EXTRA_OBD_ADDRESS)
             ?.trim()
             ?.takeIf { it.isNotBlank() }
-            ?: findSingleKnownObdAddress()
-        telemetry = DrivingTelemetryController(this, address) { state ->
+            ?: DrivingObdDiscovery.findSingleKnownAddress(this)
+        telemetry = DrivingTelemetrySession.acquire(this, address) { state ->
             latestState = state
             volumeSurface.render(state)
             hud.render(state)
-        }.also { it.start() }
+        }
     }
 
     private fun handleHudAction(action: HudAction) {
@@ -224,24 +228,9 @@ class DrivingHudActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("MissingPermission")
-    private fun findSingleKnownObdAddress(): String? {
-        if (Build.VERSION.SDK_INT >= 31 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
-        ) return null
-        val adapter = getSystemService(BluetoothManager::class.java).adapter ?: return null
-        val candidates = adapter.bondedDevices.orEmpty().filter { device ->
-            val name = device.name.orEmpty().lowercase(Locale.US)
-            OBD_NAME_MARKERS.any(name::contains)
-        }
-        return candidates.singleOrNull()?.address
-    }
 
     companion object {
         const val EXTRA_OBD_ADDRESS = "obd_address"
         const val ACTION_OPEN = BuildConfig.APPLICATION_ID + ".OPEN_DRIVING_HUD"
-        private val OBD_NAME_MARKERS = listOf(
-            "obd", "elm327", "elm 327", "obdlink", "vgate", "veepeak", "gearworks", "carista", "blue driver"
-        )
     }
 }

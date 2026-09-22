@@ -98,7 +98,8 @@ class DrivingHudView(
     private fun drawBrand(canvas: Canvas, w: Float, h: Float) {
         drawText(canvas, "ICARUS", w * .035f, h * .075f, h * .048f, gold, true)
         drawText(canvas, "SPATIAL HUD", w * .035f, h * .112f, h * .021f, cyan, false)
-        drawText(canvas, state.sourceLabel, w * .035f, h * .145f, h * .017f, if (state.obdConnected) cyan else warning, false)
+        val liveMotion = state.obdConnected || state.speedMph != null || state.heading != null
+        drawText(canvas, state.sourceLabel, w * .035f, h * .145f, h * .017f, if (liveMotion) cyan else warning, false)
 
         exitHit.set(w * .885f, h * .045f, w * .95f, h * .125f)
         paint.style = Paint.Style.STROKE
@@ -242,7 +243,8 @@ class DrivingHudView(
         drawText(canvas, state.roadStatus, panel.left + w * .018f, panel.top + h * .06f, h * .025f, if (state.obdConnected) cyan else white, true)
         drawText(canvas, state.roadDetail, panel.left + w * .018f, panel.top + h * .11f, h * .016f, dim, false)
         val movement = when (state.vehicleMoving) { true -> "MOVING"; false -> "STOPPED"; null -> "SPEED UNKNOWN" }
-        drawText(canvas, movement, panel.left + w * .018f, panel.top + h * .158f, h * .016f, gold, false)
+        val heading = state.heading?.let { " • HEADING $it" }.orEmpty()
+        drawText(canvas, movement + heading, panel.left + w * .018f, panel.top + h * .158f, h * .016f, gold, false)
     }
 
     private fun drawFooter(canvas: Canvas, w: Float, h: Float) {

@@ -193,14 +193,13 @@ jobs:
               "downloadUrl": os.environ["APK_URL"],
               "sha256": os.environ["SHA256"],
               "patchNotes": [
-                  "Fixed installed Android apps incorrectly reporting Web mode and disabling voice controls.",
-                  "Added reviewed Chat phone actions with clear Android results and exact target matching.",
-                  "Connected cloud voice turns to the selected Chat conversation; temporary mode excludes saved history and Memory.",
-                  "Added read-only web search with source links when supported by the configured provider.",
-                  "Saved device-reported action outcomes and made completed or cancelled turn retries non-executable.",
-                  "Fixed Settings navigation, reduced empty Chat space, and retained failed request drafts.",
-                  "Hardened session changes and late callbacks so old replies cannot restore an abandoned conversation.",
-                  "Failed result uploads can remain unconfirmed; offline voice commands are outside cloud history."
+                  "Driving Mode now uses phone GPS for live speed and heading even without an OBD adapter.",
+                  "Phone HUD and bundled XREAL vehicle overlay now share one live telemetry session.",
+                  "Google Maps and Waze route guidance continues through the notification-access bridge.",
+                  "OBD-II remains optional enrichment for RPM, coolant temperature, engine load, voltage, fuel and vehicle speed.",
+                  "Bundled XREAL vehicle mode requests location access when needed and follows live GPS, route and OBD state.",
+                  "Lil ICARUS remains tied to assistant listening, thinking, speaking, action and error states.",
+                  "Reviewed Android phone actions and wake-word support remain enabled in the installed app."
               ]
           }
 
