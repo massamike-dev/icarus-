@@ -1,6 +1,9 @@
 package com.icarusalmighty.app
 
 import android.app.Activity
+import com.icarusalmighty.app.driving.DrivingHudState
+import com.icarusalmighty.app.driving.DrivingObdDiscovery
+import com.icarusalmighty.app.driving.DrivingTelemetrySession
 import com.icarusalmighty.xreal.XrealHudState
 import com.icarusalmighty.xreal.XrealLaunchResult
 import com.icarusalmighty.xreal.XrealMode
@@ -14,6 +17,7 @@ class XrealWearablesController(
     private val enabledProvider: () -> Boolean,
 ) {
     private var controller: XrealModeController? = null
+    private var telemetryLease: DrivingTelemetrySession.Lease? = null
 
     private fun enabledController(): XrealModeController? {
         if (!enabledProvider()) return null
@@ -56,7 +60,25 @@ class XrealWearablesController(
                 .put("fallback", "phone")
                 .put("error", "integration_disabled")
 
-        val result = activeController.launch(requestedMode, stateFrom(args))
+        val requestedState = stateFrom(args)
+        if (requestedMode == XrealMode.VEHICLE) {
+            telemetryLease?.close()
+            val obdAddress = DrivingObdDiscovery.findSingleKnownAddress(activity)
+            telemetryLease = DrivingTelemetrySession.acquire(activity, obdAddress) { live ->
+                controller?.takeIf { it.isOpen() }?.update(stateFromDriving(live, requestedState))
+            }
+        } else {
+            telemetryLease?.close()
+            telemetryLease = null
+        }
+        val launchState = if (requestedMode == XrealMode.VEHICLE) {
+            stateFromDriving(DrivingTelemetrySession.snapshot(), requestedState)
+        } else requestedState
+        val result = activeController.launch(requestedMode, launchState)
+        if (result != XrealLaunchResult.Started) {
+            telemetryLease?.close()
+            telemetryLease = null
+        }
         val runtimeAvailable = activeController.isRuntimeAvailable()
         return JSONObject()
             .put("provider", "xreal")
@@ -83,6 +105,8 @@ class XrealWearablesController(
     fun closeHud(): JSONObject {
         // Closing is allowed after disabling the integration, and never enables it.
         val closeRequested = (controller ?: XrealModeController(activity)).close()
+        telemetryLease?.close()
+        telemetryLease = null
         return JSONObject()
             .put("provider", "xreal")
             .put("target", "bundled")
@@ -104,6 +128,20 @@ class XrealWearablesController(
             .put("updated", false) // Broadcast delivery/rendering has no acknowledgement.
             .apply { if (!sent) put("error", "xreal_hud_not_open") }
     }
+
+    private fun stateFromDriving(live: DrivingHudState, fallback: XrealHudState): XrealHudState = XrealHudState(
+        assistantStatus = fallback.assistantStatus,
+        primaryText = fallback.primaryText,
+        navigationInstruction = live.navigationInstruction ?: fallback.navigationInstruction,
+        navigationDistance = live.navigationDistance ?: fallback.navigationDistance,
+        eta = fallback.eta,
+        heading = live.heading ?: fallback.heading,
+        speedMph = live.speedMph ?: fallback.speedMph,
+        rpm = live.rpm ?: fallback.rpm,
+        engineTempF = live.engineTempF ?: fallback.engineTempF,
+        batteryPercent = fallback.batteryPercent,
+        alertText = live.alertMessage ?: fallback.alertText,
+    )
 
     private fun stateFrom(args: JSONObject): XrealHudState = XrealHudState(
         assistantStatus = firstString(args, "assistantStatus", "status").ifBlank { "ICARUS ONLINE" },
