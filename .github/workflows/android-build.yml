@@ -193,13 +193,11 @@ jobs:
               "downloadUrl": os.environ["APK_URL"],
               "sha256": os.environ["SHA256"],
               "patchNotes": [
-                  "Driving Mode now uses phone GPS for live speed and heading even without an OBD adapter.",
-                  "Phone HUD and bundled XREAL vehicle overlay now share one live telemetry session.",
-                  "Google Maps and Waze route guidance continues through the notification-access bridge.",
-                  "OBD-II remains optional enrichment for RPM, coolant temperature, engine load, voltage, fuel and vehicle speed.",
-                  "Bundled XREAL vehicle mode requests location access when needed and follows live GPS, route and OBD state.",
-                  "Lil ICARUS remains tied to assistant listening, thinking, speaking, action and error states.",
-                  "Reviewed Android phone actions and wake-word support remain enabled in the installed app."
+                  "Added quarterly Premium billing support alongside monthly and annual plans.",
+                  "Premium developer grants remain server-controlled and separate from Google Play purchases.",
+                  "Driving Mode continues to use phone GPS for live speed and heading with optional OBD enrichment.",
+                  "Phone and bundled XREAL HUDs continue to share one live telemetry session.",
+                  "Google Maps and Waze route guidance remains available through the notification-access bridge."
               ]
           }
 

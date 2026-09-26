@@ -285,6 +285,7 @@ class PlayBillingManager(
     companion object {
         private val SUPPORTED_PRODUCTS = setOf(
             "icarus_pro_monthly",
+            "icarus_pro_quarterly",
             "icarus_pro_annual",
         )
         private val ACCOUNT_BINDING = Regex("^[0-9a-f]{64}$")
