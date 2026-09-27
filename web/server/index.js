@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JsonStore } from './store.js';
-import { createHandler } from './app.js';
+import { createBillingHandler as createHandler } from './billing-app.js';
 import { bootstrapPrivateTester, privateTestConfig } from './private-test.js';
 
 const here=dirname(fileURLToPath(import.meta.url));
