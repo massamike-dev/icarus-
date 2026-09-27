@@ -1,18 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { developerGrantEmails, entitlementFor } from './entitlements.js';
-
-test('developer Premium grants are server-controlled and normalized',()=>{
-  const env={ICARUS_PREMIUM_GRANT_EMAILS:'  Owner@Example.com,friend@example.com  '};
-  assert.deepEqual([...developerGrantEmails(env)].sort(),['friend@example.com','owner@example.com']);
-  assert.deepEqual(entitlementFor({email:'OWNER@example.com'},env),{
-    premium:true,
-    source:'developer_grant',
-    expiresAt:null,
-  });
-  assert.deepEqual(entitlementFor({email:'other@example.com'},env),{
-    premium:false,
-    source:'none',
-    expiresAt:null,
-  });
+import {developerGrantUserIds,entitlementFor} from './entitlements.js';
+test('developer grants are exact server-configured immutable account IDs',()=>{
+ const env={ICARUS_PREMIUM_GRANT_USER_IDS:' account-a,account-b,account-a '};
+ assert.deepEqual([...developerGrantUserIds(env)],['account-a','account-b']);
+ assert.deepEqual(entitlementFor({id:'account-a'},env),{premium:true,source:'developer_grant',expiresAt:null});
+ assert.deepEqual(entitlementFor({id:'ACCOUNT-A'},env),{premium:false,source:'none',expiresAt:null});
 });

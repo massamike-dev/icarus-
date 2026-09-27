@@ -1,293 +1,171 @@
 package com.icarusalmighty.app
 
 import android.app.Activity
-import com.android.billingclient.api.AcknowledgePurchaseParams
+import android.os.Handler
+import android.os.Looper
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * Thin Google Play Billing client. The Android app never grants Premium by
- * itself: it only returns Play purchase tokens to the web layer, which sends
- * them to the ICARUS backend for Google Developer API verification.
- *
- * New purchase requests use a compact internal product spec of
- * `productId|accountBinding`. The native shell strips the binding before
- * querying Play, then passes the 64-character pseudonymous account binding to
- * BillingFlowParams so the backend can verify that the purchase belongs to the
- * signed-in ICARUS account.
- */
-class PlayBillingManager(
-    private val activity: Activity,
-    private val resultDispatcher: (String) -> Unit,
-) {
-    private var pendingSubscribeRequestId: String? = null
-    private var pendingSubscribeProductId: String? = null
-
-    private val billingClient = BillingClient.newBuilder(activity)
+/** Play supplies prices and purchase tokens. Only the server grants/acknowledges Premium. */
+class PlayBillingManager(private val activity: Activity, private val resultDispatcher: (String) -> Unit) {
+    private data class Pending(val requestId: String, val productId: String, val binding: String)
+    private var pending: Pending? = null
+    private var loadingPurchase = false
+    private var closed = false
+    private var connecting = false
+    private val handler = Handler(Looper.getMainLooper())
+    private val waiting = mutableListOf<Pair<String, () -> Unit>>()
+    private val connectionTimeout = Runnable { failWaiting("play_billing_timeout") }
+    private val client = BillingClient.newBuilder(activity)
+        .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
         .setListener { result, purchases ->
-            val requestId = pendingSubscribeRequestId
-            if (requestId == null) {
-                clearPendingSubscribe()
-                return@setListener
-            }
+            val request = pending ?: return@setListener // Restored on the next foreground query.
+            pending = null
+            loadingPurchase = false
+            if (closed) return@setListener
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                dispatchError(requestId, billingError(result))
-                clearPendingSubscribe()
-                return@setListener
+                error(request.requestId, errorCode(result)); return@setListener
             }
-
-            val purchase = purchases?.firstOrNull()
-            if (purchase == null) {
-                dispatchError(requestId, "purchase_missing")
-                clearPendingSubscribe()
-                return@setListener
+            val purchase = purchases?.firstOrNull {
+                it.products.contains(request.productId) && it.accountIdentifiers?.obfuscatedAccountId == request.binding
             }
+            if (purchase == null) error(request.requestId, "purchase_account_or_product_mismatch")
+            else send(request.requestId, JSONObject().put("billingProtocolVersion", 2).put("purchase", purchaseJson(purchase)))
+        }.build()
 
-            when (purchase.purchaseState) {
-                com.android.billingclient.api.Purchase.PurchaseState.PURCHASED -> {
-                    acknowledgeIfNeeded(requestId, purchase) {
-                        dispatchPurchase(requestId, purchase, "purchased")
-                        clearPendingSubscribe()
+    // Reuses the existing native action. Older Android builds omit protocol v2,
+    // so the web membership screen cannot accidentally initiate legacy checkout.
+    fun checkSubscription(requestId: String) = connected(requestId) {
+        queryProducts(requestId) { details ->
+            client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()) { result, purchases ->
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) error(requestId, errorCode(result))
+                else {
+                    val catalog = JSONArray()
+                    details.forEach { detail ->
+                        baseOffers(detail).forEach { offer ->
+                            val phase = offer.pricingPhases.pricingPhaseList.single()
+                            catalog.put(JSONObject().put("productId", detail.productId)
+                                .put("basePlanId", offer.basePlanId).put("offerToken", offer.offerToken)
+                                .put("billingPeriod", phase.billingPeriod).put("formattedPrice", phase.formattedPrice)
+                                .put("priceAmountMicros", phase.priceAmountMicros).put("currencyCode", phase.priceCurrencyCode))
+                        }
                     }
-                }
-                com.android.billingclient.api.Purchase.PurchaseState.PENDING -> {
-                    dispatchPurchase(requestId, purchase, "pending")
-                    clearPendingSubscribe()
-                }
-                else -> {
-                    dispatchError(requestId, "purchase_not_completed")
-                    clearPendingSubscribe()
-                }
-            }
-        }
-        .enablePendingPurchases(
-            PendingPurchasesParams.newBuilder()
-                .enableOneTimeProducts()
-                .build()
-        )
-        .build()
-
-    fun checkSubscription(requestId: String) {
-        withConnected(requestId) {
-            val params = QueryPurchasesParams.newBuilder()
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-            billingClient.queryPurchasesAsync(params) { result, purchases ->
-                if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                    dispatchError(requestId, billingError(result))
-                    return@queryPurchasesAsync
-                }
-
-                val purchase = purchases
-                    .filter { it.purchaseState == com.android.billingclient.api.Purchase.PurchaseState.PURCHASED }
-                    .maxByOrNull { it.purchaseTime }
-
-                if (purchase == null) {
-                    dispatch(
-                        JSONObject()
-                            .put("ok", true)
-                            .put("requestId", requestId)
-                            .put("data", JSONObject()
-                                .put("active", false)
-                                .put("purchaseToken", "")
-                                .put("state", "none"))
-                    )
-                    return@queryPurchasesAsync
-                }
-
-                // Restore/query flows use their own request id. If acknowledgement
-                // fails, always resolve that exact request instead of looking at
-                // the unrelated new-purchase state.
-                acknowledgeIfNeeded(requestId, purchase) {
-                    dispatchPurchase(requestId, purchase, "purchased")
+                    send(requestId, JSONObject().put("billingProtocolVersion", 2).put("products", catalog)
+                        .put("purchases", JSONArray(purchases.filter { it.products.any(SUPPORTED_PRODUCTS::contains) }.map(::purchaseJson))))
                 }
             }
         }
     }
 
+    // productId|server-issued account binding|basePlanId|Google offer token
     fun subscribe(requestId: String, productSpec: String) {
-        val parts = productSpec.split('|', limit = 2)
-        val productId = parts.firstOrNull().orEmpty().trim()
-        val accountBinding = parts.getOrNull(1).orEmpty().trim().lowercase()
-
-        if (productId !in SUPPORTED_PRODUCTS) {
-            dispatchError(requestId, "unknown_subscription_product")
-            return
+        val parts = productSpec.split('|')
+        if (parts.size != 4 || parts[0] !in SUPPORTED_PRODUCTS || !BINDING.matches(parts[1]) ||
+            !BASE_PLAN.matches(parts[2]) || parts[3].isBlank() || parts[3].length > 4096) {
+            error(requestId, "invalid_subscription_selection"); return
         }
-        if (!ACCOUNT_BINDING.matches(accountBinding)) {
-            dispatchError(requestId, "invalid_billing_account_binding")
-            return
-        }
-        if (pendingSubscribeRequestId != null) {
-            dispatchError(requestId, "billing_flow_in_progress")
-            return
-        }
-
-        withConnected(requestId) {
-            val product = QueryProductDetailsParams.Product.newBuilder()
-                .setProductId(productId)
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build()
-            val query = QueryProductDetailsParams.newBuilder()
-                .setProductList(listOf(product))
-                .build()
-
-            billingClient.queryProductDetailsAsync(query) { result, detailsResult ->
-                if (result.responseCode != BillingClient.BillingResponseCode.OK) {
-                    dispatchError(requestId, billingError(result))
-                    return@queryProductDetailsAsync
+        if (pending != null || loadingPurchase) { error(requestId, "billing_flow_in_progress"); return }
+        loadingPurchase = true
+        val (productId, binding, basePlanId, offerToken) = parts
+        connected(requestId) {
+            queryProducts(requestId) { products ->
+                val detail = products.firstOrNull { it.productId == productId }
+                val offer = detail?.let(::baseOffers)?.firstOrNull { it.basePlanId == basePlanId && it.offerToken == offerToken }
+                if (detail == null || offer == null) {
+                    loadingPurchase = false; error(requestId, "subscription_offer_changed_refresh_prices"); return@queryProducts
                 }
-
-                val productDetails = detailsResult.productDetailsList.firstOrNull()
-                if (productDetails == null) {
-                    dispatchError(requestId, "subscription_product_unavailable")
-                    return@queryProductDetailsAsync
-                }
-
-                val offer = chooseOffer(productDetails)
-                if (offer == null) {
-                    dispatchError(requestId, "subscription_offer_unavailable")
-                    return@queryProductDetailsAsync
-                }
-
-                val productParams = BillingFlowParams.ProductDetailsParams.newBuilder()
-                    .setProductDetails(productDetails)
-                    .setOfferToken(offer.offerToken)
-                    .build()
-                val flowParams = BillingFlowParams.newBuilder()
-                    .setProductDetailsParamsList(listOf(productParams))
-                    .setObfuscatedAccountId(accountBinding)
-                    .build()
-
-                pendingSubscribeRequestId = requestId
-                pendingSubscribeProductId = productId
-                val launchResult = billingClient.launchBillingFlow(activity, flowParams)
-                if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
-                    clearPendingSubscribe()
-                    dispatchError(requestId, billingError(launchResult))
+                // All plans confer the same membership. Do not sell overlapping plans.
+                client.queryPurchasesAsync(QueryPurchasesParams.newBuilder().setProductType(BillingClient.ProductType.SUBS).build()) { result, purchases ->
+                    if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                        loadingPurchase = false; error(requestId, errorCode(result)); return@queryPurchasesAsync
+                    }
+                    if (purchases.any { p -> p.products.any(SUPPORTED_PRODUCTS::contains) && p.purchaseState in setOf(Purchase.PurchaseState.PURCHASED, Purchase.PurchaseState.PENDING) }) {
+                        loadingPurchase = false; error(requestId, "existing_subscription_restore_or_manage"); return@queryPurchasesAsync
+                    }
+                    activity.runOnUiThread {
+                        if (closed || activity.isFinishing || activity.isDestroyed) { loadingPurchase = false; return@runOnUiThread }
+                        pending = Pending(requestId, productId, binding)
+                        val selected = BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(detail).setOfferToken(offer.offerToken).build()
+                        val flow = BillingFlowParams.newBuilder().setProductDetailsParamsList(listOf(selected)).setObfuscatedAccountId(binding).build()
+                        val launched = client.launchBillingFlow(activity, flow)
+                        if (launched.responseCode != BillingClient.BillingResponseCode.OK) {
+                            pending = null; loadingPurchase = false; error(requestId, errorCode(launched))
+                        }
+                    }
                 }
             }
         }
     }
 
     fun close() {
-        clearPendingSubscribe()
-        if (billingClient.isReady) billingClient.endConnection()
+        closed = true; pending = null; loadingPurchase = false
+        waiting.clear(); handler.removeCallbacksAndMessages(null); client.endConnection()
     }
 
-    private fun chooseOffer(details: ProductDetails): ProductDetails.SubscriptionOfferDetails? {
-        val offers = details.subscriptionOfferDetails.orEmpty()
-        if (offers.isEmpty()) return null
-
-        // Prefer a trial when Google Play says the user is eligible, otherwise
-        // fall back to the first eligible paid offer. The UI does not promise a
-        // trial until Play actually presents one.
-        return offers.firstOrNull { offer ->
-            offer.pricingPhases.pricingPhaseList.any { it.priceAmountMicros == 0L }
-        } ?: offers.first()
-    }
-
-    private fun acknowledgeIfNeeded(
-        requestId: String,
-        purchase: com.android.billingclient.api.Purchase,
-        after: () -> Unit,
-    ) {
-        if (purchase.isAcknowledged) {
-            after()
-            return
+    private fun baseOffers(detail: ProductDetails): List<ProductDetails.SubscriptionOfferDetails> =
+        detail.subscriptionOfferDetails.orEmpty().filter { offer ->
+            val phases = offer.pricingPhases.pricingPhaseList
+            offer.offerId == null && phases.size == 1 && phases[0].recurrenceMode == ProductDetails.RecurrenceMode.INFINITE_RECURRING &&
+                phases[0].billingPeriod == PERIODS[detail.productId] && phases[0].priceAmountMicros > 0
         }
 
-        val params = AcknowledgePurchaseParams.newBuilder()
-            .setPurchaseToken(purchase.purchaseToken)
-            .build()
-        billingClient.acknowledgePurchase(params) { result ->
-            if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                after()
-            } else {
-                dispatchError(requestId, "purchase_acknowledgement_failed")
-                if (pendingSubscribeRequestId == requestId) clearPendingSubscribe()
-            }
+    private fun queryProducts(requestId: String, done: (List<ProductDetails>) -> Unit) {
+        val products = SUPPORTED_PRODUCTS.map { QueryProductDetailsParams.Product.newBuilder().setProductId(it).setProductType(BillingClient.ProductType.SUBS).build() }
+        client.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(products).build()) { result, response ->
+            if (closed) return@queryProductDetailsAsync
+            if (result.responseCode != BillingClient.BillingResponseCode.OK) { loadingPurchase = false; error(requestId, errorCode(result)) }
+            else done(response.productDetailsList)
         }
     }
-
-    private fun withConnected(requestId: String, action: () -> Unit) {
-        if (billingClient.isReady) {
-            action()
-            return
-        }
-
-        billingClient.startConnection(object : BillingClientStateListener {
+    private fun connected(id: String, action: () -> Unit) {
+        if (closed) return
+        if (client.isReady) { action(); return }
+        waiting.add(id to action)
+        if (connecting) return
+        connecting = true; handler.postDelayed(connectionTimeout, 15000)
+        client.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
-                if (result.responseCode == BillingClient.BillingResponseCode.OK) action()
-                else dispatchError(requestId, billingError(result))
+                if (closed) return
+                handler.removeCallbacks(connectionTimeout)
+                if (result.responseCode != BillingClient.BillingResponseCode.OK) { failWaiting(errorCode(result)); return }
+                connecting = false
+                val queue = waiting.toList(); waiting.clear(); queue.forEach { it.second() }
             }
-
-            override fun onBillingServiceDisconnected() {
-                // A later user action will reconnect. Do not synthesize a
-                // Premium state from a transient Play service disconnect.
-            }
+            override fun onBillingServiceDisconnected() { failWaiting("play_billing_unavailable") }
         })
     }
-
-    private fun dispatchPurchase(
-        requestId: String,
-        purchase: com.android.billingclient.api.Purchase,
-        state: String,
-    ) {
-        val products = purchase.products
-        val productId = products.firstOrNull() ?: pendingSubscribeProductId.orEmpty()
-        dispatch(
-            JSONObject()
-                .put("ok", true)
-                .put("requestId", requestId)
-                .put("data", JSONObject()
-                    .put("active", purchase.purchaseState == com.android.billingclient.api.Purchase.PurchaseState.PURCHASED)
-                    .put("purchaseToken", purchase.purchaseToken)
-                    .put("productId", productId)
-                    .put("state", state)
-                    .put("acknowledged", purchase.isAcknowledged))
-        )
+    private fun failWaiting(code: String) {
+        connecting = false; loadingPurchase = false; handler.removeCallbacks(connectionTimeout)
+        val queue = waiting.toList(); waiting.clear(); queue.forEach { error(it.first, code) }
     }
-
-    private fun dispatchError(requestId: String, code: String) {
-        dispatch(
-            JSONObject()
-                .put("ok", false)
-                .put("requestId", requestId)
-                .put("error", code)
-        )
-    }
-
-    private fun dispatch(payload: JSONObject) = resultDispatcher(payload.toString())
-
-    private fun clearPendingSubscribe() {
-        pendingSubscribeRequestId = null
-        pendingSubscribeProductId = null
-    }
-
-    private fun billingError(result: BillingResult): String = when (result.responseCode) {
+    private fun purchaseJson(p: Purchase) = JSONObject().put("productId", p.products.firstOrNull { it in SUPPORTED_PRODUCTS })
+        .put("purchaseToken", p.purchaseToken).put("state", when (p.purchaseState) {
+            Purchase.PurchaseState.PURCHASED -> "purchased"
+            Purchase.PurchaseState.PENDING -> "pending"
+            else -> "unknown"
+        }).put("acknowledged", p.isAcknowledged).put("verified", false)
+    private fun send(id: String, data: JSONObject) { if (!closed) resultDispatcher(JSONObject().put("ok", true).put("requestId", id).put("data", data).toString()) }
+    private fun error(id: String, code: String) { if (!closed) resultDispatcher(JSONObject().put("ok", false).put("requestId", id).put("error", code).toString()) }
+    private fun errorCode(r: BillingResult) = when (r.responseCode) {
         BillingClient.BillingResponseCode.USER_CANCELED -> "purchase_canceled"
-        BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> "subscription_already_owned"
+        BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED -> "existing_subscription_restore_or_manage"
         BillingClient.BillingResponseCode.ITEM_UNAVAILABLE -> "subscription_product_unavailable"
-        BillingClient.BillingResponseCode.SERVICE_DISCONNECTED,
-        BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE -> "play_billing_unavailable"
         BillingClient.BillingResponseCode.NETWORK_ERROR -> "play_billing_network_error"
-        else -> "play_billing_error_${result.responseCode}"
+        else -> "play_billing_unavailable"
     }
-
     companion object {
-        private val SUPPORTED_PRODUCTS = setOf(
-            "icarus_pro_monthly",
-            "icarus_pro_quarterly",
-            "icarus_pro_annual",
-        )
-        private val ACCOUNT_BINDING = Regex("^[0-9a-f]{64}$")
+        private val SUPPORTED_PRODUCTS = setOf("icarus_pro_monthly", "icarus_pro_quarterly", "icarus_pro_annual")
+        private val PERIODS = mapOf("icarus_pro_monthly" to "P1M", "icarus_pro_quarterly" to "P3M", "icarus_pro_annual" to "P1Y")
+        private val BINDING = Regex("^[0-9a-f]{64}$")
+        private val BASE_PLAN = Regex("^[a-z0-9][a-z0-9-]{0,62}$")
     }
 }
