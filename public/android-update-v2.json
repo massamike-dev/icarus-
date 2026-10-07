@@ -1,9 +1,9 @@
 {
-  "versionCode": 45,
-  "versionName": "1.6.14",
-  "releaseDate": "2026-09-27",
-  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.6.14-test/ICARUS-latest.apk",
-  "sha256": "0207f67ed0bd6b7972371c7e7ce31bdd592bbba6a1e3c0eaa74fe47d233cf8e0",
+  "versionCode": 46,
+  "versionName": "1.6.15",
+  "releaseDate": "2026-10-07",
+  "downloadUrl": "https://github.com/massamike-dev/icarus-/releases/download/v1.6.15-test/ICARUS-latest.apk",
+  "sha256": "215fe3d5b3b6e01fc2db2dba93d3c0f3fbd4d7eda9e3eed836a740c62a50f913",
   "patchNotes": [
     "Added quarterly Premium billing support alongside monthly and annual plans.",
     "Premium developer grants remain server-controlled and separate from Google Play purchases.",
