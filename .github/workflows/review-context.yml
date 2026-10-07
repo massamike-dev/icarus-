@@ -1,0 +1,34 @@
+name: Build focused review context
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  review-context:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out reviewed commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build compact review packet
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_CONTEXT_OUTPUT: review-context.md
+        run: bash scripts/build-review-context.sh
+
+      - name: Add packet to workflow summary
+        run: cat review-context.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload review packet
+        uses: actions/upload-artifact@v4
+        with:
+          name: review-context
+          path: review-context.md
+          retention-days: 14
