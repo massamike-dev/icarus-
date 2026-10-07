@@ -26,8 +26,8 @@ tests="$(printf '%s\n' "$changed_files" | grep -Ei '(^|/)(test|tests|__tests__)(
 {
   echo "# Review context"
   echo
-  echo "- Base: `$review_base_sha`"
-  echo "- Head: `$review_head_sha`"
+  printf -- '- Base: `%s`\n' "$review_base_sha"
+  printf -- '- Head: `%s`\n' "$review_head_sha"
   echo "- Risk: **$risk**"
   echo "- Scope: $file_count files, +$added / -$deleted lines"
   echo "- Reason: $reasons"
@@ -46,7 +46,7 @@ tests="$(printf '%s\n' "$changed_files" | grep -Ei '(^|/)(test|tests|__tests__)(
   echo
   echo "## Review instruction"
   echo
-  echo "Review objective correctness, security, privacy, tests, and regressions introduced by this diff. Expand beyond changed files only to direct dependencies needed to prove a finding. Ignore style-only and speculative suggestions. Follow `docs/CODE_REVIEW.md` and `.macroscope/approvability.md`."
+  echo 'Review objective correctness, security, privacy, tests, and regressions introduced by this diff. Expand beyond changed files only to direct dependencies needed to prove a finding. Ignore style-only and speculative suggestions. Follow `docs/CODE_REVIEW.md` and `.macroscope/approvability.md`.'
 } > "$review_output"
 
 cat "$review_output"
