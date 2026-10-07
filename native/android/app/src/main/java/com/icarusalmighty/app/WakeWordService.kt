@@ -16,14 +16,11 @@ import org.json.JSONObject
 /** Opt-in native listener. One service owns the microphone and each command turn. */
 class WakeWordService : Service() {
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val recoveryPolicy = WakeRecoveryPolicy()
     private val engine: SherpaWakeWordEngine by lazy { SherpaWakeWordEngine(this) { message ->
         mainHandler.post {
             if (!stopping && session == null && !engine.diagnostics().optBoolean("engineRunning")) {
-                lastError = message
-                listenerState = "ERROR"
-                updateNotification(message)
-                stopping = true
-                stopSelf()
+                scheduleRecovery(message)
             }
         }
     } }
@@ -34,6 +31,8 @@ class WakeWordService : Service() {
     private var lastTurnAt = 0L
     private var lastTrigger = "none"
     private var lastNotification = ""
+    private var recoveryScheduled = false
+    private var nextRecoveryAt = 0L
     private var turnLock: PowerManager.WakeLock? = null
     private val monitor = object : Runnable {
         override fun run() {
@@ -49,12 +48,13 @@ class WakeWordService : Service() {
                         updateNotification("Android is silencing the microphone. Stop other listeners or recordings, then retry.")
                     }
                     stalled -> {
-                        listenerState = "AUDIO_STALLED"
-                        updateNotification("No microphone samples are arriving. Stop listening, then enable it again.")
+                        scheduleRecovery("Wake audio stalled; ICARUS is restarting the microphone.")
                     }
                     else -> {
+                        recoveryPolicy.recordHealthy(System.currentTimeMillis())
                         listenerState = "LISTENING"
-                        updateNotification(lastError ?: "Listening for “Hey ICARUS”")
+                        lastError = null
+                        updateNotification("Listening for “Hey ICARUS”")
                     }
                 }
             }
@@ -89,6 +89,8 @@ class WakeWordService : Service() {
         if (stopping || session != null) return
         if (!isEnabled(this)) { stopping = true; stopSelf(); return }
         if (engine.diagnostics().optBoolean("engineRunning")) return
+        recoveryScheduled = false
+        nextRecoveryAt = 0L
         val expectedGeneration = ++generation
         armedAt = System.currentTimeMillis()
         listenerState = "STARTING"
@@ -104,12 +106,30 @@ class WakeWordService : Service() {
             listenerState = "LISTENING"
             updateNotification(lastError ?: "Listening for “Hey ICARUS”")
         }.onFailure { error ->
-            lastError = error.message ?: "Wake listener could not start"
-            listenerState = "ERROR"
-            updateNotification(lastError!!)
-            stopping = true
-            stopSelf()
+            scheduleRecovery(error.message ?: "Wake listener could not start")
         }
+    }
+
+    private fun scheduleRecovery(message: String) {
+        if (stopping || session != null || recoveryScheduled || !isEnabled(this)) return
+        recoveryScheduled = true
+        generation++
+        engine.stop()
+        val delayMs = recoveryPolicy.recordFailure()
+        nextRecoveryAt = System.currentTimeMillis() + delayMs
+        lastError = message
+        listenerState = "RECOVERING"
+        updateNotification("$message Retrying in ${formatDelay(delayMs)}.")
+        mainHandler.postDelayed({
+            recoveryScheduled = false
+            if (!stopping && session == null && isEnabled(this)) armEngine()
+        }, delayMs)
+    }
+
+    private fun formatDelay(delayMs: Long): String = when {
+        delayMs < 1_000L -> "under a second"
+        delayMs < 60_000L -> "${delayMs / 1_000L} seconds"
+        else -> "one minute"
     }
 
     private fun beginTurn(trigger: String) {
@@ -169,6 +189,9 @@ class WakeWordService : Service() {
         .put("lastTurnAt", lastTurnAt)
         .put("lastTrigger", lastTrigger)
         .put("talkNowSupported", true)
+        .put("recoveryAttempts", recoveryPolicy.snapshot().consecutiveFailures)
+        .put("recoveryScheduled", recoveryScheduled)
+        .put("nextRecoveryAt", nextRecoveryAt)
         .put("mediaVolumePercent", getSystemService(AudioManager::class.java).let {
             100 * it.getStreamVolume(AudioManager.STREAM_MUSIC) / it.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
         })
