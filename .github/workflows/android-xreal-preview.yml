@@ -14,7 +14,7 @@ concurrency:
 
 env:
   PREVIEW_BRANCH: work/icarus-xreal-preview-20261014
-  PREVIEW_TAG: v1.6.16-xreal-preview
+  PREVIEW_TAG: v1.6.17-xreal-preview
   ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
 
 jobs:
@@ -256,7 +256,7 @@ jobs:
           PY
           gh release create "$PREVIEW_TAG" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "ICARUS 1.6.16 XREAL Preview (stationary testing only)" \
+            --title "ICARUS 1.6.17 XREAL Preview (stationary testing only)" \
             --notes-file docs/XREAL_PREVIEW_RELEASE.md --prerelease --latest=false \
             "$RUNNER_TEMP/preview-delivery/ICARUS-xreal-preview.apk" \
             "$RUNNER_TEMP/preview-delivery/SHA256SUMS" \
