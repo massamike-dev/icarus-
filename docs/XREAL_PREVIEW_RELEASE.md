@@ -24,4 +24,4 @@ If the first branch push runs before its draft PR is open, open the draft PR and
 
 ## Dependency review
 
-Vite is pinned to 8.3.3, which patches the maintainer's October 6 development-server advisories (GHSA-rq7h-c2jc-7f22, GHSA-vfpm-58rq-9qcg, GHSA-9jrq-w75r-8gcw). The installed APK uses generated static assets rather than a Vite development server. Automatic npm audit transmission is disabled during dependency installation. A complete dependency advisory review remains open; this preview is not production security sign-off.
+Vite is pinned to 8.3.3, which patches the maintainer's October 6 development-server advisories (GHSA-rq7h-c2jc-7f22, GHSA-vfpm-58rq-9qcg, GHSA-9jrq-w75r-8gcw). The installed APK uses generated static assets rather than a Vite development server. Automatic npm audit transmission is disabled during dependency installation. The high-severity source-map-js indexed-source-map denial-of-service advisory (GHSA-68fv-2mgg-jv7q) is patched with source-map-js 1.2.2. An npm advisory check is part of the current release review; passing it is not a comprehensive security assessment or production sign-off.
