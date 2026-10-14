@@ -70,23 +70,24 @@ class PreviewVerificationTests(unittest.TestCase):
             with self.subTest(baseline=field), self.assertRaises(ValueError):
                 verification.verify_upgrade(baseline, metadata(True))
 
-    def test_certificate_parser_requires_unambiguous_sha256(self):
-        output = "Verifies\nSigner #1 certificate SHA-256 digest: " + CERT.upper() + "\n"
-        self.assertEqual(verification.certificates(output), [CERT])
-        for output in ("", "Signer #1 certificate SHA-1 digest: " + CERT, output + output):
+    def test_certificate_parser_requires_one_verified_api_fingerprint(self):
+        self.assertEqual(verification.certificates("CERTIFICATE_SHA256=" + CERT), [CERT])
+        invalid = ("", "CERTIFICATE_SHA256=" + CERT.upper(),
+                   "Signer #1 certificate SHA-256 digest: " + CERT,
+                   "CERTIFICATE_SHA256=" + CERT + "\nCERTIFICATE_SHA256=" + CERT,
+                   "PUBLIC_KEY_SHA256=" + CERT)
+        for output in invalid:
             with self.subTest(output=output), self.assertRaises(ValueError):
                 verification.certificates(output)
 
-    def test_sdk_ranged_signers_use_certificate_not_public_key_fingerprints(self):
-        output = "Signer (minSdkVersion=29, maxSdkVersion=2147483647) certificate SHA-256 digest: " + CERT + "\n"
-        output += "Signer (minSdkVersion=29, maxSdkVersion=2147483647) public key SHA-256 digest: " + "c" * 64 + "\n"
-        self.assertEqual(verification.certificates(output), [CERT])
-        lower_range = "Signer (minSdkVersion=24, maxSdkVersion=28) certificate SHA-256 digest: "
-        self.assertEqual(verification.certificates(output + lower_range + CERT), [CERT])
-        with self.assertRaises(ValueError):
-            verification.certificates(output + lower_range + "c" * 64)
-        with self.assertRaises(ValueError):
-            verification.certificates(output.replace(" certificate SHA-256 digest:", " public key SHA-256 digest:"))
+    def test_certificate_api_verifies_before_returning_exactly_one_x509_digest(self):
+        helper = Path(__file__).with_name("ApkCertificateInfo.java").read_text()
+        self.assertIn("new ApkVerifier.Builder", helper)
+        self.assertIn("result.isVerified()", helper)
+        self.assertIn("result.getSignerCertificates()", helper)
+        self.assertIn("certificates.size() != 1", helper)
+        self.assertIn("certificate.getEncoded()", helper)
+        self.assertNotIn("getPublicKey()", helper)
 
     def test_permissions_fail_closed(self):
         prefix = '<manifest xmlns:android="http://schemas.android.com/apk/res/android">'

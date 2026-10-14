@@ -89,16 +89,16 @@ jobs:
             "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" | sha256sum --check --strict
           APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -n "$APKSIGNER_PATH"
-          "$APKSIGNER_PATH" verify --verbose --print-certs "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" > "$RUNNER_TEMP/baseline-certificates.txt"
-          # Public certificate fingerprints only, never a private signing key.
-          grep -E '^(Verif|Number of|Signer.* SHA-256 digest)' "$RUNNER_TEMP/baseline-certificates.txt"
           python3 - <<'PYBASE'
           import importlib.util, os
           from pathlib import Path
           spec = importlib.util.spec_from_file_location("verification", ".github/scripts/verify-xreal-preview.py")
           module = importlib.util.module_from_spec(spec)
           spec.loader.exec_module(module)
-          module.certificates((Path(os.environ["RUNNER_TEMP"]) / "baseline-certificates.txt").read_text())
+          sdk = Path(os.environ["ANDROID_HOME"])
+          apksigner = sorted(sdk.glob("build-tools/*/apksigner"))[-1]
+          fingerprints = module.signer_fingerprints(Path(os.environ["RUNNER_TEMP"]) / "preview-baseline/ICARUS-latest.apk", apksigner)
+          print("Verified baseline certificate SHA-256: " + fingerprints[0])
           PYBASE
       - name: Run native release unit tests and lint before accessing signing secrets
         id: native_validation

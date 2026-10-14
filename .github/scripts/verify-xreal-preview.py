@@ -44,17 +44,21 @@ def run_tool(command):
 
 
 def certificates(output):
-    # apksigner emits either numbered signers or SDK-ranged signers (v3/v3.1).
-    # Match certificate fingerprints only; public-key and source-stamp digests
-    # are not the APK signing identity.
-    pattern = (r"^(Signer (?:#[0-9]+|\(minSdkVersion=[0-9]+, maxSdkVersion=[0-9]+\)))"
-               r" certificate SHA-256 digest: ([0-9a-fA-F]{64})$")
-    matches = re.findall(pattern, output, re.MULTILINE)
-    require(bool(matches), "APK verification returned no supported signer certificate SHA-256 digest.")
-    require(len({label for label, _ in matches}) == len(matches), "Duplicate or ambiguous signer labels.")
-    result = sorted({value.lower() for _, value in matches})
-    require(len(result) == 1, "This preview requires one unchanged signing certificate; signer rotation is not supported.")
-    return result
+    # This machine-readable line is produced by our tiny helper using Android's
+    # ApkVerifier API. CLI labels vary between build-tools versions.
+    values = output.splitlines()
+    require(len(values) == 1, "Expected exactly one verified APK signer fingerprint.")
+    match = re.fullmatch(r"CERTIFICATE_SHA256=([0-9a-f]{64})", values[0])
+    require(match is not None, "APK verifier returned an invalid certificate SHA-256 fingerprint.")
+    return [match.group(1)]
+
+
+def signer_fingerprints(path, apksigner):
+    jar = Path(apksigner).resolve().parent / "lib" / "apksigner.jar"
+    require(jar.is_file(), "Android apksigner API jar is unavailable.")
+    helper = Path(__file__).with_name("ApkCertificateInfo.java")
+    require(helper.is_file(), "APK certificate helper is unavailable.")
+    return certificates(run_tool(["java", "--class-path", str(jar), str(helper), str(path)]))
 
 
 def permissions(output):
@@ -81,7 +85,7 @@ def permissions(output):
 
 
 def inspect_apk(path, apksigner, apkanalyzer):
-    signer_output = run_tool([apksigner, "verify", "--verbose", "--print-certs", str(path)])
+    run_tool([apksigner, "verify", str(path)])
     def manifest(field):
         return run_tool([apkanalyzer, "manifest", field, str(path)])
     code = manifest("version-code")
@@ -92,7 +96,7 @@ def inspect_apk(path, apksigner, apkanalyzer):
         "versionName": manifest("version-name"),
         "debuggable": manifest("debuggable"),
         "permissions": permissions(manifest("print")),
-        "signerCertificateSha256": certificates(signer_output),
+        "signerCertificateSha256": signer_fingerprints(path, apksigner),
     }
 
 
