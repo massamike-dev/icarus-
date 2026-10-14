@@ -65,6 +65,7 @@
 
         <activity
             android:name=".driving.DrivingHudActivity"
+            android:theme="@style/DrivingHudTheme"
             android:exported="true"
             android:launchMode="singleTop"
             android:screenOrientation="sensorLandscape">

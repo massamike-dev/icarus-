@@ -35,8 +35,8 @@ test('one companion survives navigation, can move and hide, and has a resilient 
     for(const page of ['Chat','Memory','Settings','Voice']){await app.click(page);assert.equal(app.w.document.querySelectorAll('.icarus-companion').length,1);}
     assert.equal(app.w.document.querySelector('.icarus-head'),null);
     const image=app.w.document.querySelector('.companion-figure img');image.dispatchEvent(new app.w.Event('error'));
-    await waitFor(()=>app.w.document.querySelector('.companion-fallback'));
-    assert.equal(app.w.document.querySelector('.companion-figure img'),null);
+    await waitFor(()=>app.w.document.querySelector('.companion-fallback-crest'));
+    assert.equal(app.w.document.querySelector('.companion-figure img').getAttribute('src'),'/brand/icarus-crest.svg');
     await app.click('Open ICARUS companion');await app.click('Move ICARUS to the left');
     assert.ok(app.w.document.querySelector('.companion-left'));
     await app.click('Hide ICARUS');
@@ -104,6 +104,7 @@ test('typing tucks the companion, Escape restores focus, and sign-out removes it
     app.w.document.querySelector('.profile').click();
     await waitFor(()=>app.w.document.querySelector('.auth'));
     assert.equal(app.w.document.querySelector('.icarus-companion'),null);
+    await waitFor(()=>app.w.ICARUS_NATIVE_STATUS===undefined&&app.w.ICARUS_NATIVE_RESULT===undefined);
     assert.equal(app.w.ICARUS_NATIVE_STATUS,undefined);
     assert.equal(app.w.ICARUS_NATIVE_RESULT,undefined);
     assert.deepEqual(app.errors,[]);

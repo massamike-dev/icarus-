@@ -39,7 +39,7 @@ class IcarusNativeBridge(
 ) {
     private val context: Context get() = activity
     private val obd = ObdManager(context)
-    private val localModel = LocalModelManager(context)
+    private val localModel = LocalModelManager.get(context)
     private val billing = PlayBillingManager(activity, resultDispatcher)
     private val speechHandler = Handler(Looper.getMainLooper())
     private var voiceOperation: VoiceOperation? = null
@@ -85,8 +85,10 @@ class IcarusNativeBridge(
 
         return try {
             when (action) {
+                "get_runtime_mode" -> ok(requestId, RuntimeMode.status(context))
                 "configure_voice_session" -> {
-                    VoiceSessionStore.configure(context, args)
+                    if (RuntimeMode.current(context) == RuntimeMode.CLOUD) VoiceSessionStore.configure(context, args)
+                    else VoiceSessionStore.clear(context)
                     ok(requestId)
                 }
                 "open_app" -> openApp(requestId, args)
@@ -136,7 +138,7 @@ class IcarusNativeBridge(
                 "download_local_model" -> ok(requestId, localModel.startDownload(args.optBoolean("wifiOnly", true)))
                 "delete_local_model" -> ok(requestId, localModel.deleteModel())
                 "local_chat" -> {
-                    localModel.generate(requestId, firstString(args, "prompt", "message", "text"), resultDispatcher)
+                    localModel.generate(requestId, firstString(args, "prompt", "message", "text"), resultDispatcher, args.optJSONArray("messages"), args.optString("memoryContext"))
                     ""
                 }
                 "interpret_command" -> {
@@ -159,7 +161,9 @@ class IcarusNativeBridge(
         } catch (e: SecurityException) {
             error(requestId, "permission_required", e.message)
         } catch (e: Exception) {
-            error(requestId, "native_action_failed", e.message)
+            val code = e.message?.takeIf { it.startsWith("local_model_") }
+            if (code != null) error(requestId, code, LocalModelManager.errorMessage(code))
+            else error(requestId, "native_action_failed", e.message)
         }
     }
 
@@ -726,7 +730,7 @@ class IcarusNativeBridge(
             "set_volume", "set_brightness", "make_call", "send_sms", "take_photo", "set_alarm",
             "set_timer", "navigate_to", "get_battery", "obd_list", "obd_connect", "obd_snapshot",
             "obd_disconnect", "open_driving_hud", "open_navigation_access_settings", "find_videos", "compose_video_montage", "native_tts", "speak_text", "stop_speaking", "session_logout", "check_subscription", "subscribe", "check_update",
-            "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
+            "get_runtime_mode", "set_runtime_mode", "local_model_status", "download_local_model", "delete_local_model", "local_chat", "interpret_command",
             "meta_status", "meta_register", "meta_unregister", "meta_session_start", "meta_session_stop",
             "meta_capture_photo", "meta_display", "meta_audio_test", "meta_mock_enable", "meta_mock_disable",
             "xreal_status", "open_xreal_hud", "close_xreal_hud", "update_xreal_hud", "meta_xreal_status", "meta_xreal_launch", "meta_xreal_close", "meta_xreal_update"
@@ -739,6 +743,7 @@ class IcarusNativeBridge(
             .put("applicationId", BuildConfig.APPLICATION_ID)
             .put("privateTest", BuildConfig.PRIVATE_TEST)
             .put("actionProtocolVersion", 1)
+            .put("runtime", RuntimeMode.status(context))
             .put("voiceSession", VoiceSessionStore.status(context))
             .put("voiceSettings", VoicePreferences.summary(VoicePreferences.read(context)))
             .put("device", "${Build.MANUFACTURER} ${Build.MODEL}".trim())

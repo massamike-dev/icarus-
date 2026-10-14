@@ -4,6 +4,7 @@ import {readDeviceStatus,subscribeNative} from './device-actions';
 import {getNativeTransport} from './native-transport.js';
 import {voiceDiagnosticRows} from './voice-status.js';
 import {DevicePreferences} from './settings-preferences.jsx';
+import {isLocalMode} from './local-core.js';
 
 export class ScreenBoundary extends React.Component {
   state = {failed:false};
@@ -80,7 +81,7 @@ export function VoiceControls() {
     {status&&<dl className="voice-diagnostics" aria-label="Voice diagnostics">{voiceDiagnosticRows(status).map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
     <dialog ref={dialog} className="settings-dialog" aria-labelledby="voice-consent-title" aria-describedby="voice-consent-description">
       <h2 id="voice-consent-title">Enable hands-free listening?</h2>
-      <p id="voice-consent-description">ICARUS listens locally for “Hey ICARUS” in the background. Commands after wake may use Android speech recognition and your configured AI provider. You can stop listening here or from the ICARUS notification.</p>
+      <p id="voice-consent-description">ICARUS listens locally for “Hey ICARUS” in the background. Commands after wake may use Android speech recognition. On-device mode keeps AI interpretation local; optional cloud mode uses the configured server and AI provider. You can stop listening here or from the ICARUS notification.</p>
       <div className="settings-actions"><button ref={cancel} className="secondary" onClick={()=>dialog.current.close()}>Cancel</button><button className="primary" onClick={()=>{dialog.current.close();send('wake_word',{enabled:true});}}>Enable listening</button></div>
     </dialog>
   </div>;
@@ -90,8 +91,8 @@ export function Settings({user,onSignOut}) {
   return <section className="workspace settings-workspace">
     <p className="eyebrow">ICARUS SETTINGS</p><h1>Settings</h1>
     <DevicePreferences><VoiceControls/></DevicePreferences>
-    <section className="settings-section" aria-labelledby="account-settings"><h2 id="account-settings">Your account</h2><p>{user.name}</p><p className="account-email">{user.email}</p><button className="secondary" onClick={onSignOut}>Sign out</button></section>
+    {!isLocalMode()&&<section className="settings-section" aria-labelledby="account-settings"><h2 id="account-settings">Your account</h2><p>{user.name}</p><p className="account-email">{user.email}</p><button className="secondary" onClick={onSignOut}>Sign out</button></section>}
     <ReleaseNotes/>
-    <section className="settings-section" aria-labelledby="privacy-settings"><h2 id="privacy-settings">Privacy & support</h2><div className="settings-links"><a href="/privacy-policy">Privacy policy</a><a href="mailto:wennigworks@gmail.com">Contact support</a><a href="/account-deletion">Account deletion options</a></div></section>
+    <section className="settings-section" aria-labelledby="privacy-settings"><h2 id="privacy-settings">Privacy & support</h2><div className="settings-links"><a href={isLocalMode()?"/assets/web/index.html?view=privacy":"/privacy-policy"}>Privacy policy</a><a href="mailto:wennigworks@gmail.com">Contact support</a>{!isLocalMode()&&<a href="/account-deletion">Account deletion options</a>}</div></section>
   </section>;
 }

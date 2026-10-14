@@ -44,7 +44,10 @@ export function modelStatusText(model) {
     case 'downloading':return 'Downloading to this phone…';
     case 'paused':return 'Download paused. Check Wi-Fi, storage and the Android download notification.';
     case 'failed':return 'Download failed. Check Wi-Fi and available storage, then try again.';
-    case 'not_downloaded':return 'Not downloaded on this phone.';
+    case 'not_downloaded':return 'Not downloaded on this phone. Download once to use on-device Chat.';
+    case 'verifying':return 'Verifying the downloaded model on this phone. This may take a few minutes.';
+    case 'unsupported_device':
+    case 'unsupported':return 'This device does not support the local AI runtime. Basic device controls remain available; cloud is optional.';
     default:return 'Android reported an unknown model state. Refresh before continuing.';
   }
 }

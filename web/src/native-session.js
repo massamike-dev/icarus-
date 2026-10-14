@@ -2,6 +2,7 @@
 // explicit opt-in controls, and a compatibility receiver for pre-36 hosts.
 import {readVoiceSession} from './device-actions';
 import {getNativeTransport} from './native-transport.js';
+import {isLocalMode} from './local-core.js';
 
 // Selection stays in memory in the web client. Android owns its durable voice
 // selection; temporary messages and credentials are never kept in this object.
@@ -21,10 +22,17 @@ export function selectChatContext({conversationId,temporary=false}) {
   return getChatContext();
 }
 export function syncVoiceSession() {
+  // Local WebView history is a separate device vault. Do not pass a stale cloud
+  // credential or a device-only conversation ID to the voice service.
+  if(isLocalMode()){
+    if(request('configure_voice_session',{token:'',conversationId:'',temporary:true}))contextNeedsSync=false;
+    return;
+  }
   const context=contextNeedsSync?{conversationId:chatContext.conversationId||'',temporary:chatContext.temporary}:{};
   if(request('configure_voice_session',{token:localStorage.getItem('icarus_token')||'',...context}))contextNeedsSync=false;
 }
 export async function restoreChatContext() {
+  if(isLocalMode()){if(contextNeedsSync)syncVoiceSession();return getChatContext();}
   if(contextNeedsSync)syncVoiceSession();
   const revision=chatContext.revision;
   const voice=await readVoiceSession();
@@ -47,8 +55,8 @@ export function installVoiceControls() {
   });
   window.addEventListener('icarus-native-ready',syncVoiceSession);
   const originalSet=Storage.prototype.setItem, originalRemove=Storage.prototype.removeItem;
-  Storage.prototype.setItem=function(key,value){const previous=this.getItem(key);originalSet.call(this,key,value);if(this===localStorage&&key==='icarus_token'){if(previous!==String(value))selectChatContext({});else syncVoiceSession()}};
-  Storage.prototype.removeItem=function(key){originalRemove.call(this,key);if(this===localStorage&&key==='icarus_token'){request('session_logout');selectChatContext({})}};
+  Storage.prototype.setItem=function(key,value){const previous=this.getItem(key);originalSet.call(this,key,value);if(!isLocalMode()&&this===localStorage&&key==='icarus_token'){if(previous!==String(value))selectChatContext({});else syncVoiceSession()}};
+  Storage.prototype.removeItem=function(key){originalRemove.call(this,key);if(!isLocalMode()&&this===localStorage&&key==='icarus_token'){request('session_logout');selectChatContext({})}};
   // Bridge is installed asynchronously after page load.
   let tries=0;const timer=setInterval(()=>{if(getNativeTransport()){syncVoiceSession();clearInterval(timer)}else if(++tries>=30)clearInterval(timer)},500);
 }

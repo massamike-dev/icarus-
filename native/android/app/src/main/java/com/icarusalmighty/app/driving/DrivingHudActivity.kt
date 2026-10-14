@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -25,7 +27,6 @@ import com.icarusalmighty.app.BuildConfig
 import java.util.Locale
 
 class DrivingHudActivity : AppCompatActivity() {
-    private lateinit var volumeSurface: VolumetricHudSurface
     private lateinit var hud: DrivingHudView
     private var telemetry: DrivingTelemetrySession.Lease? = null
     private var latestState = DrivingHudState()
@@ -46,19 +47,18 @@ class DrivingHudActivity : AppCompatActivity() {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
-        volumeSurface = VolumetricHudSurface(this)
+        // Pure black is no emitted HUD light on an additive optical display.
+        // On a phone this remains an instruments-only screen: transparency does
+        // not reveal the physical road, and no camera feed is started here.
+        window.setBackgroundDrawable(ColorDrawable(Color.BLACK))
+        window.statusBarColor = Color.BLACK
+        window.navigationBarColor = Color.BLACK
         hud = DrivingHudView(this, ::handleHudAction).apply {
-            // Full opacity keeps text edges stable on mirrored optical displays.
+            // Keep instrument edges sharp; unused pixels in this View are transparent.
             alpha = 1f
         }
         val root = FrameLayout(this).apply {
-            addView(
-                volumeSurface,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
-            )
+            setBackgroundColor(Color.BLACK)
             addView(
                 hud,
                 FrameLayout.LayoutParams(
@@ -73,14 +73,8 @@ class DrivingHudActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        volumeSurface.onResume()
         telemetry?.refreshNavigationAccess()
         WindowInsetsControllerCompat(window, window.decorView).hide(WindowInsetsCompat.Type.systemBars())
-    }
-
-    override fun onPause() {
-        volumeSurface.onPause()
-        super.onPause()
     }
 
     override fun onDestroy() {
@@ -119,7 +113,6 @@ class DrivingHudActivity : AppCompatActivity() {
             ?: DrivingObdDiscovery.findSingleKnownAddress(this)
         telemetry = DrivingTelemetrySession.acquire(this, address) { state ->
             latestState = state
-            volumeSurface.render(state)
             hud.render(state)
         }
     }

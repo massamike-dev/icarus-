@@ -4,10 +4,12 @@ import { extname, join, normalize } from 'node:path';
 import { hashPassword, issueToken, verifyPassword, verifyToken } from './auth.js';
 import { interpretCommand } from './commands.js';
 import {assistantTurn, capabilities} from './assistant.js';
+import {searchIntent} from './search-intent.js';
 import {conversationService} from './conversation-service.js';
 import { isPrivateTester, privateSessionSecret, privateTestConfig } from './private-test.js';
 import { privateApkService } from './private-apk.js';
 import { entitlementFor } from './entitlements.js';
+import { integrationService } from './integration-service.js';
 
 const json = (res, status, body) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
 const body = async req => { const chunks=[]; for await (const chunk of req) chunks.push(chunk); if (Buffer.concat(chunks).length > 1_000_000) throw new Error('Request too large'); return JSON.parse(Buffer.concat(chunks).toString() || '{}'); };
@@ -15,6 +17,7 @@ const bearer = req => req.headers.authorization?.replace(/^Bearer\s+/i, '');
 const safeUser = (user,env) => ({ id:user.id, email:user.email, name:user.name, entitlement:entitlementFor(user,env) });
 export function createHandler({ store, env=process.env, publicDir, fetchImpl=fetch }) {
   const conversations=conversationService(store);
+  const integrations=integrationService({store,env,fetchImpl});
   const privateTest = privateTestConfig(env);
   const privateApk = privateApkService({ env, fetchImpl });
   const configuredSecret = env.ICARUS_SESSION_SECRET || (!privateTest && env.NODE_ENV === 'test' ? 'test-secret-at-least-32-characters' : '');
@@ -22,6 +25,7 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
   const secret = privateSessionSecret(configuredSecret, privateTest);
   const authenticated = async req => { const id=verifyToken(bearer(req),secret); if(!id) return null; const user=(await store.read()).users.find(u=>u.id===id)||null; return privateTest&&!isPrivateTester(user,privateTest)?null:user; };
   return async (req,res) => {
+    res.setHeader('referrer-policy','no-referrer');
     try {
       const url=new URL(req.url,'http://localhost'); const path=url.pathname;
       if (path==='/api/health') return json(res,200,{ok:true,service:'icarus-api',base44:false,...(privateTest?{privateTest:true,...(/^[a-f0-9]{40}$/.test(env.RENDER_GIT_COMMIT||'')?{commitSha:env.RENDER_GIT_COMMIT}:{})}:{})});
@@ -42,11 +46,21 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
       if(path==='/api/capabilities') return json(res,200,capabilities(env));
       if(path==='/api/me') return json(res,200,{user:safeUser(user,env)});
       if(path==='/api/entitlement'&&req.method==='GET') return json(res,200,{entitlement:entitlementFor(user,env)});
+      if(path==='/api/integrations'&&req.method==='GET') return json(res,200,{integrations:await integrations.status(user.id)});
+      const integrationRoute=path.match(/^\/api\/integrations\/([a-z-]+)(?:\/(connect|callback|query))?$/);
+      if(integrationRoute){
+        const [,id,operation]=integrationRoute;
+        if(operation==='connect'&&req.method==='POST')return json(res,200,await integrations.start(user.id,id));
+        if(operation==='callback'&&req.method==='POST')return json(res,200,await integrations.finish(user.id,id,await body(req)));
+        if(operation==='query'&&req.method==='POST')return json(res,200,await integrations.query(user.id,id,await body(req)));
+        if(!operation&&req.method==='DELETE')return json(res,200,await integrations.disconnect(user.id,id));
+        return json(res,405,{error:'method_not_allowed'});
+      }
       if(path==='/api/commands/interpret'&&req.method==='POST') {
         const input=await body(req), command=String(input.command||'').trim().slice(0,1000);
         if(!command)return json(res,400,{error:'command_required'});
         const produce=async(history,memories)=>{
-          if(/^(search (the )?(web|internet)|look up)\b/i.test(command)){
+          if(searchIntent(command)){
             const turn=await assistantTurn(history,memories,env,fetchImpl,{search:true,voice:true});
             return {...turn,action:'unknown',executionStatus:'not_executed'};
           }
@@ -59,7 +73,7 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
         return json(res,200,turn);
       }
       if(/^\/api\/actions\/[^/]+\/result$/.test(path)&&req.method==='POST')return json(res,200,await conversations.reportResult(user.id,path.split('/')[3],await body(req)));
-      if(path==='/api/account'&&req.method==='DELETE') { await store.update(d=>{d.users=d.users.filter(x=>x.id!==user.id);d.conversations=d.conversations.filter(x=>x.userId!==user.id);d.messages=d.messages.filter(x=>x.userId!==user.id);d.memories=d.memories.filter(x=>x.userId!==user.id);d.turns=(d.turns||[]).filter(x=>x.userId!==user.id);d.actionRequests=(d.actionRequests||[]).filter(x=>x.userId!==user.id)}); return json(res,200,{ok:true,deleted:true}); }
+      if(path==='/api/account'&&req.method==='DELETE') { await store.update(d=>{d.users=d.users.filter(x=>x.id!==user.id);d.conversations=d.conversations.filter(x=>x.userId!==user.id);d.messages=d.messages.filter(x=>x.userId!==user.id);d.memories=d.memories.filter(x=>x.userId!==user.id);d.turns=(d.turns||[]).filter(x=>x.userId!==user.id);d.actionRequests=(d.actionRequests||[]).filter(x=>x.userId!==user.id);d.integrationCredentials=(d.integrationCredentials||[]).filter(x=>x.userId!==user.id);d.integrationOAuthStates=(d.integrationOAuthStates||[]).filter(x=>x.userId!==user.id);d.integrationVerification=(d.integrationVerification||[]).filter(x=>x.userId!==user.id)}); return json(res,200,{ok:true,deleted:true}); }
       if(path==='/api/memories'&&req.method==='GET') return json(res,200,{memories:(await store.read()).memories.filter(x=>x.userId===user.id)});
       if(path==='/api/memories'&&req.method==='POST') { const input=await body(req); const content=String(input.content||'').trim().slice(0,4000); if(!content)return json(res,400,{error:'content_required'}); const memory={id:randomUUID(),userId:user.id,content,createdAt:new Date().toISOString()}; await store.update(d=>d.memories.push(memory)); return json(res,201,{memory}); }
       if(path.startsWith('/api/memories/')&&req.method==='DELETE') { const id=path.split('/').pop(); await store.update(d=>{d.memories=d.memories.filter(x=>x.userId!==user.id||x.id!==id)}); return json(res,200,{ok:true}); }

@@ -241,6 +241,7 @@ test('HUD navigation aborts pending requests without overriding companion or voi
     assert.equal(app.requests.filter(value=>value.action==='start_voice_turn').length,1);
     app.w.document.querySelector('.profile').click();await waitFor(()=>app.w.document.querySelector('.auth'));
     assert.equal(app.w.ICARUS_NATIVE_RESULT,app.previousResult,'sign-out restores the pre-existing callback');
+    await waitFor(()=>app.w.ICARUS_NATIVE_STATUS===undefined);
     assert.equal(app.w.ICARUS_NATIVE_STATUS,undefined);assert.deepEqual(app.errors,[]);
   }finally{app.dom.window.close();}
 });
@@ -295,4 +296,38 @@ test('correlated invalid or failed acknowledgement and transport changes reject 
   host.ICARUS_NATIVE_CHANNEL={postMessage(){}};
   host.ICARUS_NATIVE_RESULT({requestId:requests[0].requestId,ok:true,data:{opened:true}});
   await assert.rejects(pending,/connection changed/);assert.equal(host.ICARUS_NATIVE_RESULT,undefined);
+});
+
+test('XREAL driving is primary and phone Maps assistance only prepares a reviewed Chat draft',async()=>{
+  const app=await mount({enabled:true});
+  try{
+    const cards=[...app.w.document.querySelectorAll('.hud-option')];
+    assert.equal(cards[0].getAttribute('aria-labelledby'),'spatial-hud-title');
+    assert.match(cards[0].textContent,/XREAL Driving HUD/);
+    assert.match(cards[0].textContent,/not to use the glasses while operating a vehicle/);
+    assert.match(cards[1].textContent,/Maps \+ ICARUS/);
+    assert.match(cards[1].textContent,/without a road-camera feed/);
+    const before=app.requests.length;
+    await app.click('Plan a route with ICARUS');
+    await waitFor(()=>app.w.document.querySelector('textarea')?.value.includes('Help me plan a route.'));
+    assert.match(app.w.document.querySelector('textarea').value,/review it before opening Maps/);
+    assert.equal(app.requests.slice(before).filter(request=>['navigate_to','open_app','open_driving_hud','open_xreal_hud'].includes(request.action)).length,0);
+    assert.deepEqual(app.errors,[]);
+  }finally{app.dom.window.close();}
+});
+
+test('logical display diagnostics never become a glasses-connection success claim',async()=>{
+  const app=await mount({enabled:true,reply:(request,deliver)=>{
+    if(request.action!=='xreal_status')return;
+    deliver(request,{ok:true,data:{provider:'xreal',enabled:true,runtimeAvailable:true,outputVerification:'unverified',glassesConnectionVerified:false,outputDiagnostics:{actualActivityDisplayId:7,accessibleLogicalDisplays:[{id:7,type:'unknown'}]}}});
+    return false;
+  }});
+  try{
+    const text=app.w.document.querySelector('#spatial-hud-title').parentElement.textContent;
+    assert.match(text,/Physical glasses output unverified/);
+    assert.match(text,/Android window display: 7/);
+    assert.match(text,/logical display does not identify connected glasses/);
+    assert.equal(app.button('Open vehicle overlay').disabled,false,'OS-managed launch is not blocked by physical-output uncertainty');
+    assert.deepEqual(app.errors,[]);
+  }finally{app.dom.window.close();}
 });

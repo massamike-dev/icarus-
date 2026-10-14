@@ -26,7 +26,7 @@ async function mount(native=false,chat=false){
 test('Memory → Settings and every tab remain navigable without a blank screen',async()=>{
   const app=await mount();
   try{
-    for(const tab of ['Memory','Settings','Chat','Settings','Voice','Settings','Command','Settings']){
+    for(const tab of ['Memory','Settings','Chat','Settings','Voice','Settings','Home','Settings']){
       await app.click(tab);
       assert.ok(app.w.document.querySelector('nav'));
       assert.doesNotMatch(app.w.document.body.textContent,/This screen couldn't load/);
@@ -44,8 +44,8 @@ test('Settings canonical native controls dispatch once and survive repeated navi
   const app=await mount(true);
   try{
     assert.equal(app.w.IcarusNative,undefined);
-    await app.click('Check native link→');
-    await waitFor(()=>app.w.document.body.textContent.includes('Android native link connected.'));
+    await app.click('Check connection');
+    await waitFor(()=>app.w.document.body.textContent.includes('Android connected'));
     assert.ok(app.requests.some(p=>p.bridgeRequest));
     await app.click('Settings');await app.click('Stop listening');
     assert.equal([...app.w.document.querySelectorAll('button')].find(b=>b.textContent==='Enable hands-free').disabled,false);

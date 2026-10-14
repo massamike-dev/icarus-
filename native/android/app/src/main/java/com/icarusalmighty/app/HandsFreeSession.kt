@@ -35,6 +35,7 @@ class HandsFreeSession(
     private val finished: () -> Unit,
     private val onError: (String) -> Unit = {},
 ) {
+    private val runtimeGeneration = RuntimeMode.generation()
     private val handler = Handler(Looper.getMainLooper())
     private val network = Executors.newSingleThreadExecutor()
     private var recognizer: SpeechRecognizer? = null
@@ -45,7 +46,7 @@ class HandsFreeSession(
     private val captures = VoiceCaptureGate()
     private var phase = "INITIALIZING_VOICE"
     private var afterSpeech: (() -> Unit)? = null
-    private data class ProposedAction(val command: HandsFreeCommands.Command, val proposalId: String? = null, val session: VoiceSessionState? = null)
+    private data class ProposedAction(val command: HandsFreeCommands.Command, val proposalId: String? = null, val session: VoiceSessionState? = null, val modelInterpreted: Boolean = false)
     private var pending: ProposedAction? = null
     private var expectedSpeechId: String? = null
     private val timeout = Runnable { if (!closed) timedOut() }
@@ -100,6 +101,7 @@ class HandsFreeSession(
 
     private fun capture() {
         if (closed) return
+        if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         stopCapture()
         val captureId = captures.start()
         transition(if (pending == null) "CAPTURING" else "AWAITING_CONFIRMATION", 20000)
@@ -151,6 +153,7 @@ class HandsFreeSession(
     }
 
     private fun handle(text: String) {
+        if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         handler.removeCallbacks(timeout)
         val previous = pending
         pending = null
@@ -167,6 +170,7 @@ class HandsFreeSession(
 
     private fun interpret(text: String) {
         if (text.isBlank()) { say("I didn't hear a command."); return }
+        if (RuntimeMode.current(context) == RuntimeMode.LOCAL) { interpretLocally(text); return }
         val session = VoiceSessionStore.snapshot(context)
         if (session.token.isBlank()) { say("Sign in to ICARUS for flexible commands. Offline commands include battery, flashlight, volume, timers, call, and navigate to."); return }
         val clientTurnId = UUID.randomUUID().toString()
@@ -174,6 +178,7 @@ class HandsFreeSession(
         val turn = ++epoch
         network.execute {
             val result = runCatching {
+                check(RuntimeMode.current(context) == RuntimeMode.CLOUD && VoiceSessionStore.isCurrent(context, session))
                 val origin = BuildConfig.ICARUS_WEB_URL.trimEnd('/')
                 require(TrustedWebPolicy.isTrustedUrl(origin, origin))
                 val c = URL("$origin/api/commands/interpret").openConnection() as HttpURLConnection
@@ -192,9 +197,9 @@ class HandsFreeSession(
                 } finally { c.disconnect() }
             }
             handler.post {
-                if (!closed && turn == epoch) {
+                if (!closed && turn == epoch && RuntimeMode.isCurrent(runtimeGeneration)) {
                     handler.removeCallbacks(timeout)
-                    if (!VoiceSessionStore.isCurrent(context, session)) {
+                    if (RuntimeMode.current(context) != RuntimeMode.CLOUD || !VoiceSessionStore.isCurrent(context, session)) {
                         say("Your conversation changed. Please repeat that request.")
                         return@post
                     }
@@ -204,7 +209,7 @@ class HandsFreeSession(
                         if (current == null) { say("Your conversation changed. Please repeat that request."); return@onSuccess }
                         val action = p.optString("action")
                         val proposalId = p.optString("proposalId").takeIf { Regex("[A-Za-z0-9_-]{1,200}").matches(it) }
-                        if (action in HandsFreeCommands.supported) accept(ProposedAction(HandsFreeCommands.Command(action, p.optString("value")), proposalId, current))
+                        if (action in HandsFreeCommands.supported) accept(ProposedAction(HandsFreeCommands.Command(action, p.optString("value")), proposalId, current, modelInterpreted = true))
                         else say(p.optString("reply", "That action isn't connected yet.").take(500))
                     }.onFailure {
                         if (it is ConversationUnavailable) {
@@ -223,25 +228,58 @@ class HandsFreeSession(
         }
     }
 
+    private fun interpretLocally(text: String) {
+        transition("INTERPRETING", 120000)
+        val turn = ++epoch
+        LocalModelManager.get(context).interpretCommand(null, text) { raw -> handler.post {
+            if (closed || turn != epoch || !RuntimeMode.isCurrent(runtimeGeneration)) return@post
+            handler.removeCallbacks(timeout)
+            if (RuntimeMode.current(context) != RuntimeMode.LOCAL) {
+                say("Your assistant mode changed. Please repeat that request.")
+                return@post
+            }
+            val result = runCatching { JSONObject(raw) }.getOrNull()
+            if (result == null || !result.optBoolean("ok")) {
+                val message = result?.optString("message")?.takeIf { it.isNotBlank() }
+                    ?: "I couldn't interpret that on this device. Try a direct command such as battery or flashlight on."
+                onError(message)
+                say(message)
+                return@post
+            }
+            val data = result.optJSONObject("data") ?: JSONObject()
+            val command = LocalCommandResult.handsFree(data)
+            if (command != null) accept(ProposedAction(command, modelInterpreted = true))
+            else say(data.optString("clarification").ifBlank {
+                "That command needs review in ICARUS. Try a direct command such as battery, flashlight on, or navigate to a destination."
+            }.take(500))
+        } }
+    }
+
     private class ConversationUnavailable : Exception()
     private class CommandServiceUnavailable(val status: Int) : Exception()
 
     private fun accept(proposed: ProposedAction) {
+        if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         val c = proposed.command
-        if (c.action in setOf("make_call", "navigate_to", "open_app", "set_timer")) {
+        if (HandsFreeActionPolicy.requiresConfirmation(c.action, proposed.modelInterpreted)) {
             // Never allow an AI result to suppress confirmation or supply a misleading summary.
             pending = proposed
             val question = when (c.action) {
                 "make_call" -> "Call ${c.value}?"
                 "navigate_to" -> "Request navigation to ${c.value}?"
                 "set_timer" -> "Request a timer for ${c.value} seconds?"
-                else -> "Open ${c.value}?"
+                "toggle_flashlight" -> "Turn the flashlight ${c.value}?"
+                "set_volume" -> "Set media volume to ${c.value} percent?"
+                "stop_listening" -> "Turn off hands-free listening?"
+                "open_app" -> "Open ${c.value}?"
+                else -> "Request this device action?"
             }
             say("$question Say yes to confirm, or cancel.") { capture() }
         } else execute(proposed)
     }
 
     private fun execute(proposed: ProposedAction) {
+        if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         if (proposed.session != null && !VoiceSessionStore.isCurrent(context, proposed.session)) {
             say("Your conversation changed. Please repeat that request.")
             return
@@ -283,10 +321,10 @@ class HandsFreeSession(
     private fun report(proposed: ProposedAction, status: String, summary: String) {
         val session = proposed.session ?: return
         val proposalId = proposed.proposalId ?: return
-        if (session.temporary || session.token.isBlank() || !VoiceSessionStore.isCurrent(context, session)) return
+        if (RuntimeMode.current(context) != RuntimeMode.CLOUD || session.temporary || session.token.isBlank() || !VoiceSessionStore.isCurrent(context, session)) return
         if (network.isShutdown) return
         network.execute {
-            if (!VoiceSessionStore.isCurrent(context, session)) return@execute
+            if (RuntimeMode.current(context) != RuntimeMode.CLOUD || !VoiceSessionStore.isCurrent(context, session)) return@execute
             runCatching {
                 val origin = BuildConfig.ICARUS_WEB_URL.trimEnd('/')
                 require(TrustedWebPolicy.isTrustedUrl(origin, origin))
@@ -341,6 +379,7 @@ class HandsFreeSession(
 
     private fun say(text: String, next: () -> Unit = { finish() }) {
         if (closed) return
+        if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         stopCapture()
         transition("SPEAKING", 45000)
         afterSpeech = next
@@ -380,8 +419,10 @@ class HandsFreeSession(
             }
             "INTERPRETING" -> {
                 epoch++
-                onError("The ICARUS command service timed out.")
-                say("The command service timed out. Try a direct command such as battery or flashlight on.")
+                val local = RuntimeMode.current(context) == RuntimeMode.LOCAL
+                onError(if (local) "On-device interpretation timed out." else "The ICARUS cloud command service timed out.")
+                say(if (local) "On-device interpretation timed out. Direct commands still work. If the model stays busy, restart ICARUS. Nothing was sent to the cloud."
+                    else "The cloud command service timed out. Try a direct command such as battery or flashlight on.")
             }
             "SPEAKING" -> speechFailed("Android speech playback did not finish. Check media volume, audio output, and text-to-speech settings.")
             else -> { onError("The voice turn timed out before it completed."); finish() }

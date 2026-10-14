@@ -48,7 +48,7 @@ jobs:
       - run: npm test
       - name: Verify native bridge source contract
         working-directory: .
-        run: node --test tests/native-contract.test.mjs tests/private-hud-contract.test.mjs
+        run: node --test tests/native-contract.test.mjs tests/private-hud-contract.test.mjs native/android/scripts/local-runtime-contract.test.mjs
       - run: npm run build
 
   validate:
@@ -66,6 +66,15 @@ jobs:
       - name: Select validation target without inventing a deployment
         id: target
         run: python3 .github/scripts/validate-private-test.py --prepare-workflow
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install bundled offline UI dependencies
+        working-directory: web
+        run: npm ci --include=dev
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -103,6 +112,15 @@ jobs:
           persist-credentials: false
       - name: Verify restricted test service
         run: python3 .github/scripts/validate-private-test.py --check-health --expected-commit "$GITHUB_SHA" --github-env
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install bundled offline UI dependencies
+        working-directory: web
+        run: npm ci --include=dev
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

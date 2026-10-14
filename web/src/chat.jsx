@@ -2,17 +2,13 @@ import React,{useEffect,useRef,useState} from 'react';
 import {actionRequest,executeProposal,checkDevice} from './device-actions';
 import {getChatContext,selectChatContext,restoreChatContext} from './native-session';
 import {getNativeTransport} from './native-transport.js';
+import {api,isLocalMode,clearTemporaryTurns} from './local-core.js';
 
 const animateCompanion=(motion,duration=0)=>window.dispatchEvent(new CustomEvent('icarus-companion-motion',{detail:{motion,duration}}));
 
-async function api(path,options={}) {
-  const r=await fetch('/api'+path,{...options,headers:{'content-type':'application/json',authorization:`Bearer ${localStorage.getItem('icarus_token')||''}`},signal:AbortSignal.timeout(70000)});
-  if(!r.ok){const error=Error('Request failed. Check your connection and sign-in.');error.status=r.status;throw error;}
-  return r.json();
-}
-export function Chat(){
+export function Chat({initialDraft=''}){
   const [messages,setMessages]=useState([]),[conversationId,setConversationId]=useState(()=>getChatContext().conversationId),[conversations,setConversations]=useState([]);
-  const [busy,setBusy]=useState(false),[temporary,setTemporary]=useState(()=>getChatContext().temporary),[notice,setNotice]=useState(''),[draft,setDraft]=useState('');
+  const [busy,setBusy]=useState(false),[temporary,setTemporary]=useState(()=>getChatContext().temporary),[notice,setNotice]=useState(''),[draft,setDraft]=useState(initialDraft);
   const [search,setSearch]=useState(false),[canSearch,setCanSearch]=useState(false),[native,setNative]=useState(false);
   const [pending,setPending]=useState(null),[deleteId,setDeleteId]=useState(null),[unsavedResults,setUnsavedResults]=useState([]);
   const lock=useRef(false),actionLock=useRef(false),mounted=useRef(true),pendingRef=useRef(null),retryTurn=useRef(null),historyRequest=useRef(0),actionAbort=useRef(null),unsavedRef=useRef([]);
@@ -54,6 +50,7 @@ export function Chat(){
     return()=>{mounted.current=false;animateCompanion(null);actionAbort.current?.abort();clearInterval(timer);window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',onVisible);};
   },[]);
   const changeContext=(next,selectedMessages=[])=>{
+    if(isLocalMode())clearTemporaryTurns();
     const context=selectChatContext(next);
     setConversationId(context.conversationId);setTemporary(context.temporary);setMessages(selectedMessages);setProposal(null);setNotice('');setDraft('');retryTurn.current=null;
   };
@@ -77,12 +74,12 @@ export function Chat(){
       if(r.proposal){try{actionRequest(r.proposal);setProposal({...r.proposal,temporary});animateCompanion('listening');}catch{setNotice('The proposed action was invalid. Nothing was sent to Android.');animateCompanion('error',1600);}}
       else animateCompanion('confirm',1200);
       if(!temporary)loadHistory();
-    }catch(error){animateCompanion('error',1600);if(mounted.current){setMessages(prior);if(error.status===404||error.status===410){retryTurn.current=null;setNotice('This conversation is no longer available. Choose + New chat to continue. Nothing was sent to Android.');}else setNotice('ICARUS could not finish this request. Your draft is retained. Sending the unchanged draft again safely retries this request.');}}
+    }catch(error){animateCompanion('error',1600);if(mounted.current){setMessages(prior);if(error.status===404||error.status===410){retryTurn.current=null;setNotice('This conversation is no longer available. Choose + New chat to continue. Nothing was sent to Android.');}else setNotice(error.local?error.message:'ICARUS could not finish this request. Your draft is retained. Sending the unchanged draft again safely retries this request.');}}
     finally{lock.current=false;if(mounted.current)setBusy(false);}
   };
   const saveResult=async report=>{
     const removeSaved=()=>{unsavedRef.current=unsavedRef.current.filter(r=>r.id!==report.id);setUnsavedResults(unsavedRef.current)};
-    if(report.sessionToken!==(localStorage.getItem('icarus_token')||'')) {
+    if(!isLocalMode()&&report.sessionToken!==(localStorage.getItem('icarus_token')||'')) {
       if(mounted.current){removeSaved();setNotice('Your sign-in changed. The device report was not saved; the action will not be repeated.');}
       return;
     }
@@ -121,6 +118,7 @@ export function Chat(){
       <button className="secondary" disabled={busy||Boolean(pending)} onClick={reset}>+ New chat</button>
       <button className="secondary" disabled={busy||Boolean(pending)} aria-pressed={temporary} onClick={()=>changeContext({temporary:!temporary})}>Temporary {temporary?'on':'off'}</button>
     </div></div>
+    {isLocalMode()&&<p className="chat-notice">Local intelligence · Chats and explicit Memory stay on this device. The model must be downloaded in Settings before your first chat.</p>}
     <p>{native?'Phone actions are connected. Review each action before sending it to Android.':getNativeTransport()?'Checking Android support. If this persists, update ICARUS to use reviewed Chat actions.':'Open the Android app for phone actions. You can chat here.'}</p>
     <div className="chat-layout"><aside className="history-panel" aria-label="Conversation history"><b>RECENT</b>{conversations.length===0&&<p>No saved chats yet.</p>}{conversations.map(c=><div key={c.id}><button disabled={busy||Boolean(pending)} className={conversationId===c.id?'current':''} onClick={()=>changeContext({conversationId:c.id,temporary:false},c.messages||[])}>{c.title}</button><button disabled={busy||Boolean(pending)} aria-label={`Delete ${c.title}`} onClick={()=>setDeleteId(c.id)}>Delete</button></div>)}</aside>
     <div className="chat-main"><div className="messages" aria-live="polite">
@@ -132,8 +130,8 @@ export function Chat(){
     {notice&&<p className="chat-notice" role="status">{notice}</p>}
     {unsavedResults.map(report=><section className="settings-section" key={report.id}><p>Unsaved device report for {report.conversationId===conversationId?'this conversation':'a previous conversation'}: {report.summary}</p><button className="secondary" disabled={busy} onClick={async()=>{if(actionLock.current)return;actionLock.current=true;setBusy(true);await saveResult(report);actionLock.current=false;if(mounted.current)setBusy(false)}}>Retry saving result</button></section>)}
     {deleteId&&<section className="settings-section"><h2>Delete this conversation?</h2><p>This removes its saved messages.</p><div className="settings-actions"><button className="secondary" disabled={busy} onClick={()=>setDeleteId(null)}>Keep conversation</button><button className="danger" disabled={busy} onClick={deleteChat}>Delete conversation</button></div></section>}
-    <form className="composer" onSubmit={send} noValidate><textarea style={{resize:"none"}} name="message" aria-label="Message" value={draft} onChange={e=>{retryTurn.current=null;setDraft(e.target.value)}} placeholder="Tell ICARUS what you need…" disabled={busy||Boolean(pending)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form.requestSubmit()}}}/><button className="primary" disabled={busy||Boolean(pending)||!draft.trim()}>{busy?'Wait…':'Send'}<span>→</span></button></form>
-    <label><input type="checkbox" checked={search} disabled={!canSearch||busy||Boolean(pending)} onChange={e=>{retryTurn.current=null;setSearch(e.target.checked)}}/> Search web {canSearch?'(read-only turn)':'(not configured)'}</label>
+    <form className="composer" onSubmit={send} noValidate><textarea className="resize-none" style={{resize:"none"}} name="message" aria-label="Message" value={draft} onChange={e=>{retryTurn.current=null;setDraft(e.target.value)}} placeholder="Tell ICARUS what you need…" disabled={busy||Boolean(pending)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();e.currentTarget.form.requestSubmit()}}}/><button className="primary" disabled={busy||Boolean(pending)||!draft.trim()}>{busy?'Wait…':'Send'}<span>→</span></button></form>
+    <label><input type="checkbox" checked={search} disabled={!canSearch||busy||Boolean(pending)} onChange={e=>{retryTurn.current=null;setSearch(e.target.checked)}}/> Search web {canSearch?'(read-only turn)':isLocalMode()?'(cloud mode required)':'(not configured)'}</label>
     <small className="assistant-disclosure">ICARUS can make mistakes. Verify important information. An Android acknowledgement does not prove a call connected or a task finished.</small>
     </div></div>
   </section>;

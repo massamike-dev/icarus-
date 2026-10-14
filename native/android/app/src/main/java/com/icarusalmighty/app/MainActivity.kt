@@ -16,6 +16,14 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebResourceError
+import android.webkit.WebSettings
+import androidx.appcompat.app.AlertDialog
+import androidx.webkit.WebViewAssetLoader
+import java.io.ByteArrayInputStream
+import java.util.concurrent.ConcurrentHashMap
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -38,6 +46,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var metaWearables: MetaWearablesController
     private lateinit var nativeBridge: IcarusNativeBridge
     private var pendingWakePermissionRequestId: String? = null
+    private var loadErrorShown = false
+    private var pageGeneration = 0L
+    private val requestPages = ConcurrentHashMap<String, Long>()
 
     private val wakePermissions = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
         val requestId = pendingWakePermissionRequestId
@@ -79,7 +90,6 @@ class MainActivity : AppCompatActivity() {
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             contentDescription = getString(R.string.app_name)
         }
-        webView.clearCache(true)
         rootView.addView(
             webView,
             FrameLayout.LayoutParams(
@@ -116,6 +126,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        pageGeneration++
+        requestPages.clear()
+        mainHandler.removeCallbacksAndMessages(null)
         commandRecognizer?.destroy()
         commandRecognizer = null
         if (::nativeBridge.isInitialized) nativeBridge.close()
@@ -124,10 +137,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isTrustedPage(): Boolean =
-        TrustedWebPolicy.isTrustedUrl(webView.url, BuildConfig.ICARUS_WEB_URL)
+        TrustedWebPolicy.isTrustedUrl(webView.url, RuntimeMode.activeUrl(this))
 
     private fun dispatchNativeResult(payload: String) {
         webView.post {
+            val requestId = runCatching { JSONObject(payload).optString("requestId") }.getOrDefault("")
+            if (requestId.isBlank() || requestId == "null" || requestPages.remove(requestId) != pageGeneration) return@post
             if (!isTrustedPage()) return@post
             webView.evaluateJavascript(
                 "window.ICARUS_NATIVE_RESULT && window.ICARUS_NATIVE_RESULT(" + JSONObject.quote(payload) + ");",
@@ -137,8 +152,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun dispatchNativeStatus(payload: String) {
+        val generation = pageGeneration
         webView.post {
-            if (!isTrustedPage()) return@post
+            if (generation != pageGeneration || !isTrustedPage() || isDestroyed) return@post
             webView.evaluateJavascript(
                 "window.ICARUS_NATIVE_STATUS && window.ICARUS_NATIVE_STATUS(" + JSONObject.quote(payload) + ");",
                 null
@@ -153,7 +169,8 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = true
             domStorageEnabled = true
             mediaPlaybackRequiresUserGesture = false
-            cacheMode = android.webkit.WebSettings.LOAD_NO_CACHE
+            cacheMode = WebSettings.LOAD_DEFAULT
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             allowFileAccess = false
             allowContentAccess = false
             javaScriptCanOpenWindowsAutomatically = false
@@ -161,8 +178,45 @@ class MainActivity : AppCompatActivity() {
             safeBrowsingEnabled = true
             userAgentString = "$userAgentString ICARUSNative/${BuildConfig.VERSION_NAME}"
         }
+        val packagedAssets = WebViewAssetLoader.AssetsPathHandler(this)
+        val assetLoader = WebViewAssetLoader.Builder()
+            .addPathHandler("/assets/", packagedAssets)
+            .addPathHandler("/brand/", WebViewAssetLoader.PathHandler { path -> packagedAssets.handle("web/brand/$path") })
+            .addPathHandler("/models/", WebViewAssetLoader.PathHandler { path -> packagedAssets.handle("web/models/$path") })
+            .build()
         webView.webChromeClient = WebChromeClient()
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                invalidatePage()
+                super.onPageStarted(view, url, favicon)
+            }
+
+            override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest): WebResourceResponse? {
+                if (TrustedWebPolicy.isTrustedUrl(request.url.toString(), RuntimeMode.LOCAL_ORIGIN)) {
+                    // Never let a missing bundled asset fall through to the network.
+                    return assetLoader.shouldInterceptRequest(request.url) ?: blockedResponse(404, "Bundled asset not found")
+                }
+                // The bundled shell cannot quietly call a hosted API or load remote scripts.
+                if (RuntimeMode.current(this@MainActivity) == RuntimeMode.LOCAL) return blockedResponse(403, "Cloud mode is off")
+                return null
+            }
+
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest): Boolean {
+                if (TrustedWebPolicy.isTrustedUrl(request.url.toString(), RuntimeMode.activeUrl(this@MainActivity))) return false
+                if (request.isForMainFrame && request.hasGesture() && request.url.scheme in setOf("https", "http", "mailto")) {
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
+                }
+                return true
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest, error: WebResourceError?) {
+                if (request.isForMainFrame) showLoadError()
+            }
+
+            override fun onReceivedHttpError(view: WebView?, request: WebResourceRequest, response: WebResourceResponse?) {
+                if (request.isForMainFrame && (response?.statusCode ?: 200) >= 400) showLoadError()
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 if (splashView.parent != null) {
@@ -172,7 +226,7 @@ class MainActivity : AppCompatActivity() {
                         .withEndAction { rootView.removeView(splashView) }
                         .start()
                 }
-                if (!TrustedWebPolicy.isTrustedUrl(url, BuildConfig.ICARUS_WEB_URL)) return
+                if (!TrustedWebPolicy.isTrustedUrl(url, RuntimeMode.activeUrl(this@MainActivity))) return
                 removeLegacyReadyLabel()
                 notifyNativeStatus()
                 if (pendingWake) {
@@ -182,15 +236,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val allowedOrigin = TrustedWebPolicy.originRule(BuildConfig.ICARUS_WEB_URL)
-        if (allowedOrigin != null && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+        val allowedOrigins = setOfNotNull(RuntimeMode.LOCAL_ORIGIN, RuntimeMode.cloudOrigin())
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
             WebViewCompat.addWebMessageListener(
                 webView,
                 NATIVE_CHANNEL,
-                setOf(allowedOrigin)
-            ) { _, message, _, isMainFrame, _ ->
+                allowedOrigins
+            ) { _, message, sourceOrigin, isMainFrame, _ ->
                 // Same-origin iframes do not get phone-control privileges.
-                if (!isMainFrame) return@addWebMessageListener
+                if (!isMainFrame || !isTrustedPage() ||
+                    !TrustedWebPolicy.isTrustedUrl(sourceOrigin.toString(), RuntimeMode.activeUrl(this))) return@addWebMessageListener
                 handleNativeMessage(message.data)
             }
         }
@@ -232,6 +287,8 @@ class MainActivity : AppCompatActivity() {
             dispatchNativeResult(JSONObject().put("ok", false).put("error", "invalid_payload").toString())
             return
         }
+        val actionRequestId = payload.optString("requestId").takeIf { it.isNotBlank() && it != "null" }
+        if (actionRequestId != null && payload.optString("bridgeRequest") != "status") requestPages[actionRequestId] = pageGeneration
         if (payload.optString("bridgeRequest") == "status") {
             val requestId = payload.optString("requestId").ifBlank { null }
             val status = JSONObject(nativeBridge.getStatus())
@@ -241,30 +298,59 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (payload.optString("action") == "set_runtime_mode") {
+            val requestId = payload.optString("requestId").ifBlank { null }
+            val response = runCatching {
+                val mode = payload.optJSONObject("arguments")?.optString("mode").orEmpty()
+                RuntimeMode.set(this, mode)
+                JSONObject().put("ok", true).put("requestId", requestId ?: JSONObject.NULL).put("data", RuntimeMode.status(this))
+            }.getOrElse { JSONObject().put("ok", false).put("requestId", requestId ?: JSONObject.NULL)
+                .put("error", it.message ?: "runtime_mode_failed") }
+            // The old origin is no longer privileged. Deliver this final mode acknowledgement only there.
+            webView.evaluateJavascript("window.ICARUS_NATIVE_RESULT && window.ICARUS_NATIVE_RESULT(" + JSONObject.quote(response.toString()) + ");", null)
+            actionRequestId?.let { requestPages.remove(it) }
+            if (response.optBoolean("ok")) mainHandler.postDelayed({ webView.clearHistory(); loadIcarus() }, 150)
+            return
+        }
         val result = nativeBridge.executeAction(text)
         if (result.isNotBlank()) dispatchNativeResult(result)
     }
 
+    private fun blockedResponse(code: Int, message: String) = WebResourceResponse(
+        "text/plain", "utf-8", code, message, mapOf("Cache-Control" to "no-store"),
+        ByteArrayInputStream(message.toByteArray(Charsets.UTF_8)),
+    )
+
+    private fun invalidatePage() {
+        pageGeneration++
+        requestPages.clear()
+        val previous = commandRecognizer
+        commandRecognizer = null
+        runCatching { previous?.cancel() }
+        runCatching { previous?.destroy() }
+    }
+
     private fun loadIcarus() {
-        val url = BuildConfig.ICARUS_WEB_URL.trim()
-        if (TrustedWebPolicy.isTrustedUrl(url, url)) {
-            webView.loadUrl(url)
-            return
-        }
-        webView.loadDataWithBaseURL(
-            null,
-            """
-            <!doctype html><html><body style='margin:0;background:#020817;color:#eee;font-family:sans-serif'>
-            <div style='max-width:720px;margin:12vh auto;padding:32px'>
-            <h1 style='color:#d4af37'>I.C.A.R.U.S. Native Host</h1>
-            <p>The Android bridge is installed, but ICARUS_WEB_URL has not been set to a valid HTTPS ICARUS origin.</p>
-            <p>Set the published ICARUS HTTPS URL in <code>native/android/gradle.properties</code>, rebuild, and install again.</p>
-            </div></body></html>
-            """.trimIndent(),
-            "text/html",
-            "utf-8",
-            null
-        )
+        invalidatePage()
+        loadErrorShown = false
+        val url = RuntimeMode.activeUrl(this)
+        if (url.isBlank()) { showLoadError(); return }
+        webView.loadUrl(url)
+    }
+
+    private fun showLoadError() {
+        if (loadErrorShown || isFinishing || isDestroyed) return
+        loadErrorShown = true
+        if (splashView.parent != null) rootView.removeView(splashView)
+        val cloud = RuntimeMode.current(this) == RuntimeMode.CLOUD
+        AlertDialog.Builder(this)
+            .setTitle(if (cloud) "Cloud UI unavailable" else "Bundled UI unavailable")
+            .setMessage(if (cloud) "Check your connection or explicitly switch back to the on-device assistant. No request was retried in another mode."
+                else "The offline interface could not load. Reinstall a build containing the bundled web assets. Native hands-free commands remain available.")
+            .setPositiveButton("Retry") { _, _ -> loadIcarus() }
+            .apply { if (cloud) setNeutralButton("Use on-device") { _, _ -> RuntimeMode.set(this@MainActivity, RuntimeMode.LOCAL); loadIcarus() } }
+            .setNegativeButton("Close", null)
+            .show()
     }
 
     fun requestWakePermissionFromDisclosure(requestId: String?): String {
@@ -355,7 +441,9 @@ class MainActivity : AppCompatActivity() {
             pendingWake = true
             return
         }
+        val generation = pageGeneration
         webView.post {
+            if (generation != pageGeneration || isDestroyed) return@post
             if (!isTrustedPage()) {
                 pendingWake = true
                 loadIcarus()
@@ -366,7 +454,7 @@ class MainActivity : AppCompatActivity() {
                 null
             )
             playWakeTone()
-            mainHandler.postDelayed({ startNativeCommandCapture() }, 550L)
+            mainHandler.postDelayed({ if (generation == pageGeneration && isTrustedPage()) startNativeCommandCapture() }, 550L)
         }
     }
 
@@ -380,6 +468,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startNativeCommandCapture() {
+        val generation = pageGeneration
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             dispatchVoiceError("Microphone permission is required.")
             return
@@ -392,14 +481,15 @@ class MainActivity : AppCompatActivity() {
         commandRecognizer?.destroy()
         commandRecognizer = SpeechRecognizer.createSpeechRecognizer(this).also { recognizer ->
             recognizer.setRecognitionListener(object : RecognitionListener {
-                override fun onReadyForSpeech(params: Bundle?) = dispatchVoiceState("listening")
-                override fun onBeginningOfSpeech() = dispatchVoiceState("hearing")
+                override fun onReadyForSpeech(params: Bundle?) { if (generation == pageGeneration) dispatchVoiceState("listening") }
+                override fun onBeginningOfSpeech() { if (generation == pageGeneration) dispatchVoiceState("hearing") }
                 override fun onRmsChanged(rmsdB: Float) = Unit
                 override fun onBufferReceived(buffer: ByteArray?) = Unit
-                override fun onEndOfSpeech() = dispatchVoiceState("processing")
+                override fun onEndOfSpeech() { if (generation == pageGeneration) dispatchVoiceState("processing") }
                 override fun onPartialResults(partialResults: Bundle?) = Unit
                 override fun onEvent(eventType: Int, params: Bundle?) = Unit
                 override fun onError(error: Int) {
+                    if (generation != pageGeneration) return
                     val message = when (error) {
                         SpeechRecognizer.ERROR_NO_MATCH -> "I didn't catch that."
                         SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "I didn't hear a command."
@@ -410,6 +500,7 @@ class MainActivity : AppCompatActivity() {
                     restartWakeWordLater(1600L)
                 }
                 override fun onResults(results: Bundle?) {
+                    if (generation != pageGeneration) return
                     val transcript = results
                         ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                         ?.firstOrNull()
@@ -437,8 +528,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun dispatchNativeCommand(transcript: String) {
         val quoted = JSONObject.quote(transcript)
+        val generation = pageGeneration
         webView.post {
-            if (!isTrustedPage()) return@post
+            if (generation != pageGeneration || !isTrustedPage()) return@post
             webView.evaluateJavascript(
                 "sessionStorage.setItem('icarus-native-command',$quoted);" +
                     "window.dispatchEvent(new CustomEvent('icarus-native-command',{detail:{transcript:$quoted}}));",
@@ -448,8 +540,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun dispatchVoiceState(state: String) {
+        val generation = pageGeneration
         webView.post {
-            if (!isTrustedPage()) return@post
+            if (generation != pageGeneration || !isTrustedPage()) return@post
             webView.evaluateJavascript(
                 "window.dispatchEvent(new CustomEvent('icarus-native-voice-state',{detail:{state:${JSONObject.quote(state)}}}));",
                 null
@@ -458,8 +551,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun dispatchVoiceError(message: String) {
+        val generation = pageGeneration
         webView.post {
-            if (!isTrustedPage()) return@post
+            if (generation != pageGeneration || !isTrustedPage()) return@post
             webView.evaluateJavascript(
                 "window.dispatchEvent(new CustomEvent('icarus-native-voice-error',{detail:{message:${JSONObject.quote(message)}}}));",
                 null

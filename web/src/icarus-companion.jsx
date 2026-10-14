@@ -37,7 +37,7 @@ function voiceView(status,available){
 
 // This single companion belongs to the authenticated shell. It displays native
 // state; opening, moving or restoring it never requests microphone access.
-export function IcarusCompanion({onNavigate}){
+export function IcarusCompanion({onNavigate,presentation='floating'}){
   const[prefs,setPrefs]=useState(preferences),[open,setOpen]=useState(false),[tucked,setTucked]=useState(false);
   const[status,setStatus]=useState(null),[available,setAvailable]=useState(Boolean(getNativeTransport()));
   const[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[modelReady,setModelReady]=useState(false),[modelFailed,setModelFailed]=useState(false),[posterFailed,setPosterFailed]=useState(false),[activityMotion,setActivityMotion]=useState(null);
@@ -136,7 +136,7 @@ export function IcarusCompanion({onNavigate}){
   const motion=activityMotion||(message.startsWith('Android accepted')?'confirm':view.phase);
   const hide=()=>{focusAfterHide.current=true;setOpen(false);setPrefs(p=>({...p,hidden:true}));};
   const show=()=>{focusAfterHide.current=true;setPrefs(p=>({...p,hidden:false}));};
-  return <div ref={dock} className={`icarus-companion companion-${prefs.side}`} data-phase={view.phase} hidden={tucked}>
+  return <div ref={dock} className={`icarus-companion companion-${prefs.side} companion-${presentation}`} data-phase={view.phase} hidden={tucked}>
     {prefs.hidden?<button ref={restore} type="button" className="companion-restore" onClick={show} aria-label="Show ICARUS companion">ICARUS</button>:<>
       {open&&<section className="companion-panel" id="icarus-companion-panel" aria-labelledby="icarus-companion-title">
         <div className="companion-heading"><h2 id="icarus-companion-title">ICARUS</h2><button type="button" className="companion-close" onClick={()=>{setOpen(false);figure.current?.focus();}} aria-label="Close ICARUS companion panel">×</button></div>
@@ -147,12 +147,13 @@ export function IcarusCompanion({onNavigate}){
         <button type="button" className="companion-voice" onClick={()=>{setOpen(false);onNavigate('voice');}}>Open Voice controls</button>
         <div className="companion-tools"><button type="button" onClick={()=>setPrefs(p=>({...p,side:'left'}))} disabled={prefs.side==='left'} aria-label="Move ICARUS to the left">← Left</button><button type="button" onClick={()=>setPrefs(p=>({...p,side:'right'}))} disabled={prefs.side==='right'} aria-label="Move ICARUS to the right">Right →</button><button type="button" onClick={hide}>Hide ICARUS</button></div>
       </section>}
-      <button ref={figure} type="button" className="companion-figure" onClick={()=>setOpen(value=>!value)} aria-label="Open ICARUS companion" aria-expanded={open} aria-controls="icarus-companion-panel" title="ICARUS companion">
+      <button ref={figure} type="button" className="companion-figure" onClick={()=>setOpen(value=>!value)} aria-label="Open ICARUS companion" aria-expanded={open} aria-controls="icarus-companion-panel" title={modelFailed?'ICARUS artwork; animated 3D unavailable':'ICARUS companion'}>
         {!modelFailed&&<LilIcarus3D motion={motion} onReady={()=>setModelReady(true)} onError={()=>setModelFailed(true)}/>}
         {!posterFailed&&(!modelReady||modelFailed)&&<img className="companion-poster" src="/brand/icarus-companion.png" alt="" width="96" height="112" onError={()=>setPosterFailed(true)}/>}
-        {posterFailed&&<span className="companion-fallback" aria-hidden="true">W</span>}
+        {posterFailed&&<img className="companion-fallback-crest" src="/brand/icarus-crest.svg" alt=""/>}
         <span className="companion-state-dot" aria-hidden="true"/>
       </button>
+      {presentation==='dashboard'&&modelFailed&&<small className="companion-render-note">Artwork preview · 3D unavailable</small>}
     </>}
   </div>;
 }

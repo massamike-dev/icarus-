@@ -4,6 +4,15 @@
 
 ICARUS is an Android-first personal assistant backed by its own repository-hosted web application and API. The Android host adds capabilities that a browser cannot safely provide, including wake-word listening, native voice capture/TTS, device actions, Bluetooth/OBD-II access, optional wearable integrations, and signed in-place updates.
 
+## Local-first core (source preview)
+
+The revised Android source bundles the dashboard, defaults to on-device Chat and
+local history/Memory, and keeps cloud intelligence optional. No per-message AI
+payment is required for the local core. AI chat requires a user-initiated model
+download and supported device; Android speech recognition and online features
+may still require internet. See [local-first architecture and release checks](docs/LOCAL_FIRST_CORE.md).
+Android compilation and real-device inference still need release verification.
+
 ## Canonical Android app
 
 > **`native/android/` is the only canonical Android application.**

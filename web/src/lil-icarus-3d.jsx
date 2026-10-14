@@ -46,7 +46,9 @@ export function LilIcarus3D({motion='idle',onReady,onError}){
     const scene=new THREE.Scene();
     const camera=new THREE.PerspectiveCamera(26,1,.1,20);
     camera.position.set(0,.88,4.35);camera.lookAt(0,.82,0);
-    const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});
+    let renderer;
+    try{renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});}
+    catch(error){errorRef.current?.(error);return;}
     renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;
     renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
     renderer.domElement.className='companion-canvas';renderer.domElement.setAttribute('aria-hidden','true');
