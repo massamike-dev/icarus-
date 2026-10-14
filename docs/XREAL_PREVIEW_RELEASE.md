@@ -21,3 +21,7 @@ The dedicated workflow accepts only `work/icarus-xreal-preview-20261014` in `mas
 Only the final publication job has repository write permission. It creates the new `v1.6.16-xreal-preview` prerelease, excludes it from latest-release selection, and refuses to reuse an existing tag or release. It does not produce a store bundle, modify the public update feed, or push to a branch. Signing uses the existing repository secrets; temporary signing material is removed even if a build step fails.
 
 If the first branch push runs before its draft PR is open, open the draft PR and rerun the workflow on that exact branch/commit. A successful existing preview release is immutable: subsequent fixes require an explicitly chosen new version and tag.
+
+## Dependency review
+
+Vite is pinned to 8.3.3, which patches the maintainer's October 6 development-server advisories (GHSA-rq7h-c2jc-7f22, GHSA-vfpm-58rq-9qcg, GHSA-9jrq-w75r-8gcw). The installed APK uses generated static assets rather than a Vite development server. Automatic npm audit transmission is disabled during dependency installation. A complete dependency advisory review remains open; this preview is not production security sign-off.

@@ -78,9 +78,17 @@ class PreviewVerificationTests(unittest.TestCase):
                 verification.certificates(output)
 
     def test_permissions_fail_closed(self):
-        self.assertEqual(verification.permissions("android.permission.INTERNET\nandroid.permission.CAMERA"),
+        prefix = '<manifest xmlns:android="http://schemas.android.com/apk/res/android">'
+        valid = prefix + '<uses-permission android:name="android.permission.INTERNET"/>' + \
+            '<uses-permission android:name="android.permission.CAMERA" android:maxSdkVersion="30"/>' + \
+            '<uses-permission-sdk-23 android:name="android.permission.CAMERA"/></manifest>'
+        self.assertEqual(verification.permissions(valid),
                          ["android.permission.CAMERA", "android.permission.INTERNET"])
-        for output in ("", "Error: unavailable", "android.permission.INTERNET\n\n", "INTERNET"):
+        invalid = ("", "Error: unavailable", "<manifest/>", "<other/>",
+                   prefix + '<uses-permission name="android.permission.CAMERA"/></manifest>',
+                   prefix + '<uses-permission android:name="INTERNET"/></manifest>',
+                   '<!DOCTYPE manifest>' + valid)
+        for output in invalid:
             with self.subTest(output=output), self.assertRaises(ValueError):
                 verification.permissions(output)
 

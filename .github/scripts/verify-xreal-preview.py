@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import zipfile
+import xml.etree.ElementTree as ET
 
 
 PACKAGE = "com.icarusalmighty.app"
@@ -51,11 +52,26 @@ def certificates(output):
 
 
 def permissions(output):
-    values = output.splitlines()
+    # Parse the documented XML output, not the SDK's presentation-oriented list
+    # (which can include maxSdkVersion annotations and formatting changes).
+    require("<!DOCTYPE" not in output.upper() and "<!ENTITY" not in output.upper(),
+            "Unexpected declaration in APK manifest XML.")
+    try:
+        manifest = ET.fromstring(output)
+    except ET.ParseError as error:
+        raise ValueError("APK manifest XML is malformed.") from error
+    require(manifest.tag == "manifest", "APK manifest XML has an unexpected root.")
+    values = []
+    android_name = "{http://schemas.android.com/apk/res/android}name"
+    for element in manifest:
+        if element.tag not in ("uses-permission", "uses-permission-sdk-23", "uses-permission-sdk-m"):
+            continue
+        name = element.get(android_name, "")
+        require(bool(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+", name)),
+                "Missing or invalid permission name in APK manifest.")
+        values.append(name)
     require(bool(values), "APK permission list is empty or unavailable.")
-    require(all(re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+", value.strip()) for value in values),
-            "Unexpected APK permission-list format.")
-    return sorted({value.strip() for value in values})
+    return sorted(set(values))
 
 
 def inspect_apk(path, apksigner, apkanalyzer):
@@ -69,7 +85,7 @@ def inspect_apk(path, apksigner, apkanalyzer):
         "versionCode": int(code),
         "versionName": manifest("version-name"),
         "debuggable": manifest("debuggable"),
-        "permissions": permissions(manifest("permissions")),
+        "permissions": permissions(manifest("print")),
         "signerCertificateSha256": certificates(signer_output),
     }
 
