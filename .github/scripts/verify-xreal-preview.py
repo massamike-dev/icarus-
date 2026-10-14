@@ -44,10 +44,16 @@ def run_tool(command):
 
 
 def certificates(output):
-    matches = re.findall(r"^Signer #[0-9]+ certificate SHA-256 digest: ([0-9a-fA-F]{64})$", output, re.MULTILINE)
-    result = sorted({value.lower() for value in matches})
-    require(bool(result), "APK verification returned no signer certificate SHA-256 digest.")
-    require(len(matches) == len(result), "Duplicate or ambiguous signer certificates.")
+    # apksigner emits either numbered signers or SDK-ranged signers (v3/v3.1).
+    # Match certificate fingerprints only; public-key and source-stamp digests
+    # are not the APK signing identity.
+    pattern = (r"^(Signer (?:#[0-9]+|\(minSdkVersion=[0-9]+, maxSdkVersion=[0-9]+\)))"
+               r" certificate SHA-256 digest: ([0-9a-fA-F]{64})$")
+    matches = re.findall(pattern, output, re.MULTILINE)
+    require(bool(matches), "APK verification returned no supported signer certificate SHA-256 digest.")
+    require(len({label for label, _ in matches}) == len(matches), "Duplicate or ambiguous signer labels.")
+    result = sorted({value.lower() for _, value in matches})
+    require(len(result) == 1, "This preview requires one unchanged signing certificate; signer rotation is not supported.")
     return result
 
 

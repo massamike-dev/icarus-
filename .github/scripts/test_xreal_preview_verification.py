@@ -77,6 +77,17 @@ class PreviewVerificationTests(unittest.TestCase):
             with self.subTest(output=output), self.assertRaises(ValueError):
                 verification.certificates(output)
 
+    def test_sdk_ranged_signers_use_certificate_not_public_key_fingerprints(self):
+        output = "Signer (minSdkVersion=29, maxSdkVersion=2147483647) certificate SHA-256 digest: " + CERT + "\n"
+        output += "Signer (minSdkVersion=29, maxSdkVersion=2147483647) public key SHA-256 digest: " + "c" * 64 + "\n"
+        self.assertEqual(verification.certificates(output), [CERT])
+        lower_range = "Signer (minSdkVersion=24, maxSdkVersion=28) certificate SHA-256 digest: "
+        self.assertEqual(verification.certificates(output + lower_range + CERT), [CERT])
+        with self.assertRaises(ValueError):
+            verification.certificates(output + lower_range + "c" * 64)
+        with self.assertRaises(ValueError):
+            verification.certificates(output.replace(" certificate SHA-256 digest:", " public key SHA-256 digest:"))
+
     def test_permissions_fail_closed(self):
         prefix = '<manifest xmlns:android="http://schemas.android.com/apk/res/android">'
         valid = prefix + '<uses-permission android:name="android.permission.INTERNET"/>' + \

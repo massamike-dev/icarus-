@@ -77,6 +77,29 @@ jobs:
           cache-disabled: true
       - name: Prepare account-free wake-word engine
         run: bash native/android/scripts/prepare-sherpa-kws.sh
+      - name: Download pinned public baseline without any signing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/preview-baseline"
+          gh release download v1.6.15-test --repo "$GITHUB_REPOSITORY" \
+            --pattern ICARUS-latest.apk --dir "$RUNNER_TEMP/preview-baseline"
+          printf '%s  %s\n' \
+            '215fe3d5b3b6e01fc2db2dba93d3c0f3fbd4d7eda9e3eed836a740c62a50f913' \
+            "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" | sha256sum --check --strict
+          APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -n "$APKSIGNER_PATH"
+          "$APKSIGNER_PATH" verify --verbose --print-certs "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" > "$RUNNER_TEMP/baseline-certificates.txt"
+          # Public certificate fingerprints only, never a private signing key.
+          grep -E '^(Verif|Number of|Signer.* SHA-256 digest)' "$RUNNER_TEMP/baseline-certificates.txt"
+          python3 - <<'PYBASE'
+          import importlib.util, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location("verification", ".github/scripts/verify-xreal-preview.py")
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          module.certificates((Path(os.environ["RUNNER_TEMP"]) / "baseline-certificates.txt").read_text())
+          PYBASE
       - name: Run native release unit tests and lint before accessing signing secrets
         id: native_validation
         working-directory: native/android
@@ -105,16 +128,6 @@ jobs:
           if len(matches) != 1:
               raise SystemExit("Exactly one open draft PR must reference this branch and commit before signing.")
           PY
-      - name: Download pinned public baseline without any signing credentials
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/preview-baseline"
-          gh release download v1.6.15-test --repo "$GITHUB_REPOSITORY" \
-            --pattern ICARUS-latest.apk --dir "$RUNNER_TEMP/preview-baseline"
-          printf '%s  %s\n' \
-            '215fe3d5b3b6e01fc2db2dba93d3c0f3fbd4d7eda9e3eed836a740c62a50f913' \
-            "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" | sha256sum --check --strict
       - name: Assemble release APK using only the existing ICARUS signer
         id: signing
         env:
