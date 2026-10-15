@@ -55,7 +55,7 @@ test('bridge authorization binds active origin, main frame and response generati
 });
 
 test('deterministic commands run before local interpretation; cloud needs explicit mode',()=>{
-  assert.match(voice,/HandsFreeCommands\.parse\(text\)\s*if \(command != null\) accept\(ProposedAction\(command\)\) else interpret\(text\)/);
+  assert.match(voice,/HandsFreeCommands\.parse\(text\)[\s\S]*?if \(command != null\) accept\(ProposedAction\(command\)\) else interpret\(text\)/);
   assert.match(voice,/RuntimeMode\.current\(context\) == RuntimeMode\.LOCAL\) \{ interpretLocally\(text\); return \}/);
   assert.match(voice,/LocalModelManager\.get\(context\)\.interpretCommand/);
   assert.match(voice,/LocalCommandResult\.handsFree\(data\)[\s\S]*?accept\(ProposedAction\(command, modelInterpreted = true\)\)/);

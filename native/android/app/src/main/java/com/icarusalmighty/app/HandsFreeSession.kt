@@ -44,6 +44,8 @@ class HandsFreeSession(
     private var closed = false
     private var epoch = 0
     private val captures = VoiceCaptureGate()
+    private val launchCancellation = AppLaunchCancellationGate()
+    private var launchDeadline: Runnable? = null
     private var phase = "INITIALIZING_VOICE"
     private var afterSpeech: (() -> Unit)? = null
     private data class ProposedAction(val command: HandsFreeCommands.Command, val proposalId: String? = null, val session: VoiceSessionState? = null, val modelInterpreted: Boolean = false)
@@ -147,6 +149,9 @@ class HandsFreeSession(
     private fun stopCapture() {
         // Invalidate callbacks before destroy(), which may itself deliver onError.
         captures.cancel()
+        launchCancellation.cancel()
+        launchDeadline?.let(handler::removeCallbacks)
+        launchDeadline = null
         val previous = recognizer
         recognizer = null
         runCatching { previous?.destroy() }
@@ -155,6 +160,13 @@ class HandsFreeSession(
     private fun handle(text: String) {
         if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         handler.removeCallbacks(timeout)
+        val command = HandsFreeCommands.parse(text)
+        // Explicit stop/home always wins, including while awaiting confirmation.
+        if (command?.action in setOf("stop_listening", "go_home", "close_app", "cancel", "unsupported_force_stop")) {
+            cancelPending("Cancelled before execution.")
+            execute(ProposedAction(checkNotNull(command)))
+            return
+        }
         val previous = pending
         pending = null
         if (previous != null) {
@@ -164,7 +176,6 @@ class HandsFreeSession(
             }
             return
         }
-        val command = HandsFreeCommands.parse(text)
         if (command != null) accept(ProposedAction(command)) else interpret(text)
     }
 
@@ -261,6 +272,10 @@ class HandsFreeSession(
     private fun accept(proposed: ProposedAction) {
         if (!RuntimeMode.isCurrent(runtimeGeneration)) { finish(); return }
         val c = proposed.command
+        if (c.action == "open_app" && !proposed.modelInterpreted) {
+            prepareAppLaunch(proposed)
+            return
+        }
         if (HandsFreeActionPolicy.requiresConfirmation(c.action, proposed.modelInterpreted)) {
             // Never allow an AI result to suppress confirmation or supply a misleading summary.
             pending = proposed
@@ -272,10 +287,122 @@ class HandsFreeSession(
                 "set_volume" -> "Set media volume to ${c.value} percent?"
                 "stop_listening" -> "Turn off hands-free listening?"
                 "open_app" -> "Open ${c.value}?"
+                "go_home", "close_app" -> "Return to the home screen?"
                 else -> "Request this device action?"
             }
             say("$question Say yes to confirm, or cancel.") { capture() }
         } else execute(proposed)
+    }
+
+    private fun resolveApp(name: String) = HandsFreeAppLaunch.resolve(name,
+        context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
+    ) { it.loadLabel(context.packageManager).toString() }
+
+    private fun prepareAppLaunch(proposed: ProposedAction) {
+        if (context.getSystemService(KeyguardManager::class.java).isDeviceLocked) {
+            say("Unlock your phone and repeat this command.")
+            return
+        }
+        runCatching {
+            val app = resolveApp(proposed.command.value)
+            if (app == null) { say("Say the exact name of one installed app."); return }
+            val intent = context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName)
+            if (intent == null) { say("I couldn't open that app."); return }
+            pending = proposed
+            say(HandsFreeAppLaunch.announcement(app.loadLabel(context.packageManager).toString())) {
+                captureLaunchCancellation(proposed, intent)
+            }
+        }.onFailure { say("I couldn't open that app.") }
+    }
+
+    /** TTS has completed before this starts. Wait three seconds of microphone-ready time,
+     * then drain the final recognition result so a boundary 'stop' cannot race the launch.
+     * Missing readiness/results or recognition errors cancel rather than launch blindly.
+     */
+    private fun captureLaunchCancellation(proposed: ProposedAction, intent: Intent) {
+        if (closed || !RuntimeMode.isCurrent(runtimeGeneration) || !WakeWordService.isEnabled(context)) { finish(); return }
+        stopCapture()
+        val captureId = captures.start()
+        val windowId = launchCancellation.start()
+        transition("LISTENING_FOR_CANCEL", 15000)
+        fun fail(message: String) {
+            if (closed || !captures.consume(captureId)) return
+            stopCapture()
+            cancelPending("App launch cancelled because cancellation listening was unavailable.")
+            onError(message)
+            say("Cancelled.")
+        }
+        fun result(text: String, silence: Boolean = false) {
+            if (closed || !captures.consume(captureId)) return
+            val canLaunch = silence && launchCancellation.finishWithSilence(windowId)
+            stopCapture()
+            if (!RuntimeMode.isCurrent(runtimeGeneration) || !WakeWordService.isEnabled(context)) { finish(); return }
+            if (canLaunch && pending === proposed) {
+                pending = null
+                transition("EXECUTING")
+                val failure = runCatching {
+                    check(!context.getSystemService(KeyguardManager::class.java).isDeviceLocked)
+                    context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }.exceptionOrNull()
+                if (failure == null) {
+                    report(proposed, "reported", "App launch requested from Android.")
+                    finish() // The concise opening announcement was already spoken.
+                } else {
+                    report(proposed, "reported", "Android could not open the app.")
+                    say("I couldn't open that app.")
+                }
+            } else {
+                cancelPending("Cancelled before execution.")
+                val command = HandsFreeCommands.parse(text)
+                if (command?.action in setOf("stop_listening", "go_home", "close_app", "cancel", "unsupported_force_stop")) execute(ProposedAction(checkNotNull(command)))
+                else say("Cancelled.")
+            }
+        }
+        runCatching {
+            if (!SpeechRecognizer.isRecognitionAvailable(context)) { fail("Android speech recognition is unavailable."); return }
+            val r = SpeechRecognizer.createSpeechRecognizer(context)
+            recognizer = r
+            r.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(p: Bundle?) {
+                    if (closed || !launchCancellation.microphoneReady(windowId)) return
+                    launchDeadline = Runnable {
+                        if (closed || !launchCancellation.windowElapsed(windowId)) return@Runnable
+                        if (!RuntimeMode.isCurrent(runtimeGeneration) || !WakeWordService.isEnabled(context)) { finish(); return@Runnable }
+                        transition("FINALIZING_APP_LAUNCH", 8000)
+                        // Do not truncate 'stop listening' begun just before the deadline.
+                        if (!launchCancellation.awaitingSpeechResult(windowId)) {
+                            runCatching { r.stopListening() }.onFailure { fail("Android could not finish cancellation listening.") }
+                        }
+                    }.also { handler.postDelayed(it, AppLaunchCancellationGate.WINDOW_MS) }
+                }
+                override fun onBeginningOfSpeech() { launchCancellation.heardSpeech(windowId) }
+                override fun onRmsChanged(v: Float) = Unit
+                override fun onBufferReceived(b: ByteArray?) = Unit
+                override fun onEndOfSpeech() = Unit
+                override fun onEvent(t: Int, p: Bundle?) = Unit
+                override fun onPartialResults(p: Bundle?) {
+                    val text = p?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                    if (text.isNotBlank()) launchCancellation.heardSpeech(windowId)
+                    // Bare 'stop' can become 'stop listening'; 'close' can become a named app.
+                    // Wait for final results before navigating or resolving a target.
+                    if (HandsFreeCommands.parse(text)?.action == "stop_listening" ||
+                        text.trim().lowercase() in setOf("cancel", "never mind", "nevermind")) result(text)
+                }
+                override fun onResults(results: Bundle?) {
+                    val text = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty()
+                    result(text, silence = text.isBlank())
+                }
+                override fun onError(e: Int) {
+                    if (e in setOf(SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT)) result("", silence = true)
+                    else fail(recognitionError(e))
+                }
+            })
+            r.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+                .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, AppLaunchCancellationGate.WINDOW_MS))
+        }.onFailure { fail("Microphone capture could not start for app-launch cancellation.") }
     }
 
     private fun execute(proposed: ProposedAction) {
@@ -289,6 +416,7 @@ class HandsFreeSession(
         val message = runCatching {
             when (c.action) {
                 "cancel" -> "Cancelled."
+                "unsupported_force_stop" -> "I can't force-stop apps. I can return to the home screen."
                 "stop_listening" -> { WakeWordService.setEnabled(context, false); "Hands-free listening is off. Enable it in ICARUS to start again." }
                 "get_battery" -> "Battery is ${context.getSystemService(BatteryManager::class.java).getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)} percent."
                 "toggle_flashlight" -> {
@@ -346,6 +474,10 @@ class HandsFreeSession(
     private fun launch(c: HandsFreeCommands.Command): String {
         if (context.getSystemService(KeyguardManager::class.java).isDeviceLocked) return "Unlock your phone and repeat this command."
         val intent = when (c.action) {
+            "go_home", "close_app" -> {
+                if (c.action == "close_app" && resolveApp(c.value) == null) return "Say the exact name of one installed app."
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            }
             "make_call" -> {
                 if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) throw SecurityException()
                 val number = if (Regex("\\+?[0-9 ()-]{3,}").matches(c.value)) c.value else {
@@ -366,14 +498,13 @@ class HandsFreeSession(
                 Intent(AlarmClock.ACTION_SET_TIMER).putExtra(AlarmClock.EXTRA_LENGTH, seconds).putExtra(AlarmClock.EXTRA_SKIP_UI, true)
             }
             "open_app" -> {
-                val apps = context.packageManager.queryIntentActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0)
-                    .filter { it.loadLabel(context.packageManager).toString().equals(c.value, true) }
-                if (apps.size != 1) return "Say the exact name of one installed app."
-                context.packageManager.getLaunchIntentForPackage(apps.single().activityInfo.packageName) ?: error("No launch intent")
+                val app = resolveApp(c.value) ?: return "Say the exact name of one installed app."
+                context.packageManager.getLaunchIntentForPackage(app.activityInfo.packageName) ?: error("No launch intent")
             }
             else -> return "That action isn't connected for hands-free use yet."
         }
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        if (c.action in setOf("go_home", "close_app")) return "Home."
         return "Request sent to Android. If it doesn't open, Android may require you to open ICARUS first."
     }
 
@@ -416,6 +547,12 @@ class HandsFreeSession(
                 cancelPending("Confirmation timed out; the action was not executed.")
                 onError("Android speech recognition did not return a result within 20 seconds.")
                 say("Speech recognition timed out. Try Hey ICARUS again.")
+            }
+            "LISTENING_FOR_CANCEL", "FINALIZING_APP_LAUNCH" -> {
+                stopCapture()
+                cancelPending("App launch cancelled because cancellation listening timed out.")
+                onError("Android did not complete app-launch cancellation listening.")
+                say("Cancelled.")
             }
             "INTERPRETING" -> {
                 epoch++

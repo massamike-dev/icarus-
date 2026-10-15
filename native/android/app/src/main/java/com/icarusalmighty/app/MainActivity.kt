@@ -30,6 +30,9 @@ import android.widget.ImageView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import com.icarusalmighty.app.update.PlayUpdateManager
@@ -104,7 +107,19 @@ class MainActivity : AppCompatActivity() {
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
+        // Android 15+ enforces edge-to-edge. Keep the whole WebView viewport
+        // outside system bars/cutouts instead of assuming CSS env() is populated.
+        // IME uses max(), so navigation and keyboard insets are never added twice.
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        rootView.setBackgroundColor(android.graphics.Color.rgb(6, 11, 24))
+        ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime())
+            view.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, keyboard.bottom))
+            WindowInsetsCompat.CONSUMED
+        }
         setContentView(rootView)
+        ViewCompat.requestApplyInsets(rootView)
         configureWebView()
         loadIcarus()
         ensureWakeListenerRunning()

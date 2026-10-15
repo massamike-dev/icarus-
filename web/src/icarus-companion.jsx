@@ -5,7 +5,7 @@ import {LilIcarus3D} from './lil-icarus-3d.jsx';
 import './companion.css';
 
 const preferenceKey='icarus_companion_preferences';
-const activeStages=new Set(['STARTING','PREPARING_VOICE','INITIALIZING_VOICE','ACKNOWLEDGING','CAPTURING','AWAITING_CONFIRMATION','INTERPRETING','EXECUTING','SPEAKING']);
+const activeStages=new Set(['STARTING','PREPARING_VOICE','INITIALIZING_VOICE','ACKNOWLEDGING','CAPTURING','AWAITING_CONFIRMATION','LISTENING_FOR_CANCEL','FINALIZING_APP_LAUNCH','INTERPRETING','EXECUTING','SPEAKING']);
 const companionMotions=new Set(['idle','preparing','listening','thinking','speaking','confirm','error']);
 const stages={
   STARTING:['preparing','Starting the wake listener.'],
@@ -14,7 +14,9 @@ const stages={
   INITIALIZING_VOICE:['preparing','Starting speech.'],
   ACKNOWLEDGING:['speaking','Acknowledging your request.'],
   CAPTURING:['listening','Listening to your command.'],
-  AWAITING_CONFIRMATION:['listening','Waiting for your confirmation.'],
+  AWAITING_CONFIRMATION:['listening','Say yes to confirm the action ICARUS read out, or cancel.'],
+  LISTENING_FOR_CANCEL:['listening','Say cancel now to stop the pending app launch.'],
+  FINALIZING_APP_LAUNCH:['thinking','Finishing the cancellation check.'],
   INTERPRETING:['thinking','Understanding your command.'],
   EXECUTING:['thinking','Carrying out your request.'],
   SPEAKING:['speaking','Speaking.'],

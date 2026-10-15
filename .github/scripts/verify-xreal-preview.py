@@ -12,8 +12,8 @@ import xml.etree.ElementTree as ET
 
 
 PACKAGE = "com.icarusalmighty.app"
-VERSION_CODE = 48
-VERSION_NAME = "1.6.17"
+VERSION_CODE = 49
+VERSION_NAME = "1.6.18"
 BASELINE_VERSION_CODE = 46
 BASELINE_VERSION_NAME = "1.6.15"
 BASELINE_TAG = "v1.6.15-test"

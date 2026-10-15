@@ -58,6 +58,12 @@ test('waiting for wake is idle; command capture and errors reflect native state'
     await app.broadcast({listenerState:'CAPTURING'});
     assert.equal(app.w.document.querySelector('.icarus-companion').dataset.phase,'listening');
     assert.equal(app.w.document.querySelector('.companion-talk').disabled,true);
+    await app.broadcast({listenerState:'LISTENING_FOR_CANCEL'});
+    assert.match(app.w.document.querySelector('.companion-status').textContent,/Say cancel/);
+    assert.equal(app.w.document.querySelector('.companion-talk').disabled,true);
+    await app.broadcast({listenerState:'FINALIZING_APP_LAUNCH'});
+    assert.match(app.w.document.querySelector('.companion-status').textContent,/Finishing the cancellation check/);
+    assert.equal(app.w.document.querySelector('.companion-talk').disabled,true);
     await app.broadcast({listenerState:'INTERPRETING'});
     assert.equal(app.w.document.querySelector('.icarus-companion').dataset.phase,'thinking');
     await app.broadcast({listenerState:'SPEAKING'});
