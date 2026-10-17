@@ -117,6 +117,7 @@ html { font-family: var(--font-body); background: var(--ink); scrollbar-color: v
 .dashboard-footnote, .dashboard-help { margin: 14px 0 0; color: var(--steel); font-size: 11px; line-height: 1.7; }
 .dashboard-help { color: var(--sky); }
 .resize-none { resize: none; }
+.companion-dock-label { display: none; }
 
 @media(max-width:850px) {
   html { scroll-padding-top: env(safe-area-inset-top); scroll-padding-bottom: calc(var(--mobile-nav-height) + 24px + env(safe-area-inset-bottom)); }
@@ -152,7 +153,21 @@ html { font-family: var(--font-body); background: var(--ink); scrollbar-color: v
   .app-shell > aside > nav > button.active { background: rgba(18,71,122,.24); color: var(--gold); }
   .app-shell > aside > nav > button.active::before { position: absolute; content: ''; top: 0; left: 33%; right: 33%; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold); box-shadow: 0 0 9px #ffd57299; }
   .app-shell > aside > nav svg { width: 25px; height: 25px; stroke-width: 1.7; }
-  .icarus-companion:not(.companion-dashboard) { bottom: calc(var(--mobile-nav-height) + 12px + env(safe-area-inset-bottom)); }
+  /* Reserve a real mobile dock instead of floating a transparent hit target
+     over Settings actions or the Chat composer. Home owns its inline scene. */
+  .app-shell:not([data-page="home"]) { padding-bottom: calc(var(--mobile-nav-height) + 88px + env(safe-area-inset-bottom)); }
+  .app-shell:not([data-page="home"]) :is(button, input, textarea, select) { scroll-margin-bottom: calc(var(--mobile-nav-height) + 88px + env(safe-area-inset-bottom)); }
+  .icarus-companion:not(.companion-dashboard) { z-index: 4; bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); left: 0; right: 0; width: 100%; max-width: 100%; height: 64px; background: #062551; border-top: 1px solid #487cab; }
+  .icarus-companion:not(.companion-dashboard) .companion-figure { display: flex; align-items: center; justify-content: flex-start; width: 100%; height: 63px; padding: 0 16px 0 76px; border-radius: 0; }
+  .icarus-companion:not(.companion-dashboard) .companion-model { width: 64px; right: auto; }
+  .icarus-companion:not(.companion-dashboard) .companion-poster { position: absolute; left: 4px; top: 0; width: 60px; max-width: 60px; height: 63px; }
+  .icarus-companion:not(.companion-dashboard) .companion-fallback-crest { position: absolute; left: 12px; width: 44px; height: 44px; }
+  .icarus-companion:not(.companion-dashboard) .companion-state-dot { left: 56px; right: auto; bottom: 10px; }
+  .icarus-companion:not(.companion-dashboard) .companion-dock-label { display: block; color: var(--steel); font-size: 13px; text-align: left; }
+  .icarus-companion:not(.companion-dashboard) .companion-restore { width: 100%; height: 63px; border: 0; border-radius: 0; }
+  .icarus-companion:not(.companion-dashboard) .companion-panel { width: min(360px, calc(100vw - 24px)); bottom: 72px; max-height: calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  .companion-right:not(.companion-dashboard) .companion-panel { right: 12px; left: auto; }
+  .companion-left:not(.companion-dashboard) .companion-panel { left: 12px; right: auto; }
 }
 @media(max-width:420px) {
   .command-dashboard { padding-left: 20px; padding-right: 20px; }

@@ -39,7 +39,7 @@ async function setup(width,height,{native=true,reduced=false}={}){
  assert.ok(art.image.top>=art.figure.top-1&&art.image.bottom<=art.figure.bottom+1,'The full gold character must fit inside its scene without clipping');
  return{context,page};
 }
-async function shot(page,name){await page.screenshot({path:path.join(output,name+'.png'),fullPage:false});report.screenshots.push(name+'.png');}
+async function shot(page,name,{top=true}={}){if(top)await page.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));await page.screenshot({path:path.join(output,name+'.png'),fullPage:false});report.screenshots.push(name+'.png');}
 async function noOverflow(page,label){const size=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(size.scroll<=size.width+1,`${label}: overflow ${size.scroll}/${size.width}`);report.checks.push(label+' has no horizontal overflow');}
 try{
  const {context,page}=await setup(393,852);
@@ -52,7 +52,10 @@ try{
  await page.getByRole('button',{name:'Plan my day',exact:true}).click();
  assert.equal(await page.getByRole('textbox',{name:'Message',exact:true}).inputValue(),'Plan my day');
  assert.equal(await page.evaluate(()=>window.__qaNativeRequests.filter(r=>r.action==='local_chat').length),0);
- await shot(page,'chat-draft-393x852');await noOverflow(page,'393px Chat');
+ await shot(page,'chat-draft-393x852');
+ await page.locator('.composer').evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));await shot(page,'chat-composer-393x852',{top:false});
+ const dock=await page.locator('.companion-floating').boundingBox();assert.ok(dock&&dock.width===393&&dock.height<=65,'Mobile voice dock must occupy its own full-width strip');
+ await noOverflow(page,'393px Chat');
  await page.getByRole('button',{name:'Memory',exact:true}).click();
  await page.getByRole('textbox',{name:'Something ICARUS should remember'}).fill('Browser QA sample memory');
  await page.getByRole('button',{name:'Remember',exact:true}).click();
@@ -60,7 +63,10 @@ try{
  await shot(page,'memory-393x852');await noOverflow(page,'393px Memory');
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  await page.getByRole('heading',{name:'Settings',exact:true}).waitFor();
- await shot(page,'settings-393x852');await noOverflow(page,'393px Settings');
+ await shot(page,'settings-393x852');
+ await page.getByRole('button',{name:'Check voice status',exact:true}).evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));
+ const statusBounds=await page.getByRole('button',{name:'Check voice status',exact:true}).boundingBox();const dockBounds=await page.locator('.companion-floating').boundingBox();assert.ok(statusBounds.y+statusBounds.height<dockBounds.y,'Scrolled Settings controls must clear the mobile dock');await shot(page,'settings-voice-controls-393x852',{top:false});
+ await noOverflow(page,'393px Settings');
  await page.getByRole('button',{name:'Home',exact:true}).click();
  await page.locator('.dashboard-tools summary').click();
  await page.getByRole('button',{name:'Open voice controls',exact:true}).click();
@@ -70,6 +76,8 @@ try{
  assert.equal(await page.evaluate(()=>window.__qaNativeRequests.filter(r=>r.action==='wake_word').length),0);
  await page.getByRole('button',{name:'Home',exact:true}).click();
  await page.locator('.dashboard-tools summary').click();await page.getByRole('button',{name:'Open vehicle controls',exact:true}).click();
+ const vehicleButtonHeights=await page.locator('.hud-option .settings-actions > button').evaluateAll(buttons=>buttons.map(button=>button.getBoundingClientRect().height));
+ assert.ok(vehicleButtonHeights.length>0&&vehicleButtonHeights.every(height=>height>=44&&height<120),'Column-oriented Vehicle actions must retain compact touch targets');
  await shot(page,'vehicle-393x852');await noOverflow(page,'393px Vehicle');
  await page.getByRole('button',{name:'Home',exact:true}).click();await page.locator('.dashboard-talk:enabled').waitFor();
  await page.getByRole('button',{name:'Talk now from Home',exact:true}).click();
@@ -80,7 +88,7 @@ try{
  await context.close();
  for(const [width,height] of [[320,568],[430,932],[1440,1000]]){
   const {context,page}=await setup(width,height);await page.locator('.dashboard-talk:enabled').waitFor();await noOverflow(page,`${width}px Home`);await shot(page,`home-${width}x${height}`);
-  if(width<=850)assert.equal(await page.locator('nav button:visible').count(),4);
+  if(width<=850){assert.equal(await page.locator('nav button:visible').count(),4);await page.locator('.dashboard-tools summary').scrollIntoViewIfNeeded();await shot(page,`home-controls-${width}x${height}`,{top:false});assert.equal(await page.locator('.dashboard-tools summary').isVisible(),true);}
   await page.getByRole('button',{name:'Settings',exact:true}).click();await noOverflow(page,`${width}px Settings`);await shot(page,`settings-${width}x${height}`);
   await context.close();
  }

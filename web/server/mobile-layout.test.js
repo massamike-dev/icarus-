@@ -28,3 +28,11 @@ test('Android owns consumed system bar, cutout, and keyboard insets for the WebV
   assert.match(activity,/WindowInsetsCompat.CONSUMED/);
   assert.match(activity,/ViewCompat.requestApplyInsets\(rootView\)/);
 });
+
+
+test('mobile companion uses an opaque reserved dock instead of covering individual controls',()=>{
+ const css=source('../src/dashboard.css');
+ assert.match(css,/\.app-shell:not\(\[data-page="home"\]\) \{ padding-bottom: calc\(var\(--mobile-nav-height\) \+ 88px/);
+ assert.match(css,/\.icarus-companion:not\(\.companion-dashboard\) \{[^}]*width: 100%;[^}]*height: 64px;[^}]*background: #062551;/);
+ assert.match(css,/scroll-margin-bottom: calc\(var\(--mobile-nav-height\) \+ 88px/);
+});

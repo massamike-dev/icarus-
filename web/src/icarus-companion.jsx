@@ -155,6 +155,7 @@ export function IcarusCompanion({onNavigate,presentation='floating'}){
         {!posterFailed&&(presentation==='dashboard'||!modelReady||modelFailed)&&<img className="companion-poster" src={presentation==='dashboard'?'/brand/lil-icarus-soft-gold.webp':'/brand/icarus-companion.png'} alt="" width="96" height="112" onError={()=>setPosterFailed(true)}/>}
         {posterFailed&&<img className="companion-fallback-crest" src="/brand/icarus-crest.svg" alt=""/>}
         <span className="companion-state-dot" aria-hidden="true"/>
+        {presentation!=='dashboard'&&<span className="companion-dock-label" aria-hidden="true">Lil ICARUS · Voice & controls</span>}
       </button>
       {presentation==='dashboard'&&<div className="dashboard-voice">
         <p className="companion-caption">Tap Lil ICARUS for voice & controls</p>

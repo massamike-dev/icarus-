@@ -273,6 +273,9 @@
 .hud-option:first-child { border-top-color: var(--gold); }
 .hud-option h2 { font-size: clamp(27px, 3vw, 34px); }
 .hud-option .eyebrow { color: var(--gold); }
+/* Vehicle actions stack vertically: the mobile row-button basis would otherwise
+ * become a 160px height. Let their content and existing 48px minimum size them. */
+.hud-option .settings-actions > button { flex: 0 1 auto; }
 .hud-feedback { padding-top: 4px; }
 .premium-plan { padding: 22px; border-color: var(--page-edge); }
 .premium-plan h2 { font-size: 27px; }

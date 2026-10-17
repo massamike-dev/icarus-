@@ -53,3 +53,21 @@ test('supporting controls retain touch targets, disabled cues, and accessibility
   assert.ok(media.includes('(forced-colors: active)'));
   assert.ok(declares('.history-panel button.current', 'outline', '2px solid Highlight'));
 });
+
+test('stacked Vehicle actions keep content height instead of the mobile row flex basis', () => {
+  const vehicle = postcss.parse(readFileSync(new URL('../src/vehicle.css', import.meta.url), 'utf8'));
+  let columnActions = false, fullTouchTarget = false;
+  vehicle.walkRules(rule => {
+    if (rule.selectors.includes('.hud-option .settings-actions')) {
+      columnActions ||= rule.nodes.some(node => node.type === 'decl' && node.prop === 'flex-direction' && node.value === 'column');
+    }
+    if (rule.selectors.includes('.hud-option button')) {
+      fullTouchTarget ||= rule.nodes.some(node => node.type === 'decl' && node.prop === 'min-height' && node.value === '48px');
+    }
+  });
+  assert.ok(columnActions, 'The Vehicle action group uses a vertical flex axis');
+  assert.ok(fullTouchTarget, 'Vehicle controls retain their 48px touch targets');
+  assert.ok(declares('.settings-actions > button', 'flex', '1 1 160px'), 'Row groups still wrap usefully on small screens');
+  assert.ok(declares('.hud-option .settings-actions > button', 'flex', '0 1 auto'), 'The more-specific Vehicle rule must reset the basis to content height');
+  assert.ok(rulesFor('.hud-option .settings-actions > button').some(rule => rule.parent.type === 'root'), 'The vertical-axis reset must apply at every viewport, including 320px and 393px');
+});
