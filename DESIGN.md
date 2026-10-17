@@ -38,3 +38,12 @@ The driving-HUD reference stays separate from the app dashboard: do not imply th
 The reply field and suggestions transfer drafts to Chat for review, without sending or triggering any phone action. All six existing navigation destinations remain functional; the mobile bar now matches the historical four-tab layout.
 
 The supplied 1254px gold-and-blue winged-helmet icon is bundled unchanged as `web/public/brand/icarus-app-icon.png` for authentication and sidebar identity. Preserve its detailed metallic material; do not substitute a flat illustrative logo.
+
+
+## Approved blue-glass theme (October 17, 2026)
+
+This supersedes the earlier dashboard color/layout guidance above. The approved softer-gold concept uses rich blue translucent glass, subdued cyan edging, dimensional gold Lil ICARUS and blue primary buttons with gold/cyan highlights. Current tokens are defined in dashboard.css: ink #021027, panel #07244a, raised #0d3565, line #417eac, secondary #c0d8f2, text #f5f8ff, cyan #73d5ff, gold #f1d17d, focus #ffe4a1.
+
+Home uses separate generated character, platform and background WebP assets, while its typography, buttons, drafts and navigation remain native DOM. Supporting pages use glass-pages.css and preserve their original functional layouts. On mobile the supporting-page animated companion is contained in a reserved 64px dock above navigation; desktop retains the corner figure. Native OS status bars and keyboard remain host-owned.
+
+Browser screenshots and flow checks use explicit fixtures. See docs/BLUE_GLASS_THEME.md and design-qa.md for evidence and limitations. No hardware or live-account operation should be inferred from fixture screenshots.

@@ -79,6 +79,7 @@ try{
  const vehicleButtonHeights=await page.locator('.hud-option .settings-actions > button').evaluateAll(buttons=>buttons.map(button=>button.getBoundingClientRect().height));
  assert.ok(vehicleButtonHeights.length>0&&vehicleButtonHeights.every(height=>height>=44&&height<120),'Column-oriented Vehicle actions must retain compact touch targets');
  await shot(page,'vehicle-393x852');await noOverflow(page,'393px Vehicle');
+ await page.locator('.hud-option .settings-actions > button').first().evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));await shot(page,'vehicle-actions-393x852',{top:false});
  await page.getByRole('button',{name:'Home',exact:true}).click();await page.locator('.dashboard-talk:enabled').waitFor();
  await page.getByRole('button',{name:'Talk now from Home',exact:true}).click();
  await page.locator('.dashboard-talk:disabled').waitFor();

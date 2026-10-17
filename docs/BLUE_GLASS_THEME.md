@@ -8,7 +8,7 @@ The October 17 approved softer-gold visual concept is implemented as real contro
 - Home message and idea cards open drafts in Chat for review; they do not submit requests.
 - Unsupported or unconfirmed native states remain explicit. The on-device badge identifies workspace mode, not a verified microphone or model.
 - Mobile keeps four primary navigation items, with Vehicle/Voice accessible under the controls disclosure. The screen scrolls above the fixed navigation.
-- Home uses the approved dimensional character artwork. The pre-existing animated 3D companion is retained on supporting pages, with an image fallback.
+- Home uses the approved dimensional character artwork. The pre-existing animated 3D companion is retained on supporting pages, with an image fallback. On mobile it lives in a reserved voice dock above navigation, rather than over form controls.
 - No backend configuration, billing, permissions, native voice cancellation policy, production deployment, main merge or Play publication is changed.
 
 The bundled APK contains these screens for on-device mode. Switching to the independently hosted cloud workspace loads the currently deployed website and may show its earlier theme until a separately approved web deployment.

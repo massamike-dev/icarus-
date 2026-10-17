@@ -14,7 +14,7 @@ concurrency:
 
 env:
   PREVIEW_BRANCH: work/icarus-xreal-preview-20261014
-  PREVIEW_TAG: v1.6.18-xreal-preview
+  PREVIEW_TAG: v1.6.19-xreal-preview
   ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
 
 jobs:
@@ -46,6 +46,20 @@ jobs:
       - name: Build bundled offline UI
         working-directory: web
         run: npm run build -- --base=./
+      - name: Install browser for isolated UI checks
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Verify exact bundled UI before signing
+        working-directory: web
+        run: node scripts/visual-smoke.mjs
+      - name: Save browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-preview-browser-ui-${{ github.sha }}
+          path: web/ui-qa/
+          if-no-files-found: error
+          retention-days: 14
 
   build-preview:
     needs: validate-web
@@ -257,7 +271,7 @@ jobs:
           PY
           gh release create "$PREVIEW_TAG" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "ICARUS 1.6.18 XREAL Preview (stationary testing only)" \
+            --title "ICARUS 1.6.19 Blue Glass Preview (stationary testing only)" \
             --notes-file docs/XREAL_PREVIEW_RELEASE.md --prerelease --latest=false \
             "$RUNNER_TEMP/preview-delivery/ICARUS-xreal-preview.apk" \
             "$RUNNER_TEMP/preview-delivery/SHA256SUMS" \

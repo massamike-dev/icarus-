@@ -178,6 +178,11 @@ class PreviewVerificationTests(unittest.TestCase):
         self.assertNotIn("android-update-v2.json", workflow)
         self.assertEqual(workflow.count("contents: write"), 1)
         self.assertLess(workflow.index("id: native_validation"), workflow.index("id: signing"))
+        self.assertIn("!contains(github.event.head_commit.message, '[visual-qa]')", workflow)
+        self.assertIn("needs: validate-web", workflow)
+        self.assertLess(workflow.index("run: node scripts/visual-smoke.mjs"), workflow.index("  build-preview:"))
+        self.assertIn("PREVIEW_TAG: v" + verification.VERSION_NAME + "-xreal-preview", workflow)
+
 
 
 if __name__ == "__main__":

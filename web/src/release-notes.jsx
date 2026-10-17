@@ -1,6 +1,9 @@
 import React from 'react';
 
-export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Animated Lil ICARUS · Android 1.6.11 Test</p><ul>
+export function ReleaseNotes(){return <section className="settings-section" aria-labelledby="release-notes"><h2 id="release-notes">What’s new</h2><p>Blue Glass · Android 1.6.19 Test</p><ul>
+  <li>The approved rich-blue glass and softer-gold theme now carries through Home, Chat, Memory, Settings, Voice, Vehicle and related panels in the bundled on-device interface.</li>
+  <li>Home features full-body gold Lil ICARUS, real Talk now controls and message/idea drafts that open in Chat for review.</li>
+  <li>Supporting mobile pages reserve a compact voice dock above navigation so the companion no longer covers Settings actions or the Chat composer.</li>
   <li>New local-first core: the Android app bundles its dashboard and opens without server sign-in. On-device Chat and Memory stay on this phone.</li>
   <li>Download the optional local model once for AI chat and flexible commands. The core does not require per-message AI payments and never silently switches to paid cloud.</li>
   <li>Optional cloud mode keeps its own sign-in, history and connected services. Switching does not upload local chats or Memory.</li>
