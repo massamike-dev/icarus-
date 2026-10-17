@@ -6,11 +6,30 @@ Published privacy policy: https://icarusassistant.com/privacy-policy
 
 This document explains why the Android host requests each permission and what release behavior is expected. It is a repository engineering document; the published privacy policy remains the user-facing policy.
 
+## On-device and optional cloud workspaces
+
+- The revised Android source defaults to a bundled, account-free dashboard. Local
+  Chat history and explicitly saved Memory use device WebView storage, separate
+  from the hosted account. Switching mode does not upload them.
+- The optional downloaded model receives only the selected local conversation
+  context and saved Memory. Temporary Chat excludes saved Memory and is not
+  persisted. Model conversations are closed after each request.
+- Local model errors never trigger cloud AI. The user must explicitly choose the
+  cloud workspace; future cloud messages then use the configured server/provider.
+- Device storage is not an external backup. Deleting local chats removes their
+  stored message text; clearing app data/uninstalling removes the local workspace.
+  Android backup is disabled. Do not claim application-level encryption.
+- Local AI does not imply every voice, maps, update or integration feature is
+  offline. Android speech recognition and network-required TTS voices may use
+  network services according to the installed engine and selected voice.
+- Late native replies are scoped to their requesting page, preventing local
+  inference output from being delivered after a switch to the cloud workspace.
+
 ## Permission rationale
 
 | Permission | Why ICARUS uses it | Expected behavior |
 | --- | --- | --- |
-| `INTERNET` | Load the published ICARUS app, cloud assistant endpoints, update metadata, and optional SDK network calls | Core UI should still degrade cleanly when offline and use local capabilities where available |
+| `INTERNET` | Optional cloud workspace, model downloads, update metadata, and optional SDK network calls | Bundled local core UI loads offline; local AI never silently falls back to cloud |
 | `RECORD_AUDIO` | Wake-word listening and explicit voice/conversation capture | Wake listening is opt-in; foreground mic service shows a persistent notification |
 | `POST_NOTIFICATIONS` | Persistent wake-word foreground-service notification and related status | Requested only where Android requires runtime notification permission |
 | `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MICROPHONE` | Keep user-enabled wake-word listening alive while the UI is not foregrounded | Stops on force-stop, permission revocation, explicit Stop, or reboot until user re-enables |

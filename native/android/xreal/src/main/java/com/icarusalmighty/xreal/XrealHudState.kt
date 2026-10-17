@@ -1,5 +1,7 @@
 package com.icarusalmighty.xreal
 
+import com.icarusalmighty.xreal.hud.CinematicDrivingScene
+
 data class XrealHudState(
     val assistantStatus: String = "Idle",
     val primaryText: String? = null,
@@ -12,7 +14,50 @@ data class XrealHudState(
     val engineTempF: Int? = null,
     val batteryPercent: Int? = null,
     val alertText: String? = null,
-)
+    val fuelPercent: Int? = null,
+    val engineLoadPercent: Int? = null,
+    val batteryVolts: Double? = null,
+    val nextTurnDistanceFt: Int? = null,
+    val nextRoad: String? = null,
+    val navigationSource: String? = null,
+    val navigationAccessGranted: Boolean = false,
+    val roadStatus: String = "ROAD DATA OFFLINE",
+    val roadDetail: String = "CONNECT A LIVE NAVIGATION SOURCE",
+    val diagnosticsExpanded: Boolean = false,
+    val navigationExpanded: Boolean = false,
+    val listening: Boolean = false,
+    val vehicleMoving: Boolean? = null,
+    val obdConnected: Boolean = false,
+    val sourceLabel: String = "LIVE DATA UNAVAILABLE",
+    val vehicleSnapshotAtElapsedRealtimeMs: Long? = null,
+    val vehicleSnapshotValidUntilElapsedRealtimeMs: Long? = null,
+    val speedValidUntilElapsedRealtimeMs: Long? = null,
+) {
+    fun toDrivingScene() = CinematicDrivingScene(
+        speedMph = speedMph,
+        heading = heading,
+        rpm = rpm,
+        fuelPercent = fuelPercent,
+        engineTempF = engineTempF,
+        batteryVolts = batteryVolts,
+        engineLoadPercent = engineLoadPercent,
+        nextTurnDistanceFt = nextTurnDistanceFt,
+        nextRoad = nextRoad,
+        navigationInstruction = navigationInstruction,
+        navigationDistance = navigationDistance,
+        navigationSource = navigationSource,
+        navigationAccessGranted = navigationAccessGranted,
+        roadStatus = roadStatus,
+        roadDetail = roadDetail,
+        diagnosticsExpanded = diagnosticsExpanded,
+        navigationExpanded = navigationExpanded,
+        listening = listening,
+        vehicleMoving = vehicleMoving,
+        obdConnected = obdConnected,
+        sourceLabel = sourceLabel,
+        alertMessage = alertText,
+    )
+}
 
 enum class XrealMode {
     ASSISTANT,

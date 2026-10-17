@@ -26,8 +26,8 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 46
-        versionName = "1.6.15"
+        versionCode = 49
+        versionName = "1.6.18"
         manifestPlaceholders["mwdat_application_id"] = metaApplicationId
         manifestPlaceholders["mwdat_client_token"] = metaClientToken
         manifestPlaceholders["icarus_link_scheme"] = "icarus"
@@ -85,7 +85,33 @@ android {
         }
     }
     sourceSets["main"].java.srcDir(layout.buildDirectory.dir("generated/sherpa/kotlin"))
+    sourceSets["main"].assets.srcDir(layout.buildDirectory.dir("generated/bundledWebAssets"))
 }
+
+// Every variant carries the same account-free shell. npm ci is a documented build prerequisite.
+val webDirectory = rootProject.layout.projectDirectory.dir("../../web")
+val buildBundledWeb by tasks.registering(Exec::class) {
+    workingDir(webDirectory)
+    commandLine("npm", "run", "build", "--", "--base=./")
+    inputs.files(fileTree(webDirectory) {
+        // Browser code also imports shared command policy/context modules from server/.
+        include("src/**", "server/**", "public/**", "index.html", "package*.json", "vite.config.*")
+        exclude("node_modules/**", "dist/**")
+    })
+    outputs.dir(webDirectory.dir("dist"))
+    doFirst {
+        check(webDirectory.dir("node_modules").asFile.isDirectory) {
+            "Bundled ICARUS UI requires Node 22+ and npm ci in web/ before the Android build."
+        }
+    }
+}
+val bundleWebAssets by tasks.registering(Sync::class) {
+    dependsOn(buildBundledWeb)
+    from(webDirectory.dir("dist")) { into("web") }
+    into(layout.buildDirectory.dir("generated/bundledWebAssets"))
+    doLast { check(destinationDir.resolve("web/index.html").isFile) { "Bundled web index.html is missing" } }
+}
+tasks.named("preBuild").configure { dependsOn(bundleWebAssets) }
 
 // Validate only tasks that use this build type. Ordinary debug/release builds
 // keep working without private environment configuration or signing secrets.
@@ -145,4 +171,5 @@ dependencies {
     implementation("com.meta.wearable:mwdat-mockdevice:0.9.0")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

@@ -11,55 +11,149 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.widget.FrameLayout
+import com.icarusalmighty.xreal.hud.CinematicDrivingHudView
+import com.icarusalmighty.xreal.hud.DrivingHudSurface
 import androidx.core.content.ContextCompat
 import java.lang.ref.WeakReference
 import kotlin.math.min
 
 /**
  * High-contrast, black-background HUD designed for XREAL optical displays.
- * Black pixels remain visually transparent while cyan/gold information stays legible.
+ * Black emits no display light on additive optical glasses; a phone still shows black.
+ * Physical lens dimming and real-world legibility require device verification.
  */
 class XrealHudActivity : Activity() {
-    private lateinit var hudView: XrealHudView
+    private lateinit var root: FrameLayout
+    private var hudMode = XrealMode.ASSISTANT
+    private var vehicleView: CinematicDrivingHudView? = null
+    private var vehicleSnapshot = XrealHudState()
+    private val vehicleExpiry = Runnable {
+        if (currentActivity?.get() === this && !isDestroyed && hudMode == XrealMode.VEHICLE) {
+            renderVehicleSnapshot()
+        }
+    }
+    private var assistantView: XrealAssistantView? = null
+    private var displayManager: DisplayManager? = null
+    private val displayListener = object : DisplayManager.DisplayListener {
+        override fun onDisplayAdded(displayId: Int) = recordActivityDisplay()
+        override fun onDisplayChanged(displayId: Int) = recordActivityDisplay()
+        override fun onDisplayRemoved(displayId: Int) {
+            if (currentActivity?.get() === this@XrealHudActivity && session.actualDisplayId == displayId) {
+                // A detached decor may briefly retain its former display object.
+                session.updateActualDisplayId(null)
+            }
+        }
+    }
 
     private val stateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == XrealModeController.ACTION_UPDATE_XREAL) {
-                hudView.update(intent.toHudState())
+                renderHud(hudMode, intent.toHudState())
             }
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setBackgroundDrawable(ColorDrawable(Color.BLACK))
         window.statusBarColor = Color.BLACK
         window.navigationBarColor = Color.BLACK
-        hudView = XrealHudView(this)
-        hudView.mode = intent.toMode()
-        hudView.update(intent.toHudState())
-        setContentView(hudView)
+        // The host, not the shared instrument layer, supplies optical no-light black.
+        root = FrameLayout(this).apply { setBackgroundColor(Color.BLACK) }
+        val mode = intent.toMode()
+        // Android may restore the original launch Intent after process death,
+        // without the app-side live telemetry owner. Never replay its old readings.
+        val initialState = if (savedInstanceState != null && mode == XrealMode.VEHICLE) {
+            XrealHudState(sourceLabel = "WAITING FOR LIVE TELEMETRY")
+        } else intent.toHudState()
+        renderHud(mode, initialState)
+        setContentView(root)
         enterImmersiveMode()
 
         val filter = IntentFilter(XrealModeController.ACTION_UPDATE_XREAL)
         ContextCompat.registerReceiver(this, stateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         currentActivity = WeakReference(this)
-        if (session.activityCreated()) finish()
+        displayManager = getSystemService(DisplayManager::class.java)
+        runCatching { displayManager?.registerDisplayListener(displayListener, null) }
+        if (session.activityCreated(hudMode)) finish()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        hudView.mode = intent.toMode()
-        hudView.update(intent.toHudState())
-        if (session.activityCreated()) finish()
+        renderHud(intent.toMode(), intent.toHudState())
+        if (session.activityCreated(hudMode)) finish() else recordActivityDisplay()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        enterImmersiveMode()
+        if (hudMode == XrealMode.VEHICLE) renderVehicleSnapshot()
+        // Post until the decor is attached. A logical display ID is not proof of glasses.
+        window.decorView.post { if (!isDestroyed) recordActivityDisplay() }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) recordActivityDisplay()
+    }
+
+    private fun recordActivityDisplay() {
+        if (currentActivity?.get() !== this || isDestroyed) return
+        session.updateActualDisplayId(window.decorView.display?.takeIf { it.isValid }?.displayId)
+    }
+
+    private fun renderHud(mode: XrealMode, state: XrealHudState) {
+        hudMode = mode
+        window.decorView.removeCallbacks(vehicleExpiry)
+        val view: View = when (mode) {
+            XrealMode.VEHICLE -> {
+                val vehicle = vehicleView ?: CinematicDrivingHudView(
+                    this, surface = DrivingHudSurface.XREAL,
+                ).also { vehicleView = it }
+                vehicleSnapshot = state
+                renderVehicleSnapshot()
+                vehicle
+            }
+            XrealMode.ASSISTANT -> {
+                val assistant = assistantView ?: XrealAssistantView(this).also { assistantView = it }
+                assistant.update(state)
+                assistant
+            }
+        }
+        if (root.childCount == 0 || root.getChildAt(0) !== view) {
+            root.removeAllViews()
+            root.addView(view, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            ))
+        }
+    }
+
+    private fun renderVehicleSnapshot() {
+        window.decorView.removeCallbacks(vehicleExpiry)
+        val now = SystemClock.elapsedRealtime()
+        val fresh = XrealVehicleFreshness.sanitize(vehicleSnapshot, now)
+        vehicleView?.render(fresh.toDrivingScene())
+        XrealVehicleFreshness.nextExpiryAt(vehicleSnapshot, now)?.let { deadline ->
+            // This is a one-shot liveness deadline, never an animation/render loop.
+            window.decorView.postDelayed(vehicleExpiry, (deadline - now).coerceAtLeast(1L))
+        }
     }
 
     override fun onDestroy() {
+        window.decorView.removeCallbacks(vehicleExpiry)
+        runCatching { displayManager?.unregisterDisplayListener(displayListener) }
+        displayManager = null
         runCatching { unregisterReceiver(stateReceiver) }
         if (currentActivity?.get() === this) {
             currentActivity = null
@@ -99,31 +193,10 @@ class XrealHudActivity : Activity() {
         runCatching { XrealMode.valueOf(getStringExtra(XrealModeController.EXTRA_MODE).orEmpty()) }
             .getOrDefault(XrealMode.ASSISTANT)
 
-    private fun Intent.toHudState() = XrealHudState(
-        assistantStatus = getStringExtra(XrealModeController.EXTRA_ASSISTANT_STATUS) ?: "ICARUS ONLINE",
-        primaryText = getStringExtra(XrealModeController.EXTRA_PRIMARY_TEXT),
-        navigationInstruction = getStringExtra(XrealModeController.EXTRA_NAVIGATION_INSTRUCTION),
-        navigationDistance = getStringExtra(XrealModeController.EXTRA_NAVIGATION_DISTANCE),
-        eta = getStringExtra(XrealModeController.EXTRA_ETA),
-        heading = getStringExtra(XrealModeController.EXTRA_HEADING),
-        speedMph = intExtraOrNull(XrealModeController.EXTRA_SPEED_MPH),
-        rpm = intExtraOrNull(XrealModeController.EXTRA_RPM),
-        engineTempF = intExtraOrNull(XrealModeController.EXTRA_ENGINE_TEMP_F),
-        batteryPercent = intExtraOrNull(XrealModeController.EXTRA_BATTERY_PERCENT),
-        alertText = getStringExtra(XrealModeController.EXTRA_ALERT_TEXT),
-    )
-
-    private fun Intent.intExtraOrNull(key: String): Int? =
-        if (hasExtra(key)) getIntExtra(key, 0) else null
 }
 
-private class XrealHudView(context: Context) : View(context) {
-    var mode: XrealMode = XrealMode.ASSISTANT
-        set(value) {
-            field = value
-            invalidate()
-        }
-
+/** The existing assistant surface remains independent of the driving layout. */
+private class XrealAssistantView(context: Context) : View(context) {
     private var state = XrealHudState()
     private val cyan = Color.rgb(45, 226, 230)
     private val gold = Color.rgb(244, 190, 68)
@@ -149,8 +222,7 @@ private class XrealHudView(context: Context) : View(context) {
         val logicalWidth = width / scale
         val logicalHeight = height / scale
         drawFrame(canvas, logicalWidth, logicalHeight)
-        if (mode == XrealMode.VEHICLE) drawVehicle(canvas, logicalWidth, logicalHeight)
-        else drawAssistant(canvas, logicalWidth, logicalHeight)
+        drawAssistant(canvas, logicalWidth, logicalHeight)
         canvas.restore()
     }
 
@@ -181,44 +253,6 @@ private class XrealHudView(context: Context) : View(context) {
         drawCommandCore(canvas, w / 2f, h / 2f - 74f)
         drawWrappedText(canvas, message, w / 2f, h / 2f + 100f, w * 0.68f, 46f, cyan)
         label(canvas, "VOICE  •  VISION  •  CONTROL", w / 2f, h - 145f, 22f, dimCyan, Paint.Align.CENTER)
-    }
-
-    private fun drawVehicle(canvas: Canvas, w: Float, h: Float) {
-        val instruction = state.navigationInstruction?.takeIf { it.isNotBlank() } ?: "NAVIGATION UNAVAILABLE"
-        if (!state.navigationInstruction.isNullOrBlank()) drawTurnCue(canvas, instruction, w / 2f - 355f, 216f)
-        drawFittedText(canvas, instruction.uppercase(), w / 2f, 205f, w * 0.55f, 40f, 28f, cyan)
-        state.navigationDistance?.takeIf { it.isNotBlank() }?.let {
-            label(canvas, it.uppercase(), w / 2f, 260f, 26f, gold, Paint.Align.CENTER)
-        }
-        state.eta?.takeIf { it.isNotBlank() }?.let {
-            label(canvas, "ETA ${it.uppercase()}", w / 2f, 298f, 20f, dimCyan, Paint.Align.CENTER)
-        }
-
-        if (!state.heading.isNullOrBlank()) drawHeadingTape(canvas, state.heading, w / 2f, 350f)
-
-        val speed = state.speedMph?.coerceIn(0, 199)
-        label(canvas, speed?.toString() ?: "—", w / 2f, h / 2f + 105f, 178f, Color.WHITE, Paint.Align.CENTER)
-        label(canvas, "MPH", w / 2f, h / 2f + 154f, 29f, cyan, Paint.Align.CENTER)
-
-        val temp = state.engineTempF?.let { "$it°F" } ?: "—"
-        metric(canvas, "ENGINE", temp, 170f, h - 178f)
-        val rpm = state.rpm?.coerceIn(0, 9999)?.toString() ?: "—"
-        metric(canvas, "RPM", rpm, 385f, h - 178f)
-        val heading = state.heading?.takeIf { it.isNotBlank() }?.uppercase() ?: "—"
-        metric(canvas, "HEADING", heading, w - 385f, h - 178f, Paint.Align.RIGHT)
-        metric(canvas, "MODE", "VEHICLE", w - 170f, h - 178f, Paint.Align.RIGHT)
-
-        state.alertText?.takeIf { it.isNotBlank() }?.let {
-            paint.style = Paint.Style.FILL
-            paint.color = Color.argb(220, 105, 22, 19)
-            canvas.drawRoundRect(RectF(w / 2f - 360f, h - 265f, w / 2f + 360f, h - 205f), 18f, 18f, paint)
-            drawFittedText(canvas, it.uppercase(), w / 2f, h - 224f, 650f, 24f, 18f, Color.WHITE)
-        }
-
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 5f
-        paint.color = dimCyan
-        canvas.drawArc(RectF(w / 2f - 220f, h / 2f - 205f, w / 2f + 220f, h / 2f + 235f), 205f, 130f, false, paint)
     }
 
     private fun drawStatus(canvas: Canvas, right: Float, baseline: Float) {
@@ -263,62 +297,6 @@ private class XrealHudView(context: Context) : View(context) {
         paint.style = Paint.Style.FILL
         paint.color = cyan
         canvas.drawCircle(x, y, 5f, paint)
-    }
-
-    private fun drawTurnCue(canvas: Canvas, instruction: String, x: Float, y: Float) {
-        val lower = instruction.lowercase()
-        val direction = when {
-            "u-turn" in lower || "uturn" in lower -> 2
-            "left" in lower -> -1
-            "right" in lower -> 1
-            else -> 0
-        }
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 8f
-        paint.color = gold
-        val path = Path()
-        when (direction) {
-            -1 -> { path.moveTo(x + 32f, y + 35f); path.lineTo(x + 32f, y - 22f); path.lineTo(x - 30f, y - 22f); path.moveTo(x - 30f, y - 22f); path.lineTo(x - 4f, y - 48f); path.moveTo(x - 30f, y - 22f); path.lineTo(x - 4f, y + 4f) }
-            1 -> { path.moveTo(x - 32f, y + 35f); path.lineTo(x - 32f, y - 22f); path.lineTo(x + 30f, y - 22f); path.moveTo(x + 30f, y - 22f); path.lineTo(x + 4f, y - 48f); path.moveTo(x + 30f, y - 22f); path.lineTo(x + 4f, y + 4f) }
-            2 -> { path.moveTo(x + 34f, y + 28f); path.cubicTo(x + 34f, y - 40f, x - 34f, y - 40f, x - 34f, y + 5f); path.moveTo(x - 34f, y + 5f); path.lineTo(x - 12f, y - 17f); path.moveTo(x - 34f, y + 5f); path.lineTo(x - 52f, y - 18f) }
-            else -> { path.moveTo(x, y + 35f); path.lineTo(x, y - 42f); path.moveTo(x, y - 42f); path.lineTo(x - 24f, y - 14f); path.moveTo(x, y - 42f); path.lineTo(x + 24f, y - 14f) }
-        }
-        canvas.drawPath(path, paint)
-    }
-
-    private fun drawHeadingTape(canvas: Canvas, heading: String?, centerX: Float, baseline: Float) {
-        val labels = listOf("W", "NW", "N", "NE", "E", "SE", "S", "SW")
-        val selected = heading?.trim()?.uppercase()?.let { value -> labels.indexOfFirst { it == value } }?.takeIf { it >= 0 } ?: return
-        val spacing = 78f
-        for (offset in -2..2) {
-            val index = (selected + offset + labels.size) % labels.size
-            val x = centerX + offset * spacing
-            val active = offset == 0
-            label(canvas, labels[index], x, baseline, if (active) 28f else 19f, if (active) gold else dimCyan, Paint.Align.CENTER)
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = if (active) 3f else 2f
-            paint.color = if (active) gold else quietCyan
-            canvas.drawLine(x, baseline + 13f, x, baseline + if (active) 33f else 25f, paint)
-        }
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 2f
-        paint.color = quietCyan
-        canvas.drawLine(centerX - 205f, baseline + 42f, centerX + 205f, baseline + 42f, paint)
-    }
-
-    private fun drawFittedText(canvas: Canvas, text: String, x: Float, y: Float, maxWidth: Float, preferred: Float, minimum: Float, color: Int) {
-        var size = preferred
-        paint.textSize = size
-        while (size > minimum && paint.measureText(text) > maxWidth) {
-            size -= 1f
-            paint.textSize = size
-        }
-        label(canvas, text, x, y, size, color, Paint.Align.CENTER)
-    }
-
-    private fun metric(canvas: Canvas, name: String, value: String, x: Float, y: Float, align: Paint.Align = Paint.Align.LEFT) {
-        label(canvas, name, x, y, 21f, dimCyan, align)
-        label(canvas, value, x, y + 45f, 35f, gold, align)
     }
 
     private fun drawWrappedText(canvas: Canvas, text: String, centerX: Float, startY: Float, maxWidth: Float, size: Float, color: Int) {

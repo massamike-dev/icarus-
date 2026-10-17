@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import org.json.JSONObject
 
@@ -28,6 +29,8 @@ class WakeWordService : Service() {
     private var session: HandsFreeSession? = null
     private var generation = 0L
     private var armedAt = 0L
+    private var wakeEngineStartMs = 0L
+    private var wakeToTurnMs = -1L
     private var lastTurnAt = 0L
     private var lastTrigger = "none"
     private var lastNotification = ""
@@ -94,6 +97,7 @@ class WakeWordService : Service() {
         val expectedGeneration = ++generation
         armedAt = System.currentTimeMillis()
         listenerState = "STARTING"
+        val startingAt = SystemClock.elapsedRealtime()
         engine.start {
             // AudioRecord keeps the CPU awake during capture. The bounded lock
             // bridges command/network/TTS work after the wake recorder closes.
@@ -103,6 +107,7 @@ class WakeWordService : Service() {
                 if (session == null) releaseTurnLock()
             }
         }.onSuccess {
+            wakeEngineStartMs = SystemClock.elapsedRealtime() - startingAt
             listenerState = "LISTENING"
             updateNotification(lastError ?: "Listening for “Hey ICARUS”")
         }.onFailure { error ->
@@ -140,6 +145,10 @@ class WakeWordService : Service() {
         lastError = null
         lastTrigger = trigger
         lastTurnAt = System.currentTimeMillis()
+        wakeToTurnMs = if (trigger == "wake_phrase") {
+            engine.diagnostics().optLong("lastDetectedElapsed", 0L).takeIf { it > 0L }
+                ?.let { (SystemClock.elapsedRealtime() - it).coerceAtLeast(0L) } ?: -1L
+        } else -1L
         listenerState = "PREPARING_VOICE"
         updateNotification("Preparing voice…")
         session = HandsFreeSession(this, { value ->
@@ -187,6 +196,11 @@ class WakeWordService : Service() {
 
     private fun diagnostics(): JSONObject = engine.diagnostics()
         .put("lastTurnAt", lastTurnAt)
+        .put("commandTurnActive", session != null)
+        .put("captureScope", if (session != null) "command_turn" else "wake_recorder")
+        .put("wakeArmedAt", armedAt)
+        .put("wakeEngineStartMs", wakeEngineStartMs)
+        .put("wakeToTurnMs", wakeToTurnMs)
         .put("lastTrigger", lastTrigger)
         .put("talkNowSupported", true)
         .put("recoveryAttempts", recoveryPolicy.snapshot().consecutiveFailures)

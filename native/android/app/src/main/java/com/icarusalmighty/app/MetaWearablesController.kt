@@ -206,6 +206,8 @@ class MetaWearablesController(
         .toString()
 
     fun close() {
+        // Do not leave foreground telemetry owned by a destroyed host Activity.
+        xrealController?.closeHud()
         xrealController = null
     }
 

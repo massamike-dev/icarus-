@@ -35,8 +35,8 @@ test('one companion survives navigation, can move and hide, and has a resilient 
     for(const page of ['Chat','Memory','Settings','Voice']){await app.click(page);assert.equal(app.w.document.querySelectorAll('.icarus-companion').length,1);}
     assert.equal(app.w.document.querySelector('.icarus-head'),null);
     const image=app.w.document.querySelector('.companion-figure img');image.dispatchEvent(new app.w.Event('error'));
-    await waitFor(()=>app.w.document.querySelector('.companion-fallback'));
-    assert.equal(app.w.document.querySelector('.companion-figure img'),null);
+    await waitFor(()=>app.w.document.querySelector('.companion-fallback-crest'));
+    assert.equal(app.w.document.querySelector('.companion-figure img').getAttribute('src'),'/brand/icarus-crest.svg');
     await app.click('Open ICARUS companion');await app.click('Move ICARUS to the left');
     assert.ok(app.w.document.querySelector('.companion-left'));
     await app.click('Hide ICARUS');
@@ -57,6 +57,12 @@ test('waiting for wake is idle; command capture and errors reflect native state'
     assert.equal(app.requests.filter(p=>p.action==='start_voice_turn').length,0);
     await app.broadcast({listenerState:'CAPTURING'});
     assert.equal(app.w.document.querySelector('.icarus-companion').dataset.phase,'listening');
+    assert.equal(app.w.document.querySelector('.companion-talk').disabled,true);
+    await app.broadcast({listenerState:'LISTENING_FOR_CANCEL'});
+    assert.match(app.w.document.querySelector('.companion-status').textContent,/Say cancel/);
+    assert.equal(app.w.document.querySelector('.companion-talk').disabled,true);
+    await app.broadcast({listenerState:'FINALIZING_APP_LAUNCH'});
+    assert.match(app.w.document.querySelector('.companion-status').textContent,/Finishing the cancellation check/);
     assert.equal(app.w.document.querySelector('.companion-talk').disabled,true);
     await app.broadcast({listenerState:'INTERPRETING'});
     assert.equal(app.w.document.querySelector('.icarus-companion').dataset.phase,'thinking');
@@ -104,8 +110,46 @@ test('typing tucks the companion, Escape restores focus, and sign-out removes it
     app.w.document.querySelector('.profile').click();
     await waitFor(()=>app.w.document.querySelector('.auth'));
     assert.equal(app.w.document.querySelector('.icarus-companion'),null);
+    await waitFor(()=>app.w.ICARUS_NATIVE_STATUS===undefined&&app.w.ICARUS_NATIVE_RESULT===undefined);
     assert.equal(app.w.ICARUS_NATIVE_STATUS,undefined);
     assert.equal(app.w.ICARUS_NATIVE_RESULT,undefined);
     assert.deepEqual(app.errors,[]);
   }finally{app.dom.window.close();}
+});
+
+
+test('Home typing keeps the inline voice status live while floating companions still tuck',async()=>{
+ const app=await mount();
+ try{
+  await waitFor(()=>!app.w.document.querySelector('.dashboard-talk').disabled);
+  const input=app.w.document.querySelector('#dashboard-draft');input.focus();
+  await new Promise(r=>setTimeout(r,20));
+  assert.equal(app.w.document.querySelector('.companion-dashboard').hidden,false);
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,false);
+  await app.broadcast({listenerState:'LISTENING_FOR_CANCEL'});
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,true);
+  assert.match(app.w.document.querySelector('#dashboard-voice-status').textContent,/Say cancel/);
+  await app.broadcast({listenerState:'LISTENING'});
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,false);
+  assert.equal(app.requests.filter(p=>p.action==='start_voice_turn').length,0);
+  assert.deepEqual(app.errors,[]);
+ }finally{app.dom.window.close();}
+});
+
+
+test('Home acknowledgement never masks live cancellation or error instructions',async()=>{
+ const app=await mount();
+ try{
+  await waitFor(()=>!app.w.document.querySelector('.dashboard-talk').disabled);
+  await app.click('Talk now from Home');
+  const sent=app.requests.find(p=>p.action==='start_voice_turn');
+  app.w.ICARUS_NATIVE_RESULT(JSON.stringify({requestId:sent.requestId,ok:true,data:{requestAccepted:true}}));
+  await waitFor(()=>app.w.document.querySelector('.dashboard-voice-feedback')?.textContent.includes('Android accepted'));
+  await app.broadcast({listenerState:'LISTENING_FOR_CANCEL'});
+  assert.match(app.w.document.querySelector('#dashboard-voice-status').textContent,/Say cancel/);
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,true);
+  await app.broadcast({listenerState:'MICROPHONE_BLOCKED'});
+  assert.match(app.w.document.querySelector('#dashboard-voice-status').textContent,/blocking microphone/);
+  assert.deepEqual(app.errors,[]);
+ }finally{app.dom.window.close();}
 });

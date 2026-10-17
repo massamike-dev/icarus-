@@ -1,5 +1,6 @@
 package com.icarusalmighty.app.driving
 
+import android.os.SystemClock
 import kotlin.math.roundToInt
 
 data class DrivingHudState(
@@ -22,12 +23,20 @@ data class DrivingHudState(
     val navigationExpanded: Boolean = true,
     val listening: Boolean = false,
     val vehicleMoving: Boolean? = null,
+    val speedValidUntilElapsedRealtimeMs: Long? = null,
     val obdConnected: Boolean = false,
     val sourceLabel: String = "PHONE GPS WAITING",
     val alertMessage: String? = null,
     val lastVoiceCommand: String? = null
 ) {
-    val parkedControlsAllowed: Boolean get() = vehicleMoving == false
+    // Check at action time too: a delayed main-loop expiry callback must never unlock controls.
+    val parkedControlsAllowed: Boolean get() = parkedControlsAllowedAt(SystemClock.elapsedRealtime())
+
+    fun parkedControlsAllowedAt(nowElapsedRealtimeMs: Long): Boolean {
+        val validUntil = speedValidUntilElapsedRealtimeMs ?: return false
+        return vehicleMoving == false && speedMph == 0 && nowElapsedRealtimeMs >= 0L &&
+            nowElapsedRealtimeMs < validUntil
+    }
 }
 
 enum class HudAction {

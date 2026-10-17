@@ -47,6 +47,9 @@ object DrivingTelemetrySession {
         @Volatile private var closed = false
 
         fun refreshNavigationAccess() = DrivingTelemetrySession.controller?.refreshNavigationAccess()
+        fun refreshSnapshot() {
+            if (!closed) DrivingTelemetrySession.controller?.refreshSnapshot()
+        }
         fun toggleDiagnostics() = DrivingTelemetrySession.controller?.toggleDiagnostics()
         fun toggleNavigation() = DrivingTelemetrySession.controller?.toggleNavigation()
         fun showEngineDetails() = DrivingTelemetrySession.controller?.showEngineDetails()
