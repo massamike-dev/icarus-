@@ -35,6 +35,8 @@ async function setup(width,height,{native=true,reduced=false}={}){
  page.on('pageerror',error=>report.consoleErrors.push(String(error)));
  await page.goto(origin+'/assets/web/index.html');await page.locator('#dashboard-title').waitFor();
  await page.locator('.companion-poster').evaluate(image=>image.decode());
+ const art=await page.locator('.companion-figure').evaluate(figure=>{const image=figure.querySelector('img');const a=figure.getBoundingClientRect(),b=image.getBoundingClientRect();return{figure:{top:a.top,bottom:a.bottom,height:a.height},image:{top:b.top,bottom:b.bottom,height:b.height}};});
+ assert.ok(art.image.top>=art.figure.top-1&&art.image.bottom<=art.figure.bottom+1,'The full gold character must fit inside its scene without clipping');
  return{context,page};
 }
 async function shot(page,name){await page.screenshot({path:path.join(output,name+'.png'),fullPage:false});report.screenshots.push(name+'.png');}
