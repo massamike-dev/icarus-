@@ -37,6 +37,8 @@ class SherpaWakeWordEngine(private val context: Context, private val onFailure: 
     @Volatile private var silenceStateKnown = false
     @Volatile private var microphoneSource = "automatic"
     @Volatile private var lastDetectedAt = 0L
+    @Volatile private var lastDetectedElapsed = 0L
+    @Volatile private var configuredSensitivity = 60
     @Volatile private var detectionCount = 0L
 
     override fun start(onDetected: () -> Unit): Result<Unit> = runCatching {
@@ -50,7 +52,8 @@ class SherpaWakeWordEngine(private val context: Context, private val onFailure: 
             }
             val modelDir = "sherpa-onnx-kws-zipformer-gigaspeech-3.3M-2024-01-01"
             val preferences = context.getSharedPreferences("icarus_voice", Context.MODE_PRIVATE)
-            val settings = WakeDetectionSettings.fromSensitivity(preferences.getInt("sensitivity", 60))
+            configuredSensitivity = preferences.getInt("sensitivity", 60).coerceIn(25, 90)
+            val settings = WakeDetectionSettings.fromSensitivity(configuredSensitivity)
             val config = KeywordSpotterConfig(
                 featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),
                 modelConfig = OnlineModelConfig(
@@ -149,6 +152,7 @@ class SherpaWakeWordEngine(private val context: Context, private val onFailure: 
                     current.kws.decode(current.stream)
                     if (current.kws.getResult(current.stream).keyword.isNotBlank()) {
                         lastDetectedAt = System.currentTimeMillis()
+                        lastDetectedElapsed = SystemClock.elapsedRealtime()
                         detectionCount += 1
                         detected = true
                         current.running.set(false)
@@ -206,6 +210,9 @@ class SherpaWakeWordEngine(private val context: Context, private val onFailure: 
             .put("audioAgeMs", if (elapsed == 0L) -1L else (SystemClock.elapsedRealtime() - elapsed).coerceAtLeast(0L))
             .put("audioLevel", audioLevel.toDouble())
             .put("lastDetectedAt", lastDetectedAt)
+            .put("lastDetectedElapsed", lastDetectedElapsed)
+            .put("configuredSensitivity", configuredSensitivity)
+            .put("keywordThreshold", WakeDetectionSettings.fromSensitivity(configuredSensitivity).threshold.toDouble())
             .put("detectionCount", detectionCount)
     }
 

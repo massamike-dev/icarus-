@@ -1,0 +1,197 @@
+/* ICARUS blue glass. Real controls sit above packaged decorative artwork;
+   device status, focus, voice eligibility and scrolling remain functional. */
+:root {
+  --ink: #021027;
+  --panel: #07244a;
+  --panel2: #0d3565;
+  --line: #417eac;
+  --steel: #c0d8f2;
+  --white: #f5f8ff;
+  --sky: #73d5ff;
+  --gold: #f1d17d;
+  --focus: #ffe4a1;
+  --glass: rgba(7,38,78,.80);
+  --font-display: Georgia, 'Times New Roman', serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mobile-nav-height: 80px;
+  --scrollbar-thumb: #5f96c4;
+}
+html { font-family: var(--font-body); background: var(--ink); scrollbar-color: var(--scrollbar-thumb) var(--ink); scrollbar-width: auto; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: var(--ink); }
+*::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border: 2px solid var(--ink); border-radius: 8px; }
+*::-webkit-scrollbar-thumb:hover { background: var(--steel); }
+.app-shell { position: relative; background: #03152f url('/brand/icarus-blue-glass.webp') center top / cover fixed; isolation: isolate; }
+.app-shell::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: rgba(1,13,33,.28); }
+.app-shell > aside { background: rgba(3,23,50,.92); border-color: #386e9f; box-shadow: 1px 0 18px #001124; backdrop-filter: blur(20px); }
+.brand { margin-left: 0; margin-right: 0; }
+.brand b { font-family: var(--font-display); font-size: 20px; font-weight: 400; letter-spacing: .13em; color: var(--gold); }
+.brand small { letter-spacing: .12em; }
+.app-shell > aside nav button { color: var(--steel); border-radius: 12px; }
+.app-shell > aside nav button.active { border-color: var(--gold); color: var(--gold); background: rgba(18,66,116,.55); }
+.app-shell > aside nav button.active svg { filter: drop-shadow(0 0 6px #e8b84b88); }
+.app-header { height: 76px; padding: 0 42px; border-color: #79b1da55; background: rgba(2,19,44,.48); }
+.mobile-wordmark { display: none; font-family: var(--font-display); font-weight: 400; letter-spacing: .17em; color: var(--gold); margin-right: auto; }
+.app-shell[data-page="home"] .app-header { display: none; }
+.primary { min-height: 48px; border: 1px solid #87d5ff; border-top-color: var(--gold); border-radius: 14px; background: linear-gradient(145deg, #287cde, #075bc4 60%, #056bce); color: var(--white); gap: 12px; box-shadow: inset 0 1px 12px #98e1ff40, 0 4px 16px #00112d66; }
+.primary:hover:enabled { background: linear-gradient(145deg, #388df0, #116bd6 60%, #137fdf); }
+.primary svg, .dashboard-actions svg, .device-symbol svg { width: 21px; height: 21px; flex-shrink: 0; }
+.secondary { min-height: 44px; border-radius: 12px; background: var(--glass); font-size: 13px; }
+.workspace h1, .auth h1, .legal h1, .settings-section h2, .settings-dialog h2 { font-family: var(--font-display); text-transform: none; letter-spacing: -.025em; line-height: 1.15; }
+.workspace h1 { font-size: clamp(28px, 4vw, 44px); }
+.workspace-intro { color: var(--steel); line-height: 1.65; }
+
+.command-dashboard { max-width: 850px; margin: 0 auto; padding: 28px 42px 48px; }
+.dashboard-home { display: flex; flex-direction: column; }
+.dashboard-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 0 24px; margin-bottom: 24px; border-bottom: 1px solid #96c9ea70; }
+.dashboard-wordmark { font-family: var(--font-display); font-size: 29px; font-weight: 400; line-height: 1.2; letter-spacing: .20em; color: var(--gold); text-shadow: 0 0 15px #dca74450; }
+.workspace-badge { display: flex; align-items: center; justify-content: center; flex-shrink: 0; gap: 7px; padding: 7px 12px; border: 1px solid #61c5ff; border-radius: 22px; background: rgba(7,61,119,.75); box-shadow: inset 0 1px 12px #4cc4ff26; color: var(--white); font-size: 13px; line-height: 1.5; }
+.workspace-badge i { width: 6px; height: 6px; border-radius: 50%; background: #63e4ff; box-shadow: 0 0 10px #38cfff80; }
+.command-stage { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+.stage-copy { width: 100%; text-align: center; }
+.stage-copy h1 { font-family: var(--font-display); font-size: clamp(30px, 4.3vw, 44px); font-weight: 400; line-height: 1.15; letter-spacing: -.035em; margin: 0 0 8px; text-shadow: 0 2px 6px #00112f; }
+.stage-copy > p { margin: 0; color: var(--steel); font-size: 18px; line-height: 1.5; overflow-wrap: anywhere; }
+.dashboard-companion-stage { width: 100%; margin: 8px 0 12px; isolation: isolate; }
+.icarus-companion.companion-dashboard { position: relative; bottom: auto; left: auto; right: auto; width: 100%; max-width: 100%; z-index: 3; }
+.companion-dashboard .companion-figure { width: 100%; height: 335px; background: url('/brand/icarus-gold-platform.webp') center bottom / min(94%, 470px) auto no-repeat; }
+.companion-dashboard .companion-poster { position: absolute; inset: 0; width: 100%; max-width: 100%; height: calc(100% - 24px); max-height: 100%; min-height: 0; object-fit: contain; filter: drop-shadow(0 8px 15px #007fff44); }
+.companion-dashboard .companion-state-dot { right: calc(50% - 88px); bottom: 30px; }
+.companion-fallback-crest { width: 64px; height: 64px; object-fit: contain; }
+.companion-dashboard .companion-fallback-crest { width: 160px; height: 160px; }
+.companion-dashboard .companion-restore { margin: 120px auto; }
+.companion-caption { margin: 4px 0 14px; color: #e3eeff; text-align: center; font-size: 12px; line-height: 1.5; }
+.companion-dashboard .companion-panel { position: relative; top: auto; bottom: auto; left: auto; right: auto; transform: none; width: min(360px, 100%); margin: 12px auto; max-height: min(420px, calc(100dvh - 150px)); }
+.companion-dashboard .companion-heading h2 { font-family: var(--font-display); }
+.dashboard-voice { pointer-events: auto; }
+.icarus-companion .dashboard-talk { display: flex; align-items: center; justify-content: center; gap: 14px; width: 100%; min-height: 58px; border-radius: 16px; border: 1px solid #6de4ff; border-top: 2px solid #f3d981; background: linear-gradient(142deg, #258bee 0%, #0868d6 42%, #0862c8 78%, #2f9cef); box-shadow: inset 0 1px 11px #b1faff66, 0 0 12px #008aff55; color: var(--white); font-size: 20px; font-weight: 650; }
+.dashboard-talk svg { width: 26px; height: 26px; color: #ffe799; filter: drop-shadow(0 0 6px #e5bd5380); }
+.icarus-companion .dashboard-talk:disabled { opacity: 1; background: rgba(16,61,111,.9); color: #a8bed4; border-color: #6295ba; border-top-color: #b6ab81; box-shadow: inset 0 1px 8px #779bbe20; cursor: not-allowed; }
+.dashboard-talk:disabled svg { color: #b4ac89; filter: none; }
+.dashboard-talk:hover:enabled { filter: brightness(1.13); }
+.dashboard-voice-status, .dashboard-voice-feedback { margin: 7px 4px 0; text-align: center; color: var(--steel); font-size: 11px; line-height: 1.5; }
+.dashboard-voice-status button { margin-left: 7px; min-height: 32px; border: 0; background: transparent; color: var(--gold); text-decoration: underline; }
+.dashboard-composer { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 56px; padding: 6px 8px 6px 14px; border: 1px solid #80c9ff; border-radius: 15px; background: rgba(5,39,81,.80); box-shadow: inset 0 1px 10px #50c2ff20; backdrop-filter: blur(14px); }
+.dashboard-composer:focus-within { border-color: var(--gold); outline: 2px solid var(--gold); outline-offset: 3px; }
+.dashboard-composer input { min-width: 0; width: 100%; padding: 10px 0; border: 0; outline: 0; background: transparent; color: var(--white); font-size: 17px; }
+.dashboard-composer input:focus { outline: 0; }
+.dashboard-composer input::placeholder { color: #d0e1f4; opacity: 1; }
+.dashboard-composer button { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; border: 1px solid transparent; border-radius: 12px; background: transparent; color: var(--gold); }
+.dashboard-composer button:hover:enabled { background: #d4bb7918; }
+.dashboard-composer .composer-clear { color: var(--steel); }
+.dashboard-composer .composer-clear:disabled { display: none; }
+.dashboard-composer .composer-next { border-color: #e6d49033; background: rgba(230,210,130,.20); }
+.dashboard-composer svg { width: 23px; height: 23px; }
+.composer-keyboard { display: grid; place-items: center; width: 29px; flex-shrink: 0; color: #d1e9ff; }
+.dashboard-draft-help { margin: 7px 0 20px; text-align: center; color: var(--steel); font-size: 11px; line-height: 1.5; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.dashboard-ideas { width: 100%; }
+.ideas-label { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .13em; color: #d8e8ff; font-size: 11px; }
+.ideas-label::after { content: ''; height: 1px; flex: 1; background: #70abd480; }
+.dashboard-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; width: 100%; }
+.dashboard-suggestions button { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 14px; min-height: 91px; padding: 14px; border: 1px solid #63baf6; border-radius: 15px; background: linear-gradient(145deg, #2678c46b, #1035689e 65%, #1652988a); box-shadow: inset 0 1px 10px #8ce3ff22, 0 4px 12px #01102b33; backdrop-filter: blur(14px); color: var(--white); text-align: left; font-size: 15px; line-height: 1.35; }
+.dashboard-suggestions button > svg { width: 23px; height: 23px; flex-shrink: 0; color: var(--gold); filter: drop-shadow(0 0 4px #f0c95a44); }
+.dashboard-suggestions button:last-child { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; min-height: 49px; padding: 11px 14px; }
+.dashboard-suggestions button:last-child > svg { color: #bde5ff; }
+.dashboard-suggestions button:last-child > svg:last-child { margin-left: auto; width: 19px; }
+.dashboard-suggestions button:hover { border-color: var(--gold); background: rgba(28,91,153,.85); }
+.dashboard-tools { margin: 18px auto 0; border-top: 1px solid #96c9ea70; }
+.dashboard-tools > summary { display: flex; align-items: center; min-height: 55px; gap: 13px; list-style: none; cursor: pointer; color: var(--white); font-size: 13px; }
+.dashboard-tools > summary::-webkit-details-marker { display: none; }
+.dashboard-tools > summary > svg { width: 21px; height: 21px; flex-shrink: 0; color: #cbe8ff; }
+.dashboard-tools > summary > svg:last-child { margin-left: auto; width: 18px; transition: transform .15s; }
+.dashboard-tools[open] > summary > svg:last-child { transform: rotate(90deg); }
+.dashboard-tools > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.dashboard-tools-intro { margin: 0 0 12px; color: var(--steel); font-size: 12px; line-height: 1.6; }
+.dashboard-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.dashboard-action { display: flex; align-items: center; gap: 10px; min-height: 84px; padding: 14px 0; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--white); text-align: left; }
+.dashboard-action:hover { color: var(--gold); }
+.action-icon { display: grid; place-items: center; flex-shrink: 0; width: 30px; height: 38px; color: var(--gold); }
+.dashboard-action strong { display: block; font-size: 13px; font-weight: 500; }
+.dashboard-action small { display: block; color: var(--steel); font-size: 10px; line-height: 1.5; margin-top: 5px; }
+.action-arrow { margin-left: auto; color: var(--gold); }
+.dashboard-device { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding: 12px 0; }
+.device-symbol { display: grid; place-items: center; width: 30px; height: 36px; flex-shrink: 0; color: var(--gold); }
+.dashboard-device h2 { margin: 0 0 5px; font-size: 13px; font-weight: 500; }
+.dashboard-device p { margin: 0; color: var(--steel); font-size: 11px; line-height: 1.5; }
+.dashboard-device button { margin-left: auto; }
+.dashboard-footnote, .dashboard-help { margin: 14px 0 0; color: var(--steel); font-size: 11px; line-height: 1.7; }
+.dashboard-help { color: var(--sky); }
+.resize-none { resize: none; }
+.companion-dock-label { display: none; }
+
+@media(max-width:850px) {
+  html { scroll-padding-top: env(safe-area-inset-top); scroll-padding-bottom: calc(var(--mobile-nav-height) + 24px + env(safe-area-inset-bottom)); }
+  body { padding-bottom: 0; }
+  .app-shell { padding-bottom: calc(var(--mobile-nav-height) + 24px + env(safe-area-inset-bottom)); background-size: auto max(100svh, 900px); }
+  .app-shell main { min-height: calc(100svh - var(--mobile-nav-height) - env(safe-area-inset-bottom)); }
+  .app-header { height: calc(62px + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 20px 0; gap: 14px; }
+  .mobile-wordmark { display: block; font-size: 17px; }
+  .mode { font-size: 8px; letter-spacing: .08em; }
+  .command-dashboard { padding: calc(22px + env(safe-area-inset-top)) 22px 20px; }
+  .dashboard-heading { padding-bottom: 20px; margin-bottom: 20px; }
+  .dashboard-wordmark { font-size: 25px; }
+  .workspace-badge { font-size: 11px; padding: 6px 9px; }
+  .stage-copy h1 { font-size: clamp(28px, 8.1vw, 38px); }
+  .stage-copy > p { font-size: 16px; }
+  .companion-dashboard .companion-figure { height: clamp(236px, 31svh, 330px); }
+  .companion-dashboard .companion-restore { margin: 90px auto; }
+  .companion-caption { font-size: 11px; }
+  .icarus-companion .dashboard-talk { min-height: 52px; font-size: 18px; }
+  .dashboard-voice-status { font-size: 10px; }
+  .dashboard-composer { min-height: 51px; }
+  .dashboard-composer input { font-size: 16px; }
+  .dashboard-suggestions button { font-size: 14px; min-height: 80px; padding: 12px; }
+  .dashboard-actions { grid-template-columns: 1fr; gap: 0; }
+  .dashboard-action { min-height: 68px; padding: 11px 0; }
+  .dashboard-action small { font-size: 11px; }
+  .dashboard-device button { font-size: 11px; padding: 10px; }
+  .app-shell > aside { z-index: 5; height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid #81d0fb; background: #062551; box-shadow: inset 0 1px 16px #269ff03b, 0 -5px 28px #02112788; }
+  .app-shell > aside > nav { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+  .app-shell > aside > nav > button[data-destination="drive"],
+  .app-shell > aside > nav > button[data-destination="voice"] { display: none; }
+  .app-shell > aside > nav > button { position: relative; min-width: 0; min-height: 64px; padding: 11px 3px 9px; gap: 7px; border: 0; border-radius: 0; color: var(--steel); font-size: 12px; }
+  .app-shell > aside > nav > button.active { background: rgba(18,71,122,.24); color: var(--gold); }
+  .app-shell > aside > nav > button.active::before { position: absolute; content: ''; top: 0; left: 33%; right: 33%; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold); box-shadow: 0 0 9px #ffd57299; }
+  .app-shell > aside > nav svg { width: 25px; height: 25px; stroke-width: 1.7; }
+  /* Reserve a real mobile dock instead of floating a transparent hit target
+     over Settings actions or the Chat composer. Home owns its inline scene. */
+  .app-shell:not([data-page="home"]) { padding-bottom: calc(var(--mobile-nav-height) + 88px + env(safe-area-inset-bottom)); }
+  .app-shell:not([data-page="home"]) :is(button, input, textarea, select) { scroll-margin-bottom: calc(var(--mobile-nav-height) + 88px + env(safe-area-inset-bottom)); }
+  .icarus-companion:not(.companion-dashboard) { z-index: 4; bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); left: 0; right: 0; width: 100%; max-width: 100%; height: 64px; background: #062551; border-top: 1px solid #487cab; }
+  .icarus-companion:not(.companion-dashboard) .companion-figure { display: flex; align-items: center; justify-content: flex-start; width: 100%; height: 63px; padding: 0 16px 0 76px; border-radius: 0; }
+  .icarus-companion:not(.companion-dashboard) .companion-model { width: 64px; right: auto; }
+  .icarus-companion:not(.companion-dashboard) .companion-poster { position: absolute; left: 4px; top: 0; width: 60px; max-width: 60px; height: 63px; }
+  .icarus-companion:not(.companion-dashboard) .companion-fallback-crest { position: absolute; left: 12px; width: 44px; height: 44px; }
+  .icarus-companion:not(.companion-dashboard) .companion-state-dot { left: 56px; right: auto; bottom: 10px; }
+  .icarus-companion:not(.companion-dashboard) .companion-dock-label { display: block; color: var(--steel); font-size: 13px; text-align: left; }
+  .icarus-companion:not(.companion-dashboard) .companion-restore { width: 100%; height: 63px; border: 0; border-radius: 0; }
+  .icarus-companion:not(.companion-dashboard) .companion-panel { width: min(360px, calc(100vw - 24px)); bottom: 72px; max-height: calc(100dvh - 250px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+  .companion-right:not(.companion-dashboard) .companion-panel { right: 12px; left: auto; }
+  .companion-left:not(.companion-dashboard) .companion-panel { left: 12px; right: auto; }
+}
+@media(max-width:420px) {
+  .command-dashboard { padding-left: 20px; padding-right: 20px; }
+  .dashboard-wordmark { font-size: 23px; letter-spacing: .17em; }
+  .dashboard-heading { gap: 9px; }
+  .dashboard-composer { gap: 7px; }
+}
+@media(max-width:350px) {
+  .command-dashboard { padding-left: 14px; padding-right: 14px; }
+  .dashboard-wordmark { font-size: 20px; }
+  .workspace-badge { font-size: 10px; padding: 5px 8px; }
+  .stage-copy h1 { font-size: 27px; }
+  .stage-copy > p { font-size: 14px; }
+  .dashboard-composer input { font-size: 15px; }
+  .composer-keyboard { display: none; }
+  .dashboard-suggestions button { font-size: 13px; }
+  .app-shell > aside > nav > button { font-size: 11px; }
+}
+@media(prefers-reduced-motion:reduce) { .dashboard-tools > summary > svg:last-child { transition: none; } }
+@media(forced-colors:active) {
+  .app-shell { background: Canvas; }
+  .app-shell::before { display: none; }
+  .dashboard-composer, .workspace-badge, .dashboard-suggestions button, .primary, .secondary, .icarus-companion .dashboard-talk { background: ButtonFace; border: 1px solid ButtonText; color: ButtonText; box-shadow: none; }
+  .dashboard-talk:disabled { color: GrayText; border-color: GrayText; }
+  .app-shell > aside { background: Canvas; border-color: CanvasText; }
+  .app-shell > aside > nav > button.active { color: Highlight; }
+}

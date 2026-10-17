@@ -8,7 +8,7 @@
 .icarus-companion button{font:inherit;min-height:44px;max-width:100%;border-radius:8px;cursor:pointer;touch-action:manipulation}
 .icarus-companion button:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
 .icarus-companion button:disabled{cursor:default;opacity:.55}
-.companion-figure{position:relative;display:grid;place-items:center;width:96px;height:112px;padding:0;border:0;background:transparent}
+.companion-figure{position:relative;z-index:0;isolation:isolate;overflow:hidden;display:grid;place-items:center;width:96px;height:112px;padding:0;border:0;background:transparent}
 .companion-model{position:absolute;inset:0;display:block;filter:drop-shadow(0 3px 7px var(--ink));transition:filter .18s ease}
 .companion-canvas{display:block;width:100%;height:100%;object-fit:contain}
 .companion-poster{display:block;width:auto;max-width:96px;height:112px;object-fit:contain;filter:drop-shadow(0 3px 7px var(--ink));transform-origin:center bottom}
@@ -17,7 +17,7 @@
 .companion-state-dot{position:absolute;width:8px;height:8px;border:1px solid var(--ink);border-radius:50%;right:12px;bottom:8px;background:var(--steel)}
 .icarus-companion[data-phase="listening"] .companion-state-dot,.icarus-companion[data-phase="speaking"] .companion-state-dot{background:var(--sky)}
 .icarus-companion[data-phase="error"] .companion-state-dot{background:var(--ember)}
-.companion-panel{position:absolute;bottom:calc(100% + 8px);width:min(286px,calc(100vw - 24px));max-height:calc(100dvh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--focus);border-radius:12px;padding:12px;box-shadow:0 12px 36px var(--ink);overflow-wrap:anywhere}
+.companion-panel{position:absolute;z-index:2;bottom:calc(100% + 8px);width:min(286px,calc(100vw - 24px));max-height:calc(100dvh - 160px - env(safe-area-inset-top) - env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--focus);border-radius:12px;padding:12px;box-shadow:0 12px 36px var(--ink);overflow-wrap:anywhere}
 .companion-right .companion-panel{right:0}
 .companion-left .companion-panel{left:0}
 .companion-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}

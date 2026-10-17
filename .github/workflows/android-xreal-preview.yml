@@ -1,0 +1,279 @@
+name: Build isolated ICARUS XREAL preview
+
+on:
+  push:
+    branches: [work/icarus-xreal-preview-20261014]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icarus-xreal-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PREVIEW_BRANCH: work/icarus-xreal-preview-20261014
+  PREVIEW_TAG: v1.6.19-xreal-preview
+  ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
+
+jobs:
+  validate-web:
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-xreal-preview-20261014'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Verify preview and private delivery boundaries
+        run: |
+          python3 .github/scripts/test_xreal_preview_verification.py
+          python3 .github/scripts/test_private_test_validation.py
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci --include=dev
+      - name: Run complete web tests
+        working-directory: web
+        run: npm test
+      - name: Run complete native source contracts
+        run: node --test tests/*.test.mjs native/android/scripts/*.test.mjs
+      - name: Build bundled offline UI
+        working-directory: web
+        run: npm run build -- --base=./
+      - name: Install browser for isolated UI checks
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Verify exact bundled UI before signing
+        working-directory: web
+        run: node scripts/visual-smoke.mjs
+      - name: Save browser verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: icarus-preview-browser-ui-${{ github.sha }}
+          path: web/ui-qa/
+          if-no-files-found: error
+          retention-days: 14
+
+  build-preview:
+    needs: validate-web
+    # A source-only visual review push never signs or publishes an APK.
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-xreal-preview-20261014' && !contains(github.event.head_commit.message, '[visual-qa]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install bundled UI dependencies
+        working-directory: web
+        run: npm ci --include=dev
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+          cache-disabled: true
+      - name: Prepare account-free wake-word engine
+        run: bash native/android/scripts/prepare-sherpa-kws.sh
+      - name: Download pinned public baseline without any signing credentials
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/preview-baseline"
+          gh release download v1.6.15-test --repo "$GITHUB_REPOSITORY" \
+            --pattern ICARUS-latest.apk --dir "$RUNNER_TEMP/preview-baseline"
+          printf '%s  %s\n' \
+            '215fe3d5b3b6e01fc2db2dba93d3c0f3fbd4d7eda9e3eed836a740c62a50f913' \
+            "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" | sha256sum --check --strict
+          APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          test -n "$APKSIGNER_PATH"
+          python3 - <<'PYBASE'
+          import importlib.util, os
+          from pathlib import Path
+          spec = importlib.util.spec_from_file_location("verification", ".github/scripts/verify-xreal-preview.py")
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          sdk = Path(os.environ["ANDROID_HOME"])
+          apksigner = sorted(sdk.glob("build-tools/*/apksigner"))[-1]
+          fingerprints = module.signer_fingerprints(Path(os.environ["RUNNER_TEMP"]) / "preview-baseline/ICARUS-latest.apk", apksigner)
+          print("Verified baseline certificate SHA-256: " + fingerprints[0])
+          PYBASE
+      - name: Run native release unit tests and lint before accessing signing secrets
+        id: native_validation
+        working-directory: native/android
+        env:
+          GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
+        run: |
+          gradle --no-daemon :app:testReleaseUnitTest :app:lintRelease \
+            :xreal:testReleaseUnitTest :xreal:lintRelease -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
+      - name: Require an open draft PR for this exact source commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$PREVIEW_BRANCH" \
+            --json number,isDraft,headRefOid,headRefName,headRepositoryOwner,isCrossRepository,state \
+            > "$RUNNER_TEMP/preview-pr.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          prs = json.loads((Path(os.environ["RUNNER_TEMP"]) / "preview-pr.json").read_text())
+          matches = [pr for pr in prs if pr.get("state") == "OPEN"
+              and pr.get("isDraft") is True
+              and pr.get("headRefOid") == os.environ["GITHUB_SHA"]
+              and pr.get("headRefName") == os.environ["PREVIEW_BRANCH"]
+              and pr.get("isCrossRepository") is False
+              and pr.get("headRepositoryOwner", {}).get("login") == os.environ["GITHUB_REPOSITORY_OWNER"]]
+          if len(matches) != 1:
+              raise SystemExit("Exactly one open draft PR must reference this branch and commit before signing.")
+          PY
+      - name: Assemble release APK using only the existing ICARUS signer
+        id: signing
+        env:
+          GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
+          KEYSTORE_B64: ${{ secrets.ICARUS_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD_B64: ${{ secrets.ICARUS_SIGNING_PASSWORD_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
+        run: |
+          python3 - <<'PY'
+          import base64, os, subprocess
+          from pathlib import Path
+          if not all(os.environ.get(name) for name in ("KEYSTORE_B64", "SIGNING_PASSWORD_B64", "KEY_ALIAS")):
+              raise SystemExit("Existing ICARUS signing secrets are required; no new signer will be generated.")
+          def decode_secret(name):
+              return base64.b64decode("".join(os.environ[name].split()), validate=True)
+          password = decode_secret("SIGNING_PASSWORD_B64").decode()
+          if not password or any(char in password for char in "\r\n\0"):
+              raise SystemExit("Signing password must be nonempty and contain no line breaks or NUL characters.")
+          print("::add-mask::" + password.replace("%", "%25"), flush=True)
+          signing_file = Path(os.environ["RUNNER_TEMP"]) / "icarus-xreal-preview-signing.jks"
+          try:
+              with signing_file.open("xb") as output:
+                  signing_file.chmod(0o600)
+                  output.write(decode_secret("KEYSTORE_B64"))
+              build_env = {key: value for key, value in os.environ.items()
+                           if key not in ("KEYSTORE_B64", "SIGNING_PASSWORD_B64", "KEY_ALIAS")}
+              build_env.update(ICARUS_KEYSTORE_FILE=str(signing_file), ICARUS_KEYSTORE_PASSWORD=password,
+                               ICARUS_KEY_PASSWORD=password, ICARUS_KEY_ALIAS=os.environ["KEY_ALIAS"])
+              subprocess.run(["gradle", "--no-daemon", ":app:assembleRelease",
+                              "-PICARUS_WEB_URL=" + os.environ["ICARUS_WEB_URL"], "--stacktrace"],
+                             cwd="native/android", env=build_env, check=True)
+          finally:
+              signing_file.unlink(missing_ok=True)
+          PY
+      - name: Verify signature, upgrade identity, permissions, and packaged offline UI
+        run: |
+          APKSIGNER_PATH="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          APKANALYZER_PATH="$(find "$ANDROID_HOME/cmdline-tools" -name apkanalyzer -type f | sort -V | tail -n 1)"
+          test -n "$APKSIGNER_PATH"
+          test -n "$APKANALYZER_PATH"
+          mkdir -p "$RUNNER_TEMP/preview-delivery"
+          cp native/android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/preview-delivery/ICARUS-xreal-preview.apk"
+          python3 .github/scripts/verify-xreal-preview.py \
+            --apk "$RUNNER_TEMP/preview-delivery/ICARUS-xreal-preview.apk" \
+            --baseline "$RUNNER_TEMP/preview-baseline/ICARUS-latest.apk" \
+            --apksigner "$APKSIGNER_PATH" --apkanalyzer "$APKANALYZER_PATH" \
+            --source-sha "$GITHUB_SHA" --output "$RUNNER_TEMP/preview-delivery/verification.json"
+          printf '%s\n' "$GITHUB_SHA" > "$RUNNER_TEMP/preview-delivery/SOURCE_COMMIT.txt"
+          (cd "$RUNNER_TEMP/preview-delivery" && sha256sum ICARUS-xreal-preview.apk > SHA256SUMS)
+          python3 .github/scripts/verify-xreal-preview.py \
+            --check-delivery "$RUNNER_TEMP/preview-delivery" --source-sha "$GITHUB_SHA"
+      - name: Save verified APK and verification report
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-xreal-preview-${{ github.sha }}
+          path: ${{ runner.temp }}/preview-delivery/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Save native validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-xreal-preview-validation-${{ github.sha }}
+          path: |
+            native/android/app/build/reports/tests/testReleaseUnitTest/**
+            native/android/app/build/reports/lint-results-release.*
+            native/android/xreal/build/reports/tests/testReleaseUnitTest/**
+            native/android/xreal/build/reports/lint-results-release.*
+          if-no-files-found: ignore
+      - name: Always remove signing material and temporary APKs
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/icarus-xreal-preview-signing.jks"
+          rm -rf "$RUNNER_TEMP/preview-baseline" "$RUNNER_TEMP/preview-delivery"
+          rm -rf native/android/app/build/outputs/apk/release
+
+  publish-preview:
+    needs: [validate-web, build-preview]
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-xreal-preview-20261014'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ICARUS-xreal-preview-${{ github.sha }}
+          path: ${{ runner.temp }}/preview-delivery
+      - name: Recheck exact artifact identity
+        run: |
+          python3 .github/scripts/verify-xreal-preview.py \
+            --check-delivery "$RUNNER_TEMP/preview-delivery" --source-sha "$GITHUB_SHA"
+      - name: Publish only a new preview prerelease for the current open draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Fail closed on API errors; never update an existing release or tag.
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --paginate --slurp > "$RUNNER_TEMP/preview-releases.json"
+          gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/$PREVIEW_TAG" > "$RUNNER_TEMP/preview-tags.json"
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$PREVIEW_BRANCH" \
+            --json number,isDraft,headRefOid,headRefName,headRepositoryOwner,isCrossRepository,state \
+            > "$RUNNER_TEMP/preview-pr.json"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          temp = Path(os.environ["RUNNER_TEMP"])
+          releases = [release for page in json.loads((temp / "preview-releases.json").read_text()) for release in page]
+          if any(release.get("tag_name") == os.environ["PREVIEW_TAG"] for release in releases):
+              raise SystemExit("Preview release already exists; it will not be replaced or changed.")
+          tags = json.loads((temp / "preview-tags.json").read_text())
+          if any(tag.get("ref") == "refs/tags/" + os.environ["PREVIEW_TAG"] for tag in tags):
+              raise SystemExit("Preview tag already exists; it will not be moved or reused.")
+          prs = json.loads((temp / "preview-pr.json").read_text())
+          matches = [pr for pr in prs if pr.get("state") == "OPEN"
+              and pr.get("isDraft") is True
+              and pr.get("headRefOid") == os.environ["GITHUB_SHA"]
+              and pr.get("headRefName") == os.environ["PREVIEW_BRANCH"]
+              and pr.get("isCrossRepository") is False
+              and pr.get("headRepositoryOwner", {}).get("login") == os.environ["GITHUB_REPOSITORY_OWNER"]]
+          if len(matches) != 1:
+              raise SystemExit("Publication requires exactly one current open draft PR on the exact branch and commit.")
+          PY
+          gh release create "$PREVIEW_TAG" \
+            --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "ICARUS 1.6.19 Blue Glass Preview (stationary testing only)" \
+            --notes-file docs/XREAL_PREVIEW_RELEASE.md --prerelease --latest=false \
+            "$RUNNER_TEMP/preview-delivery/ICARUS-xreal-preview.apk" \
+            "$RUNNER_TEMP/preview-delivery/SHA256SUMS" \
+            "$RUNNER_TEMP/preview-delivery/verification.json" \
+            "$RUNNER_TEMP/preview-delivery/SOURCE_COMMIT.txt"

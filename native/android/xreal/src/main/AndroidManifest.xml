@@ -7,7 +7,7 @@
             android:exported="false"
             android:launchMode="singleTask"
             android:screenOrientation="landscape"
-            android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen">
+            android:theme="@style/XrealHudTheme">
             <intent-filter>
                 <action android:name="com.icarusalmighty.action.OPEN_XREAL" />
                 <category android:name="android.intent.category.DEFAULT" />

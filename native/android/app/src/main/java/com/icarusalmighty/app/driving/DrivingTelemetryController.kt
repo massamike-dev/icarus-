@@ -6,9 +6,11 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.location.LocationProvider
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.icarusalmighty.app.ObdManager
@@ -26,25 +28,41 @@ class DrivingTelemetryController(
     private val running = AtomicBoolean(false)
     private val locationManager = context.getSystemService(LocationManager::class.java)
     @Volatile private var state = DrivingHudState()
-    @Volatile private var gpsSpeedMph: Int? = null
-    @Volatile private var gpsHeading: String? = null
-    @Volatile private var gpsMoving: Boolean? = null
+    private val speedFreshness = DrivingSpeedFreshness()
+    private var gpsHeading: String? = null
+    private var gpsHeadingObservedAtMs: Long? = null
+    private var obdSnapshotStartedAtMs: Long? = null
+    private var obdTransportConnected = false
     private var navigationSubscription: AutoCloseable? = null
-    private var locationStarted = false
+    private var registeredProviders = emptySet<String>()
 
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) = applyLocation(location)
-        override fun onProviderEnabled(provider: String) = Unit
-        override fun onProviderDisabled(provider: String) = Unit
+        override fun onProviderEnabled(provider: String) = runOnMain {
+            refreshLocationRegistration()
+            mutate { this }
+        }
+        override fun onProviderDisabled(provider: String) = runOnMain {
+            clearGpsEvidence()
+            refreshLocationRegistration()
+            mutate { this }
+        }
         @Deprecated("Deprecated in Android")
-        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = runOnMain {
+            if (status != LocationProvider.AVAILABLE) {
+                clearGpsEvidence()
+                mutate { this }
+            }
+        }
     }
 
-    private val locationPermissionRetry = object : Runnable {
+    // Independent of location callbacks and the potentially blocked Bluetooth worker.
+    private val freshnessWatchdog = object : Runnable {
         override fun run() {
-            if (!running.get() || locationStarted) return
-            startLocationUpdates()
-            if (!locationStarted && running.get()) mainHandler.postDelayed(this, 5000L)
+            if (!running.get()) return
+            refreshLocationRegistration()
+            mutate { this }
+            mainHandler.postDelayed(this, DrivingSpeedFreshness.EXPIRY_CHECK_INTERVAL_MS)
         }
     }
 
@@ -52,8 +70,10 @@ class DrivingTelemetryController(
         if (!running.compareAndSet(false, true)) return
         navigationSubscription = NavigationFeed.subscribe(::applyNavigation)
         refreshNavigationAccess()
-        startLocationUpdates()
-        if (!locationStarted) mainHandler.postDelayed(locationPermissionRetry, 5000L)
+        runOnMain {
+            startLocationUpdates()
+            mainHandler.post(freshnessWatchdog)
+        }
         when {
             obdAddress.isNullOrBlank() -> mutate {
                 copy(
@@ -77,10 +97,19 @@ class DrivingTelemetryController(
         running.set(false)
         navigationSubscription?.close()
         navigationSubscription = null
-        if (hasLocationPermission()) runCatching { locationManager?.removeUpdates(locationListener) }
-        locationStarted = false
+        stopLocationUpdates()
+        clearGpsEvidence()
+        speedFreshness.clearObd(SystemClock.elapsedRealtime())
+        obdSnapshotStartedAtMs = null
+        obdTransportConnected = false
         mainHandler.removeCallbacksAndMessages(null)
         executor.shutdownNow()
+    }
+
+    // XREAL's bounded transport heartbeat may resend a snapshot, but never renew sensor age.
+    fun refreshSnapshot() = runOnMain {
+        refreshLocationRegistration()
+        mutate(publishUnchanged = true) { this }
     }
 
     fun toggleDiagnostics() = mutate { copy(diagnosticsExpanded = !diagnosticsExpanded) }
@@ -136,47 +165,76 @@ class DrivingTelemetryController(
         }
     }
 
-    @Suppress("MissingPermission")
-    private fun startLocationUpdates() {
-        if (!running.get() || locationStarted || !hasLocationPermission() || locationManager == null) return
-        var registered = false
-        val providers = buildList {
+    private fun enabledLocationProviders(): Set<String> {
+        if (!hasLocationPermission() || locationManager == null) return emptySet()
+        return buildSet {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 add(LocationManager.GPS_PROVIDER)
             }
             add(LocationManager.NETWORK_PROVIDER)
-        }.distinct()
-        for (provider in providers) {
-            if (!runCatching { locationManager.isProviderEnabled(provider) }.getOrDefault(false)) continue
-            runCatching {
-                locationManager.requestLocationUpdates(provider, 750L, 1f, locationListener, Looper.getMainLooper())
-                locationManager.getLastKnownLocation(provider)?.let(::applyLocation)
-                registered = true
-            }
-        }
-        locationStarted = registered
-        if (registered) mutate {
-            copy(
-                sourceLabel = if (obdConnected) sourceLabel else "PHONE GPS",
-                alertMessage = alertMessage?.takeUnless { it.contains("LOCATION", ignoreCase = true) }
-            )
+        }.filterTo(mutableSetOf()) { provider ->
+            runCatching { locationManager.isProviderEnabled(provider) }.getOrDefault(false)
         }
     }
 
-    private fun applyLocation(location: Location) {
-        val speed = location.takeIf { it.hasSpeed() }?.speed?.let(DrivingTelemetryMath::speedMph)
-        val heading = location.takeIf { it.hasBearing() }?.bearing?.let(DrivingTelemetryMath::cardinalHeading)
-        gpsSpeedMph = speed ?: gpsSpeedMph
-        gpsHeading = heading ?: gpsHeading
-        gpsMoving = gpsSpeedMph?.let { it >= 2 }
+    private fun refreshLocationRegistration() {
+        if (registeredProviders != enabledLocationProviders()) {
+            clearGpsEvidence()
+            stopLocationUpdates()
+            startLocationUpdates()
+        }
+        if (!hasLocationPermission() || registeredProviders.isEmpty()) clearGpsEvidence()
+    }
+
+    @Suppress("MissingPermission")
+    private fun stopLocationUpdates() {
+        // Revocation may make removal throw. It must still discard all local evidence.
+        runCatching { locationManager?.removeUpdates(locationListener) }
+        registeredProviders = emptySet()
+    }
+
+    @Suppress("MissingPermission")
+    private fun startLocationUpdates() {
+        if (!running.get() || !hasLocationPermission() || locationManager == null) return
+        val registered = mutableSetOf<String>()
+        for (provider in enabledLocationProviders()) {
+            runCatching {
+                // Stationary fixes must also arrive; a distance filter can suppress zero-speed refreshes.
+                locationManager.requestLocationUpdates(provider, 750L, 0f, locationListener, Looper.getMainLooper())
+                registered += provider
+                // applyLocation uses the measurement's elapsed time, never cache retrieval time.
+                locationManager.getLastKnownLocation(provider)?.let(::applyLocation)
+            }
+        }
+        registeredProviders = registered
+    }
+
+    private fun clearGpsEvidence() {
+        speedFreshness.clearGps(SystemClock.elapsedRealtime())
+        gpsHeading = null
+        gpsHeadingObservedAtMs = null
+    }
+
+    private fun applyLocation(location: Location) = runOnMain {
+        if (!hasLocationPermission() || location.provider !in enabledLocationProviders()) {
+            clearGpsEvidence()
+            mutate { this }
+            return@runOnMain
+        }
+        val now = SystemClock.elapsedRealtime()
+        val observedAt = location.elapsedRealtimeNanos / 1_000_000L
+        val speed = location.takeIf { it.hasSpeed() }?.speed?.toDouble()?.times(2.2369363)
+        speedFreshness.recordGps(speed, observedAt, now, location.provider ?: return@runOnMain)
+        if (!DrivingSpeedFreshness.isFresh(observedAt, now)) {
+            gpsHeading = null
+            gpsHeadingObservedAtMs = null
+        } else if (observedAt >= (gpsHeadingObservedAtMs ?: 0L)) {
+            gpsHeading = location.takeIf { it.hasBearing() }?.bearing?.takeIf { it.isFinite() }
+                ?.let(DrivingTelemetryMath::cardinalHeading)
+            gpsHeadingObservedAtMs = observedAt
+        }
         mutate {
-            copy(
-                speedMph = if (obdConnected) speedMph else gpsSpeedMph,
-                heading = gpsHeading,
-                vehicleMoving = if (obdConnected) vehicleMoving else gpsMoving,
-                sourceLabel = if (obdConnected) sourceLabel else "PHONE GPS",
-                alertMessage = alertMessage?.takeUnless { it.contains("LOCATION", ignoreCase = true) }
-            )
+            copy(alertMessage = alertMessage?.takeUnless { it.contains("LOCATION", ignoreCase = true) })
         }
     }
 
@@ -186,49 +244,52 @@ class DrivingTelemetryController(
             try {
                 mutateFromWorker { copy(sourceLabel = "CONNECTING OBD…", alertMessage = "CONNECTING TO OBD ADAPTER") }
                 obd.connect(address)
-                mutateFromWorker { copy(obdConnected = true, sourceLabel = "OBD + GPS LIVE", alertMessage = "OBD CONNECTED", heading = gpsHeading) }
+                runOnMain {
+                    obdTransportConnected = true
+                    // Connection alone supplies no speed/parked evidence.
+                    mutate { copy(alertMessage = "OBD CONNECTED • WAITING FOR TELEMETRY") }
+                }
                 while (running.get()) {
+                    if (!hasBluetoothPermission()) error("BLUETOOTH PERMISSION REQUIRED")
+                    // snapshot() reads seven PIDs sequentially and uses wall time internally. Its
+                    // completion timestamp is NOT the speed measurement time. Starting earlier is
+                    // conservative: a slow/stuck batch cannot make its early speed read fresh again.
+                    val snapshotStartedAt = SystemClock.elapsedRealtime()
                     val snap = obd.snapshot()
-                    val obdSpeed = snap.valueOrNull("speedMph")?.roundToInt()?.coerceAtLeast(0)
-                    val speed = obdSpeed ?: gpsSpeedMph
+                    val obdSpeed = snap.valueOrNull("speedMph")
                     val rpm = snap.valueOrNull("rpm")?.roundToInt()?.coerceAtLeast(0)
                     val coolant = snap.valueOrNull("coolantF")?.roundToInt()
                     val fuel = snap.valueOrNull("fuelPercent")?.roundToInt()?.coerceIn(0, 100)
                     val load = snap.valueOrNull("engineLoadPercent")?.roundToInt()?.coerceIn(0, 100)
                     val volts = snap.valueOrNull("voltage")
-                    val warning = coolant?.let { it >= 235 } == true
-                    mutateFromWorker {
-                        copy(
-                            speedMph = speed,
-                            heading = gpsHeading,
-                            rpm = rpm,
-                            engineTempF = coolant,
-                            fuelPercent = fuel,
-                            engineLoadPercent = load,
-                            batteryVolts = volts,
-                            vehicleMoving = speed?.let { it >= 2 },
-                            obdConnected = true,
-                            sourceLabel = "OBD + GPS LIVE",
-                            alertMessage = if (warning) "COOLANT ${coolant}°F" else alertMessage
-                        )
+                    runOnMain {
+                        if (hasBluetoothPermission()) {
+                            speedFreshness.recordObd(obdSpeed, snapshotStartedAt, SystemClock.elapsedRealtime())
+                            obdSnapshotStartedAtMs = snapshotStartedAt
+                            obdTransportConnected = true
+                        } else {
+                            clearObdEvidence()
+                        }
+                        mutate {
+                            copy(
+                                rpm = rpm,
+                                engineTempF = coolant,
+                                fuelPercent = fuel,
+                                engineLoadPercent = load,
+                                batteryVolts = volts,
+                                alertMessage = if (coolant != null && coolant >= 235 &&
+                                    DrivingSpeedFreshness.isFresh(snapshotStartedAt, SystemClock.elapsedRealtime())) {
+                                    "COOLANT ${coolant}°F"
+                                } else alertMessage,
+                            )
+                        }
                     }
                     Thread.sleep(900L)
                 }
             } catch (e: Exception) {
-                mutateFromWorker {
-                    copy(
-                        speedMph = gpsSpeedMph,
-                        heading = gpsHeading,
-                        rpm = null,
-                        engineTempF = null,
-                        fuelPercent = null,
-                        engineLoadPercent = null,
-                        batteryVolts = null,
-                        vehicleMoving = gpsMoving,
-                        obdConnected = false,
-                        sourceLabel = if (gpsSpeedMph != null || gpsHeading != null) "PHONE GPS" else "OBD OFFLINE",
-                        alertMessage = "OBD UNAVAILABLE • ${e.message ?: "CONNECTION FAILED"}"
-                    )
+                runOnMain {
+                    clearObdEvidence()
+                    mutate { copy(alertMessage = "OBD UNAVAILABLE • ${e.message ?: "CONNECTION FAILED"}") }
                 }
             } finally {
                 runCatching { obd.disconnect() }
@@ -236,9 +297,46 @@ class DrivingTelemetryController(
         }
     }
 
+    private fun clearObdEvidence() {
+        speedFreshness.clearObd(SystemClock.elapsedRealtime())
+        obdSnapshotStartedAtMs = null
+        obdTransportConnected = false
+    }
+
     private fun org.json.JSONObject.valueOrNull(name: String): Double? {
         if (!has(name) || isNull(name)) return null
-        return optDouble(name).takeUnless { it.isNaN() }
+        return optDouble(name).takeIf { it.isFinite() }
+    }
+
+    private fun withFreshTelemetry(value: DrivingHudState): DrivingHudState {
+        val now = SystemClock.elapsedRealtime()
+        if (!hasLocationPermission()) clearGpsEvidence()
+        if (!hasBluetoothPermission()) clearObdEvidence()
+        val reading = speedFreshness.current(now)
+        val obdFresh = obdTransportConnected && DrivingSpeedFreshness.isFresh(obdSnapshotStartedAtMs, now)
+        val heading = gpsHeading.takeIf { DrivingSpeedFreshness.isFresh(gpsHeadingObservedAtMs, now) }
+        return value.copy(
+            speedMph = reading.speedMph,
+            vehicleMoving = reading.vehicleMoving,
+            speedValidUntilElapsedRealtimeMs = reading.validUntilElapsedRealtimeMs,
+            heading = heading,
+            obdConnected = obdFresh,
+            rpm = value.rpm.takeIf { obdFresh },
+            engineTempF = value.engineTempF.takeIf { obdFresh },
+            fuelPercent = value.fuelPercent.takeIf { obdFresh },
+            engineLoadPercent = value.engineLoadPercent.takeIf { obdFresh },
+            batteryVolts = value.batteryVolts.takeIf { obdFresh },
+            sourceLabel = when {
+                obdFresh && reading.source == DrivingSpeedFreshness.Source.OBD -> "OBD LIVE"
+                obdFresh && reading.source == DrivingSpeedFreshness.Source.GPS -> "OBD + PHONE GPS"
+                obdFresh -> "OBD LIVE • SPEED UNKNOWN"
+                reading.source == DrivingSpeedFreshness.Source.GPS -> "PHONE GPS"
+                !hasLocationPermission() -> "LOCATION PERMISSION REQUIRED"
+                obdTransportConnected -> "OBD STALE • SPEED UNKNOWN"
+                value.sourceLabel == "CONNECTING OBD…" -> value.sourceLabel
+                else -> "SPEED UNKNOWN"
+            },
+        )
     }
 
     private fun hasBluetoothPermission(): Boolean =
@@ -261,20 +359,24 @@ class DrivingTelemetryController(
         )
     }
 
-    @Synchronized
-    private fun mutate(block: DrivingHudState.() -> DrivingHudState) {
-        state = state.block()
-        publish(state)
+    // Serialize input updates, policy decisions, and delivery on the main thread. A worker must
+    // never queue a precomputed state that could overwrite a newer expiry/permission-loss state.
+    private fun mutate(
+        publishUnchanged: Boolean = false,
+        block: DrivingHudState.() -> DrivingHudState,
+    ) = runOnMain {
+        val next = withFreshTelemetry(withFreshTelemetry(state).block())
+        if (next != state || publishUnchanged) {
+            state = next
+            onState(next)
+        }
     }
 
-    @Synchronized
-    private fun mutateFromWorker(block: DrivingHudState.() -> DrivingHudState) {
-        state = state.block()
-        publish(state)
-    }
+    private fun mutateFromWorker(block: DrivingHudState.() -> DrivingHudState) = mutate(block = block)
 
-    private fun publish(value: DrivingHudState) {
-        if (Looper.myLooper() == Looper.getMainLooper()) onState(value)
-        else mainHandler.post { onState(value) }
+    private fun runOnMain(block: () -> Unit) {
+        if (!running.get()) return
+        if (Looper.myLooper() == Looper.getMainLooper()) block()
+        else mainHandler.post { if (running.get()) block() }
     }
 }

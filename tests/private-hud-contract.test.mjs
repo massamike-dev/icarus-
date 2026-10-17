@@ -5,13 +5,18 @@ import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL(`../${path}`,import.meta.url),'utf8');
 const gradle=read('native/android/app/build.gradle.kts');
 const bridge=read('native/android/app/src/main/java/com/icarusalmighty/app/IcarusNativeBridge.kt');
-const driving=read('native/android/app/src/main/java/com/icarusalmighty/app/driving/DrivingHudView.kt');
+const driving=read('native/android/xreal/src/main/java/com/icarusalmighty/xreal/hud/CinematicDrivingHudView.kt');
 const volumetric=read('native/android/app/src/main/java/com/icarusalmighty/app/driving/VolumetricHudSurface.kt');
 const manifest=read('native/android/app/src/main/AndroidManifest.xml');
 
 test('animated companion update is Test 1.6.11 build 42 or newer and preserves the private app identity',()=>{
   assert.ok(Number(gradle.match(/versionCode\s*=\s*(\d+)/)?.[1])>=42);
-  assert.equal(gradle.match(/versionName\s*=\s*"([^"]+)"/)?.[1],'1.6.11');
+  const versionName=gradle.match(/versionName\s*=\s*"([^"]+)"/)?.[1];
+  const version=versionName?.match(/^(\d+)\.(\d+)\.(\d+)$/);
+  assert.ok(version,'the app version must be a three-part numeric version');
+  const minimum=[1,6,11];
+  const difference=version.slice(1).map((part,index)=>Number(part)-minimum[index]).find(value=>value!==0)||0;
+  assert.ok(difference>=0,`expected version 1.6.11 or newer, received ${versionName}`);
   assert.match(gradle,/applicationId\s*=\s*"com\.icarusalmighty\.app"/);
   const variant=gradle.split('create("privateTest")')[1]?.split('compileOptions')[0];
   assert.ok(variant,'the existing privateTest variant must remain');
