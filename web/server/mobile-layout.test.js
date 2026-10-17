@@ -15,7 +15,7 @@ test('mobile content reserves opaque navigation space and scroll clearance',()=>
   const css=source('../src/dashboard.css');
   assert.match(css,/\.app-shell \{ padding-bottom: calc\(var\(--mobile-nav-height\) \+ 24px \+ env\(safe-area-inset-bottom\)\);/);
   assert.match(css,/scroll-padding-bottom: calc\(var\(--mobile-nav-height\) \+ 24px/);
-  assert.match(css,/\.app-shell > aside \{[^}]*background: #070c18;/);
+  assert.match(css,/\.app-shell > aside \{[^}]*background: #062551;/);
   assert.match(css,/\.app-header \{ height: calc\(62px \+ env\(safe-area-inset-top\)\)/);
 });
 

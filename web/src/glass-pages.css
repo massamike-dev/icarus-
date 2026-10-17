@@ -1,0 +1,411 @@
+/*
+ * ICARUS supporting screens: the approved blue glass and soft-gold material.
+ * Load after the feature styles. Only presentation is changed here; availability,
+ * confirmations, account state, and Android actions stay owned by the components.
+ * The shared shell, background artwork, and Home scene live in dashboard.css.
+ */
+:root {
+  --page-glass: linear-gradient(145deg, rgba(23, 69, 118, .90), rgba(5, 28, 62, .96));
+  --page-inset: rgba(3, 21, 47, .86);
+  --page-edge: rgba(115, 213, 255, .48);
+  --page-shadow: 0 14px 32px rgba(0, 8, 27, .22), inset 0 1px 0 rgba(191, 231, 255, .16);
+}
+
+/* Calm display type and readable copy retain the Home screen's hierarchy. */
+.workspace { min-width: 0; }
+.workspace h1 { font-weight: 400; text-wrap: balance; overflow-wrap: anywhere; }
+.workspace > .eyebrow,
+.chat-heading .eyebrow,
+.auth > p:first-of-type,
+.legal .eyebrow { color: var(--gold); }
+.workspace :is(h2, h3), .auth .settings-section h2 {
+  color: var(--gold);
+  overflow-wrap: anywhere;
+}
+.settings-section h2, .settings-dialog h2, .hud-option h2, .premium-plan h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+}
+.workspace :is(p, li), .auth .settings-section :is(p, li) { line-height: 1.65; }
+.workspace > p:not(.eyebrow):not(.error):not(.settings-error):not(.chat-notice),
+.settings-section li { color: var(--steel); }
+.workspace :is(a:not(.primary), .text-button), .auth a, .legal a { color: var(--sky); }
+.workspace :is(a, button, input, textarea, select), .auth :is(a, button, input),
+.settings-dialog :is(a, button, input, select) { touch-action: manipulation; }
+.workspace a, .auth a, .legal a { text-underline-offset: .2em; }
+.workspace a:hover, .auth a:hover, .legal a:hover { text-decoration-thickness: 2px; }
+
+/* Glass has a nearly opaque fallback, so unsupported blur never costs legibility.
+ * Blur is limited to large surfaces; nested controls and messages do not stack it. */
+.settings-section,
+.history-panel,
+.integration-card,
+.hud-option,
+.premium-plan,
+.voice-workspace > .voice-controls,
+.auth > form,
+.memory-list article,
+.empty {
+  min-width: 0;
+  border: 1px solid var(--page-edge);
+  border-radius: 20px;
+  background: var(--page-glass);
+  box-shadow: var(--page-shadow);
+}
+@supports ((backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px))) {
+  .settings-section, .history-panel, .integration-card, .hud-option,
+  .premium-plan, .voice-workspace > .voice-controls, .auth > form {
+    background: linear-gradient(145deg, rgba(21, 67, 118, .76), rgba(5, 28, 62, .86));
+    -webkit-backdrop-filter: blur(12px) saturate(1.12);
+    backdrop-filter: blur(12px) saturate(1.12);
+  }
+}
+
+/* Real form controls use the same inset blue material as the Home composer. */
+.workspace input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+.workspace textarea,
+.settings-field select,
+.auth > form > input {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--page-edge);
+  border-radius: 12px;
+  background: var(--page-inset);
+  color: var(--white);
+  box-shadow: inset 0 1px 8px rgba(0, 7, 22, .25);
+  font: inherit;
+  line-height: 1.5;
+  color-scheme: dark;
+}
+.workspace :is(input, textarea)::placeholder, .auth input::placeholder {
+  color: #b8cde5;
+  opacity: 1;
+}
+.workspace :is(input, textarea, select):focus-visible,
+.auth input:focus-visible {
+  border-color: var(--gold);
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.settings-field select { padding: 12px; }
+.settings-field option { color: var(--white); background: var(--panel); }
+.settings-field :is(input[type="range"], output),
+.settings-check input, .chat-main > label input { accent-color: var(--gold); }
+.settings-field output { color: var(--gold); margin-left: 4px; }
+.settings-field input[type="range"] { background: transparent; box-shadow: none; }
+.settings-model-progress { accent-color: var(--sky); }
+
+/* Blue primary actions with a restrained gold rim, rather than orange blocks. */
+.workspace .primary, .auth .primary, .settings-dialog .primary {
+  min-width: 0;
+  min-height: 48px;
+  max-width: 100%;
+  border: 1px solid var(--sky);
+  border-top-color: var(--gold);
+  border-radius: 13px;
+  background: linear-gradient(135deg, #176dbc, #10468d 65%, #0c376f);
+  color: var(--white);
+  box-shadow: inset 0 1px 0 rgba(255, 228, 161, .40), 0 3px 14px rgba(25, 127, 230, .18);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+  line-height: 1.45;
+}
+.workspace .primary > span, .auth .primary > span { color: var(--gold); }
+.workspace .secondary, .auth .secondary, .settings-dialog .secondary {
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  border: 1px solid var(--page-edge);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(27, 72, 118, .86), rgba(8, 37, 77, .94));
+  color: var(--white);
+  box-shadow: inset 0 1px 0 rgba(187, 230, 255, .10);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+.workspace .secondary[aria-pressed="true"], .workspace .secondary.selected {
+  border-color: var(--gold);
+  background: linear-gradient(140deg, #1b5583, #11385d);
+  color: var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(241, 209, 125, .15);
+}
+@media (hover: hover) {
+  .workspace .primary:hover:enabled, .auth .primary:hover:enabled,
+  .settings-dialog .primary:hover:enabled, .workspace a.primary:hover {
+    background: linear-gradient(135deg, #1c70bd, #14539c 65%, #104481);
+    border-color: var(--gold);
+  }
+  .workspace .secondary:hover:enabled, .auth .secondary:hover:enabled,
+  .settings-dialog .secondary:hover:enabled {
+    border-color: var(--sky);
+    background: linear-gradient(145deg, #205689, #103764);
+    color: var(--white);
+  }
+  .workspace .secondary[aria-pressed="true"]:hover:enabled {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+}
+.workspace :is(button, input, textarea, select):disabled,
+.auth :is(button, input):disabled,
+.settings-dialog :is(button, input):disabled {
+  cursor: not-allowed;
+  opacity: .62;
+  box-shadow: none;
+}
+.workspace button:disabled, .auth button:disabled, .settings-dialog button:disabled {
+  background: #102c4b;
+  border-color: #52728e;
+  color: #bdd0e3;
+}
+.workspace button:disabled:active, .settings-dialog button:disabled:active { transform: none; }
+
+/* Chat: quiet message glass, a clear active history row, and full-size controls. */
+.chat-actions { flex-wrap: wrap; }
+.chat-layout { align-items: start; }
+.history-panel { padding: 12px; }
+.history-panel > b { color: var(--gold); }
+.history-panel > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; min-width: 0; }
+.history-panel button { min-height: 44px; min-width: 0; border-radius: 9px; line-height: 1.4; }
+.history-panel > div > button:first-child {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-panel button.current {
+  border-color: rgba(241, 209, 125, .55);
+  background: rgba(51, 92, 128, .70);
+  color: var(--white);
+}
+.history-panel button:hover:enabled { background: rgba(28, 81, 130, .82); border-color: var(--page-edge); color: var(--white); }
+.history-panel button[aria-label^="Delete "] { color: #ffb1a1; font-size: 11px; padding: 10px 6px; }
+.messages { gap: 14px; }
+.messages article {
+  border: 1px solid var(--page-edge);
+  border-radius: 19px;
+  background: linear-gradient(140deg, rgba(15, 54, 99, .91), rgba(4, 27, 59, .96));
+  box-shadow: inset 0 1px 0 rgba(158, 220, 255, .10), 0 6px 16px rgba(0, 8, 25, .15);
+  overflow-wrap: anywhere;
+}
+.messages article.user {
+  border-color: rgba(241, 209, 125, .52);
+  border-left: 2px solid var(--gold);
+  background: linear-gradient(140deg, rgba(35, 71, 107, .93), rgba(14, 41, 70, .96));
+}
+.messages article.assistant { border-left: 2px solid var(--sky); }
+.messages b { color: var(--gold); font-size: 10px; }
+.messages article.assistant > b, .messages .empty > b { color: var(--sky); }
+.messages p { color: var(--white); }
+.messages :is(p, ul) { overflow-wrap: anywhere; }
+.message-tools { flex-wrap: wrap; gap: 8px; }
+.message-tools button { min-width: 44px; min-height: 44px; padding: 8px 10px; border-radius: 9px; background: rgba(4, 26, 54, .65); font-size: 12px; }
+.message-tools button:hover:enabled { background: #174774; color: var(--white); }
+.composer textarea { border-color: rgba(241, 209, 125, .60); border-radius: 17px; }
+.composer .primary { min-width: 100px; }
+.chat-notice { color: var(--sky); overflow-wrap: anywhere; }
+.chat-main > label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 12px;
+  color: var(--steel);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chat-main > label input { flex-shrink: 0; width: 19px; height: 19px; }
+.assistant-disclosure { font-size: 11px; }
+.empty { padding: 22px; color: var(--steel); overflow-wrap: anywhere; }
+
+/* Memory uses real content cards; destructive actions keep their warning cue. */
+.memory-add { align-items: stretch; }
+.memory-list article { padding: 18px 20px; }
+.memory-list article p { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--white); }
+.memory-list article button {
+  flex: 0 0 auto;
+  min-width: 60px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid rgba(255, 154, 133, .45);
+  border-radius: 10px;
+  background: rgba(70, 25, 30, .52);
+  color: #ffb1a1;
+}
+
+/* Settings and Voice retain normal document scrolling and native controls. */
+.settings-section { margin: 0 0 18px; padding: 24px; }
+.settings-section > :last-child:not(dialog) { margin-bottom: 0; }
+.settings-section ul { padding-left: 22px; }
+.settings-section li + li { margin-top: 10px; }
+.app-shell[data-page="settings"] .workspace { padding-bottom: 24px; }
+.app-shell[data-page="settings"] .workspace + .workspace { padding-top: 0; }
+.settings-actions { align-items: center; gap: 10px; }
+.settings-actions > a:not(.primary) { display: inline-flex; align-items: center; min-height: 44px; line-height: 1.5; }
+.settings-links { gap: 7px; }
+.settings-links a { display: inline-flex; align-items: center; min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
+.settings-tuning { padding: 16px; border: 1px solid rgba(115, 213, 255, .24); border-radius: 13px; background: rgba(3, 24, 50, .30); }
+.settings-field small, .settings-muted { color: var(--steel); }
+.voice-workspace > .voice-controls { padding: 24px; }
+.voice-workspace > .voice-controls > p:first-child { margin-top: 0; }
+.voice-diagnostics { border-top-color: var(--page-edge); }
+.voice-diagnostics > div { padding: 12px 0; border-bottom-color: rgba(115, 213, 255, .23); }
+.voice-diagnostics dt { color: var(--steel); }
+.voice-diagnostics dd { color: var(--white); font-variant-numeric: tabular-nums; }
+
+/* Integration, membership, and parked vehicle setup use the same panel system.
+ * These styles never imply a live service, verified glasses, or paid entitlement. */
+.integration-card { display: flex; flex-direction: column; padding: 20px; }
+.integration-card .settings-actions { margin-top: auto; }
+.integration-state { color: var(--sky); }
+.integration-query { display: grid; gap: 16px; padding-top: 8px; }
+.integration-query h3 { margin-bottom: 0; }
+.integration-results { padding-left: 24px; }
+.integration-results li { padding-bottom: 16px; border-bottom: 1px solid rgba(115, 213, 255, .25); }
+.integration-results strong { color: var(--white); }
+.hud-option { border-top: 2px solid var(--sky); }
+.hud-option:first-child { border-top-color: var(--gold); }
+.hud-option h2 { font-size: clamp(27px, 3vw, 34px); }
+.hud-option .eyebrow { color: var(--gold); }
+.hud-feedback { padding-top: 4px; }
+.premium-plan { padding: 22px; border-color: var(--page-edge); }
+.premium-plan h2 { font-size: 27px; }
+.premium-plan p { color: var(--steel); }
+.premium-plan h2 + p { color: var(--white); }
+.premium-warning { border-color: var(--gold); background: rgba(75, 58, 22, .65); color: var(--focus); border-radius: 0 12px 12px 0; }
+
+/* Native <dialog> stays in the top layer. Its open/closed state, focus trap, and
+ * cancellation semantics are untouched. Do not set display on a closed dialog. */
+.settings-dialog {
+  border: 1px solid var(--sky);
+  border-top-color: var(--gold);
+  border-radius: 22px;
+  padding: 26px;
+  background: linear-gradient(145deg, #143d70, #071d3f 75%);
+  color: var(--white);
+  box-shadow: 0 24px 90px rgba(0, 6, 22, .65), inset 0 1px 0 rgba(255, 228, 161, .30);
+  max-height: min(80svh, calc(100dvh - 32px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.settings-dialog::backdrop { background: rgba(0, 8, 25, .78); }
+.settings-dialog h2 { color: var(--gold); font-size: clamp(25px, 4vw, 30px); }
+.settings-dialog p { color: var(--steel); }
+.settings-dialog .settings-actions { align-items: stretch; margin-top: 22px; }
+.settings-dialog .settings-actions button { flex: 1 1 160px; }
+.settings-dialog .settings-check { align-items: flex-start; line-height: 1.5; }
+.settings-dialog .settings-check input { flex-shrink: 0; }
+
+/* Auth and public account pages keep a readable, self-contained glass surface. */
+.auth { background: transparent; padding: 36px 24px; gap: 0; }
+.auth > img { width: 86px; height: 86px; object-fit: contain; filter: drop-shadow(0 4px 18px rgba(38, 151, 235, .30)); }
+.auth > h1 { max-width: 19ch; margin: 16px 0 28px; text-align: center; font-size: clamp(32px, 5vw, 48px); font-weight: 400; }
+.auth > p { max-width: 560px; text-align: center; line-height: 1.6; }
+.auth > form { width: min(100%, 420px); padding: 24px; gap: 14px; }
+.auth > .intelligence-mode { width: min(100%, 560px); margin-top: 28px; }
+.auth .text-button { min-height: 44px; color: var(--sky); }
+.auth .legal-links { color: var(--steel); letter-spacing: normal; font-size: 12px; }
+.auth .legal-links a { display: inline-flex; min-height: 44px; align-items: center; }
+.legal { padding-top: 48px; }
+.legal h1 { font-size: clamp(36px, 6vw, 62px); font-weight: 400; overflow-wrap: anywhere; }
+.legal h2 { font-family: var(--font-display); text-transform: none; color: var(--gold); font-weight: 400; }
+.legal p { color: var(--steel); }
+.legal > a { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* Warnings and destructive confirmations remain visibly distinct from cyan/gold. */
+.workspace .error, .workspace .settings-error, .auth .error,
+.settings-dialog .settings-error, .workspace [role="alert"] { color: #ffb1a1; }
+.workspace .danger, .legal .danger, .settings-dialog .danger,
+.settings-danger .secondary,
+.settings-dialog[aria-labelledby="delete-local-model-title"] .primary {
+  min-height: 44px;
+  border: 1px solid #f59885;
+  border-radius: 12px;
+  background: #48212b;
+  color: #ffe8e2;
+  box-shadow: none;
+  line-height: 1.5;
+}
+.workspace .danger:hover:enabled, .legal .danger:hover:enabled,
+.settings-dialog .danger:hover:enabled, .settings-danger .secondary:hover:enabled,
+.settings-dialog[aria-labelledby="delete-local-model-title"] .primary:hover:enabled {
+  border-color: #ffb8a7;
+  background: #602c35;
+  color: #fff4ef;
+}
+
+/* Existing mobile navigation and safe-area reservations remain shell-owned. */
+@media (max-width: 850px) {
+  .workspace { padding: 30px 20px 112px; }
+  .workspace h1 { font-size: clamp(28px, 6.7vw, 38px); }
+  .chat-actions { margin-top: 0; }
+  .history-panel { width: 100%; padding: 8px; align-items: stretch; }
+  .history-panel > div { flex: 0 0 240px; }
+  .history-panel button { flex: initial; }
+  .composer textarea { min-height: 120px; }
+  .settings-section, .voice-workspace > .voice-controls { padding: 20px; }
+  .auth > form > input, .workspace :is(input, textarea, select) { font-size: 16px; }
+}
+@media (max-width: 420px) {
+  .workspace { padding-left: 14px; padding-right: 14px; }
+  .settings-section, .voice-workspace > .voice-controls, .integration-card, .hud-option, .premium-plan { padding: 17px; border-radius: 17px; }
+  .settings-actions { gap: 8px; }
+  .settings-actions > button { flex: 1 1 160px; }
+  .settings-tuning { padding: 12px; }
+  .memory-list article { flex-wrap: wrap; gap: 12px; padding: 16px; }
+  .memory-list article p { flex: 1 1 150px; }
+  .settings-dialog { padding: 20px; border-radius: 18px; }
+  .auth { padding: 28px 16px; }
+  .auth > form { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace *, .auth *, .settings-dialog *, .legal * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  .settings-section, .history-panel, .integration-card, .hud-option, .premium-plan,
+  .voice-workspace > .voice-controls, .auth > form, .memory-list article, .empty,
+  .messages article, .messages article.user, .messages article.assistant,
+  .settings-dialog, .settings-tuning {
+    background: Canvas;
+    border-color: CanvasText;
+    color: CanvasText;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .workspace :is(button, .primary), .auth button, .settings-dialog button,
+  .workspace :is(input, textarea, select), .auth input {
+    background: ButtonFace;
+    color: ButtonText;
+    border: 1px solid ButtonText;
+    box-shadow: none;
+  }
+  .workspace :is(button, input, textarea, select):disabled,
+  .auth :is(button, input):disabled, .settings-dialog :is(button, input):disabled {
+    opacity: 1;
+    border-color: GrayText;
+    color: GrayText;
+  }
+  .history-panel button.current, .workspace .secondary[aria-pressed="true"] {
+    border-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -3px;
+  }
+  .workspace :is(button, input, textarea, select, a):focus-visible,
+  .auth :is(button, input, a):focus-visible, .settings-dialog button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+  .settings-dialog::backdrop { background: Canvas; opacity: .8; }
+}

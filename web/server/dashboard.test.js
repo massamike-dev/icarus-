@@ -72,7 +72,7 @@ test('local visual assets and responsive accessibility contracts are present',()
  assert.match(css,/grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
  assert.match(css,/data-destination="drive"/);
  assert.match(css,/data-destination="voice"/);
- assert.match(css,/height: clamp\(236px, calc\(100svh - 535px\), 410px\)/);
+ assert.match(css,/height: clamp\(236px, 31svh, 330px\)/);
  assert.equal((css.match(/:root\s*\{/g)||[]).length,1);assert.match(css,/\.dashboard-composer:focus-within/);
  const base=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');assert.doesNotMatch(base,/fonts.googleapis.com/);
  assert.ok(existsSync(new URL('../public/brand/icarus-companion.png',import.meta.url)));

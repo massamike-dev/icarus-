@@ -49,7 +49,8 @@ jobs:
 
   build-preview:
     needs: validate-web
-    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-xreal-preview-20261014'
+    # A source-only visual review push never signs or publishes an APK.
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-xreal-preview-20261014' && !contains(github.event.head_commit.message, '[visual-qa]')
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:

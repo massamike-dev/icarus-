@@ -3,6 +3,7 @@ import {readDeviceStatus,subscribeNative} from './device-actions';
 import {getNativeTransport} from './native-transport.js';
 import {LilIcarus3D} from './lil-icarus-3d.jsx';
 import './companion.css';
+import {Mic} from 'lucide-react';
 
 const preferenceKey='icarus_companion_preferences';
 const activeStages=new Set(['STARTING','PREPARING_VOICE','INITIALIZING_VOICE','ACKNOWLEDGING','CAPTURING','AWAITING_CONFIRMATION','LISTENING_FOR_CANCEL','FINALIZING_APP_LAUNCH','INTERPRETING','EXECUTING','SPEAKING']);
@@ -45,7 +46,7 @@ export function IcarusCompanion({onNavigate,presentation='floating'}){
   const[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[modelReady,setModelReady]=useState(false),[modelFailed,setModelFailed]=useState(false),[posterFailed,setPosterFailed]=useState(false),[activityMotion,setActivityMotion]=useState(null);
   const dock=useRef(null),figure=useRef(null),restore=useRef(null),pending=useRef(null),timeout=useRef(null),activityTimeout=useRef(null),mounted=useRef(false);
   const currentStatus=useRef(null),visible=useRef(false),refresh=useRef(()=>{}),focusAfterHide=useRef(false);
-  visible.current=!prefs.hidden&&!tucked;
+  visible.current=!prefs.hidden&&(!tucked||presentation==='dashboard');
   const updateStatus=value=>{currentStatus.current=value;setStatus(value);};
 
   useEffect(()=>{try{localStorage.setItem(preferenceKey,JSON.stringify(prefs));}catch{/* Preferences remain usable for this session. */}},[prefs]);
@@ -95,7 +96,7 @@ export function IcarusCompanion({onNavigate,presentation='floating'}){
       const element=document.activeElement;
       const editing=Boolean(element?.matches?.('input,textarea,select,[contenteditable="true"]')||element?.closest?.('[contenteditable="true"]'));
       setTucked(editing);
-      if(editing){visible.current=false;setOpen(false);}
+      if(editing){if(presentation!=='dashboard')visible.current=false;setOpen(false);}
     };
     const focusOut=()=>queueMicrotask(()=>{if(mounted.current)checkFocus();});
     const visibility=()=>{if(document.visibilityState==='hidden'){revision++;updateStatus(null);}else refreshStatus();};
@@ -111,7 +112,7 @@ export function IcarusCompanion({onNavigate,presentation='floating'}){
       document.removeEventListener('visibilitychange',visibility);window.removeEventListener('icarus-native-ready',refreshStatus);
     };
   },[]);
-  useEffect(()=>{if(!prefs.hidden&&!tucked)refresh.current();else updateStatus(null);},[prefs.hidden,tucked]);
+  useEffect(()=>{if(!prefs.hidden&&(!tucked||presentation==='dashboard'))refresh.current();else updateStatus(null);},[prefs.hidden,tucked,presentation]);
   useEffect(()=>{
     if(!open)return;
     const close=event=>{
@@ -138,7 +139,7 @@ export function IcarusCompanion({onNavigate,presentation='floating'}){
   const motion=activityMotion||(message.startsWith('Android accepted')?'confirm':view.phase);
   const hide=()=>{focusAfterHide.current=true;setOpen(false);setPrefs(p=>({...p,hidden:true}));};
   const show=()=>{focusAfterHide.current=true;setPrefs(p=>({...p,hidden:false}));};
-  return <div ref={dock} className={`icarus-companion companion-${prefs.side} companion-${presentation}`} data-phase={view.phase} hidden={tucked}>
+  return <div ref={dock} className={`icarus-companion companion-${prefs.side} companion-${presentation}`} data-phase={view.phase} hidden={tucked&&presentation!=='dashboard'}>
     {prefs.hidden?<button ref={restore} type="button" className="companion-restore" onClick={show} aria-label="Show ICARUS companion">ICARUS</button>:<>
       {open&&<section className="companion-panel" id="icarus-companion-panel" aria-labelledby="icarus-companion-title">
         <div className="companion-heading"><h2 id="icarus-companion-title">ICARUS</h2><button type="button" className="companion-close" onClick={()=>{setOpen(false);figure.current?.focus();}} aria-label="Close ICARUS companion panel">×</button></div>
@@ -149,13 +150,18 @@ export function IcarusCompanion({onNavigate,presentation='floating'}){
         <button type="button" className="companion-voice" onClick={()=>{setOpen(false);onNavigate('voice');}}>Open Voice controls</button>
         <div className="companion-tools"><button type="button" onClick={()=>setPrefs(p=>({...p,side:'left'}))} disabled={prefs.side==='left'} aria-label="Move ICARUS to the left">← Left</button><button type="button" onClick={()=>setPrefs(p=>({...p,side:'right'}))} disabled={prefs.side==='right'} aria-label="Move ICARUS to the right">Right →</button><button type="button" onClick={hide}>Hide ICARUS</button></div>
       </section>}
-      <button ref={figure} type="button" className="companion-figure" onClick={()=>setOpen(value=>!value)} aria-label="Open ICARUS companion" aria-expanded={open} aria-controls="icarus-companion-panel" title={modelFailed?'ICARUS artwork; animated 3D unavailable':'ICARUS companion'}>
-        {!modelFailed&&<LilIcarus3D motion={motion} onReady={()=>setModelReady(true)} onError={()=>setModelFailed(true)}/>}
-        {!posterFailed&&(!modelReady||modelFailed)&&<img className="companion-poster" src="/brand/icarus-companion.png" alt="" width="96" height="112" onError={()=>setPosterFailed(true)}/>}
+      <button ref={figure} type="button" className="companion-figure" onClick={()=>setOpen(value=>!value)} aria-label="Open ICARUS companion" aria-expanded={open} aria-controls="icarus-companion-panel" title={presentation==='dashboard'?'Lil ICARUS voice and controls':modelFailed?'ICARUS artwork; animated 3D unavailable':'ICARUS companion'}>
+        {presentation!=='dashboard'&&!modelFailed&&<LilIcarus3D motion={motion} onReady={()=>setModelReady(true)} onError={()=>setModelFailed(true)}/>}
+        {!posterFailed&&(presentation==='dashboard'||!modelReady||modelFailed)&&<img className="companion-poster" src={presentation==='dashboard'?'/brand/lil-icarus-soft-gold.webp':'/brand/icarus-companion.png'} alt="" width="96" height="112" onError={()=>setPosterFailed(true)}/>}
         {posterFailed&&<img className="companion-fallback-crest" src="/brand/icarus-crest.svg" alt=""/>}
         <span className="companion-state-dot" aria-hidden="true"/>
       </button>
-      {presentation==='dashboard'&&modelFailed&&<small className="companion-render-note">Artwork preview · 3D unavailable</small>}
+      {presentation==='dashboard'&&<div className="dashboard-voice">
+        <p className="companion-caption">Tap Lil ICARUS for voice & controls</p>
+        <button type="button" className="dashboard-talk" aria-label="Talk now from Home" disabled={!view.canTalk||busy} aria-busy={busy} aria-describedby="dashboard-voice-status" onClick={talk}><Mic aria-hidden="true" strokeWidth={1.7}/><span>{busy?'Starting voice…':'Talk now'}</span></button>
+        <p id="dashboard-voice-status" className="dashboard-voice-status" role="status">{view.label}{!view.canTalk&&!busy&&<button type="button" onClick={()=>onNavigate('voice')}>Voice controls</button>}</p>
+        {message&&<p className="dashboard-voice-feedback" role="status">{message}</p>}
+      </div>}
     </>}
   </div>;
 }

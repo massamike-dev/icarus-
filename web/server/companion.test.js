@@ -116,3 +116,40 @@ test('typing tucks the companion, Escape restores focus, and sign-out removes it
     assert.deepEqual(app.errors,[]);
   }finally{app.dom.window.close();}
 });
+
+
+test('Home typing keeps the inline voice status live while floating companions still tuck',async()=>{
+ const app=await mount();
+ try{
+  await waitFor(()=>!app.w.document.querySelector('.dashboard-talk').disabled);
+  const input=app.w.document.querySelector('#dashboard-draft');input.focus();
+  await new Promise(r=>setTimeout(r,20));
+  assert.equal(app.w.document.querySelector('.companion-dashboard').hidden,false);
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,false);
+  await app.broadcast({listenerState:'LISTENING_FOR_CANCEL'});
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,true);
+  assert.match(app.w.document.querySelector('#dashboard-voice-status').textContent,/Say cancel/);
+  await app.broadcast({listenerState:'LISTENING'});
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,false);
+  assert.equal(app.requests.filter(p=>p.action==='start_voice_turn').length,0);
+  assert.deepEqual(app.errors,[]);
+ }finally{app.dom.window.close();}
+});
+
+
+test('Home acknowledgement never masks live cancellation or error instructions',async()=>{
+ const app=await mount();
+ try{
+  await waitFor(()=>!app.w.document.querySelector('.dashboard-talk').disabled);
+  await app.click('Talk now from Home');
+  const sent=app.requests.find(p=>p.action==='start_voice_turn');
+  app.w.ICARUS_NATIVE_RESULT(JSON.stringify({requestId:sent.requestId,ok:true,data:{requestAccepted:true}}));
+  await waitFor(()=>app.w.document.querySelector('.dashboard-voice-feedback')?.textContent.includes('Android accepted'));
+  await app.broadcast({listenerState:'LISTENING_FOR_CANCEL'});
+  assert.match(app.w.document.querySelector('#dashboard-voice-status').textContent,/Say cancel/);
+  assert.equal(app.w.document.querySelector('.dashboard-talk').disabled,true);
+  await app.broadcast({listenerState:'MICROPHONE_BLOCKED'});
+  assert.match(app.w.document.querySelector('#dashboard-voice-status').textContent,/blocking microphone/);
+  assert.deepEqual(app.errors,[]);
+ }finally{app.dom.window.close();}
+});
