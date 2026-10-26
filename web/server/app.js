@@ -1,16 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
-import { hashPassword, issueToken, verifyPassword, verifyToken } from './auth.js';
+import { hashPassword, issueToken, verifyPassword, authenticateToken } from './auth.js';
 import { interpretCommand } from './commands.js';
 import {assistantTurn, capabilities} from './assistant.js';
 import {conversationService} from './conversation-service.js';
 import { isPrivateTester, privateSessionSecret, privateTestConfig } from './private-test.js';
 import { privateApkService } from './private-apk.js';
+import { createRecovery } from './recovery.js';
 import { entitlementFor } from './entitlements.js';
 
 const json = (res, status, body) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
-const body = async req => { const chunks=[]; for await (const chunk of req) chunks.push(chunk); if (Buffer.concat(chunks).length > 1_000_000) throw new Error('Request too large'); return JSON.parse(Buffer.concat(chunks).toString() || '{}'); };
+const body = async req => { const chunks=[]; let size=0; for await (const chunk of req) { size+=chunk.length; if(size>1_000_000) throw Object.assign(new Error('request_too_large'),{status:413}); chunks.push(chunk); } return JSON.parse(Buffer.concat(chunks).toString() || '{}'); };
 const bearer = req => req.headers.authorization?.replace(/^Bearer\s+/i, '');
 const safeUser = (user,env) => ({ id:user.id, email:user.email, name:user.name, entitlement:entitlementFor(user,env) });
 export function createHandler({ store, env=process.env, publicDir, fetchImpl=fetch }) {
@@ -20,14 +21,17 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
   const configuredSecret = env.ICARUS_SESSION_SECRET || (!privateTest && env.NODE_ENV === 'test' ? 'test-secret-at-least-32-characters' : '');
   if (configuredSecret.length < 32) throw new Error('ICARUS_SESSION_SECRET must be at least 32 characters.');
   const secret = privateSessionSecret(configuredSecret, privateTest);
-  const authenticated = async req => { const id=verifyToken(bearer(req),secret); if(!id) return null; const user=(await store.read()).users.find(u=>u.id===id)||null; return privateTest&&!isPrivateTester(user,privateTest)?null:user; };
+  const authenticated = async req => { const user=await authenticateToken(bearer(req),secret,store); return privateTest&&!isPrivateTester(user,privateTest)?null:user; };
+  const recovery=createRecovery({store,env,privateTest,fetchImpl,authenticated,secret});
   return async (req,res) => {
     try {
       const url=new URL(req.url,'http://localhost'); const path=url.pathname;
+      if(path==='/forgot-password'||path==='/reset-password'){res.setHeader('cache-control','no-store');res.setHeader('referrer-policy','no-referrer');res.setHeader('x-robots-tag','noindex, nofollow');}
       if (path==='/api/health') return json(res,200,{ok:true,service:'icarus-api',base44:false,...(privateTest?{privateTest:true,...(/^[a-f0-9]{40}$/.test(env.RENDER_GIT_COMMIT||'')?{commitSha:env.RENDER_GIT_COMMIT}:{})}:{})});
-      if (path==='/api/auth/config'&&req.method==='GET') return json(res,200,{privateTest:Boolean(privateTest),registrationEnabled:!privateTest});
+      if (path==='/api/auth/config'&&req.method==='GET') return json(res,200,{privateTest:Boolean(privateTest),registrationEnabled:!privateTest,passwordRecoveryEnabled:recovery.enabled,passwordChangeEnabled:recovery.changeEnabled});
+      if(await recovery.handle(req,res,path,{json,body})) return;
       if (path==='/api/auth/register' && req.method==='POST') { if(privateTest)return json(res,403,{error:'registration_disabled'}); const input=await body(req); const email=String(input.email||'').trim().toLowerCase(); if(!email.includes('@')) return json(res,400,{error:'valid_email_required'}); let created; await store.update(data=>{ if(data.users.some(u=>u.email===email)) throw Object.assign(new Error('Account exists'),{status:409}); created={id:randomUUID(),email,name:String(input.name||'Michael').trim().slice(0,80),passwordHash:hashPassword(input.password),createdAt:new Date().toISOString()}; data.users.push(created); }); return json(res,201,{token:issueToken(created.id,secret),user:safeUser(created,env)}); }
-      if (path==='/api/auth/login' && req.method==='POST') { const input=await body(req); const user=(await store.read()).users.find(u=>u.email===String(input.email||'').trim().toLowerCase()); if(!user||(privateTest&&!isPrivateTester(user,privateTest))||!verifyPassword(input.password,user.passwordHash)) return json(res,401,{error:'invalid_credentials'}); return json(res,200,{token:issueToken(user.id,secret),user:safeUser(user,env)}); }
+      if (path==='/api/auth/login' && req.method==='POST') { const input=await body(req); const user=(await store.read()).users.find(u=>u.email===String(input.email||'').trim().toLowerCase()); if(!user||(privateTest&&!isPrivateTester(user,privateTest))||!verifyPassword(input.password,user.passwordHash)) return json(res,401,{error:'invalid_credentials'}); return json(res,200,{token:issueToken(user.id,secret,Date.now(),user.sessionVersion??0),user:safeUser(user,env)}); }
       if(path==='/api/private-apk'||path==='/api/private-apk/metadata'){
         if(!privateTest)return json(res,404,{error:'not_found'});
         if(path==='/api/private-apk'&&req.method==='POST'){
