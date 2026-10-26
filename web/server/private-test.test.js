@@ -62,7 +62,7 @@ test('private bootstrap is idempotent and refuses production data, foreign teste
 
 test('private health remains public, registration stays closed, and only provisioned credentials log in', () => fixture(async ({ store, request }) => {
   assert.deepEqual(await request('/health'), { status: 200, body: { ok: true, service: 'icarus-api', base44: false, privateTest: true } });
-  assert.deepEqual(await request('/auth/config'), { status: 200, body: { privateTest: true, registrationEnabled: false } });
+  assert.deepEqual(await request('/auth/config'), { status: 200, body: { privateTest: true, registrationEnabled: false, passwordRecoveryEnabled: false, passwordChangeEnabled: false } });
   const before = await store.read();
   for (const email of [env.ICARUS_TEST_EMAIL, 'outsider@example.test']) {
     assert.deepEqual(await request('/auth/register', { method: 'POST', data: { email, password } }), { status: 403, body: { error: 'registration_disabled' } });
@@ -109,7 +109,7 @@ test('rotating private credentials revokes previous tokens while account deletio
 });
 
 test('public mode retains account registration and login', () => fixture(async ({ request, store }) => {
-  assert.deepEqual(await request('/auth/config'), { status: 200, body: { privateTest: false, registrationEnabled: true } });
+  assert.deepEqual(await request('/auth/config'), { status: 200, body: { privateTest: false, registrationEnabled: true, passwordRecoveryEnabled: false, passwordChangeEnabled: false } });
   const account = await request('/auth/register', { method: 'POST', data: { email: 'public@example.test', password } });
   assert.equal(account.status, 201);
   assert.equal((await request('/auth/login', { method: 'POST', data: { email: 'public@example.test', password } })).status, 200);

@@ -1,5 +1,5 @@
 import {createHandler} from './app.js';
-import {verifyToken} from './auth.js';
+import {authenticateToken} from './auth.js';
 import {isPrivateTester,privateSessionSecret,privateTestConfig} from './private-test.js';
 import {createPlayBilling,billingBody} from './play-billing.js';
 import {premiumFeatures,requiredPremiumFeature,PREMIUM_FEATURE_LABELS} from './premium-features.js';
@@ -23,7 +23,7 @@ export function createBillingHandler({store,env=process.env,fetchImpl=fetch,...o
         res.writeHead(204);return res.end();
       }
       const token=String(req.headers.authorization||'').replace(/^Bearer\s+/i,'');
-      const id=verifyToken(token,secret),user=id&&(await store.read()).users.find(u=>u.id===id);
+      const user=await authenticateToken(token,secret,store);
       if(!user||privateTest&&!isPrivateTester(user,privateTest))return json(res,401,{error:'authentication_required'});
       if(feature){if(!(await billing.entitlement(user)).premium)return json(res,403,{error:'premium_required',feature});return original(req,res);}
       if(path==='/api/account'&&req.method==='DELETE') {

@@ -1,0 +1,8202 @@
+{
+  "source": "https://raw.githubusercontent.com/LibreOffice/dictionaries/8236765eb34de01083e0554c3ccafa6d8ff1ee18/el_GR/el_GR.dic",
+  "sourceSha256": "e5b9b9c2cf05bbc59e03fe302b462dae85968f822f4fc219a8ed2879d6943720",
+  "license": "MPL-1.1 (chosen from MPL-1.1/GPL-2.0/LGPL-2.1 tri-license)",
+  "transliteration": "Explicit accent-stripped Greeklish-style map; not ISO 843",
+  "selection": "v2: 5-8 letters, >=2 vowels, conservative exclusion fragments, one per first4 prefix, minimum Levenshtein distance2, SHA256 deterministic ordering",
+  "count": 2048,
+  "entries": [
+    {
+      "latin": "achani",
+      "greek": "αχανή"
+    },
+    {
+      "latin": "acheris",
+      "greek": "αχερής"
+    },
+    {
+      "latin": "achladas",
+      "greek": "αχλάδας"
+    },
+    {
+      "latin": "achmakes",
+      "greek": "αχμάκες"
+    },
+    {
+      "latin": "achnoyda",
+      "greek": "άχνουδα"
+    },
+    {
+      "latin": "achymoy",
+      "greek": "άχυμου"
+    },
+    {
+      "latin": "adeipnos",
+      "greek": "άδειπνος"
+    },
+    {
+      "latin": "adelfe",
+      "greek": "αδελφέ"
+    },
+    {
+      "latin": "adendri",
+      "greek": "άδενδρη"
+    },
+    {
+      "latin": "aderfoys",
+      "greek": "αδερφούς"
+    },
+    {
+      "latin": "adiafora",
+      "greek": "αδιάφορα"
+    },
+    {
+      "latin": "adilos",
+      "greek": "άδηλος"
+    },
+    {
+      "latin": "adoles",
+      "greek": "άδολες"
+    },
+    {
+      "latin": "adonita",
+      "greek": "αδόνητα"
+    },
+    {
+      "latin": "adota",
+      "greek": "άδοτα"
+    },
+    {
+      "latin": "adynamoy",
+      "greek": "αδύναμου"
+    },
+    {
+      "latin": "aerate",
+      "greek": "αεράτε"
+    },
+    {
+      "latin": "aergi",
+      "greek": "άεργη"
+    },
+    {
+      "latin": "aeristho",
+      "greek": "αερισθώ"
+    },
+    {
+      "latin": "afaireso",
+      "greek": "αφαιρέσω"
+    },
+    {
+      "latin": "afante",
+      "greek": "άφαντε"
+    },
+    {
+      "latin": "afasion",
+      "greek": "αφασιών"
+    },
+    {
+      "latin": "afeidoys",
+      "greek": "αφειδούς"
+    },
+    {
+      "latin": "afeli",
+      "greek": "αφελή"
+    },
+    {
+      "latin": "afetes",
+      "greek": "αφέτες"
+    },
+    {
+      "latin": "afieroso",
+      "greek": "αφιερώσω"
+    },
+    {
+      "latin": "afiltra",
+      "greek": "άφιλτρα"
+    },
+    {
+      "latin": "afinoyne",
+      "greek": "αφήνουνε"
+    },
+    {
+      "latin": "afonion",
+      "greek": "αφωνιών"
+    },
+    {
+      "latin": "aforias",
+      "greek": "αφορίας"
+    },
+    {
+      "latin": "afroys",
+      "greek": "αφρούς"
+    },
+    {
+      "latin": "afthonos",
+      "greek": "άφθονος"
+    },
+    {
+      "latin": "afylakte",
+      "greek": "αφύλακτε"
+    },
+    {
+      "latin": "aganoys",
+      "greek": "αγανούς"
+    },
+    {
+      "latin": "agapoysa",
+      "greek": "αγαπούσα"
+    },
+    {
+      "latin": "agarmpa",
+      "greek": "άγαρμπα"
+    },
+    {
+      "latin": "agchetai",
+      "greek": "άγχεται"
+    },
+    {
+      "latin": "agdartoi",
+      "greek": "άγδαρτοι"
+    },
+    {
+      "latin": "ageytoi",
+      "greek": "άγευτοι"
+    },
+    {
+      "latin": "aggeiako",
+      "greek": "αγγειακό"
+    },
+    {
+      "latin": "aggizate",
+      "greek": "αγγίζατε"
+    },
+    {
+      "latin": "agiasoyn",
+      "greek": "αγιάσουν"
+    },
+    {
+      "latin": "agkylona",
+      "greek": "αγκύλωνα"
+    },
+    {
+      "latin": "agnisete",
+      "greek": "αγνίσετε"
+    },
+    {
+      "latin": "agnomon",
+      "greek": "άγνωμων"
+    },
+    {
+      "latin": "agontan",
+      "greek": "άγονταν"
+    },
+    {
+      "latin": "agoraioi",
+      "greek": "αγοραίοι"
+    },
+    {
+      "latin": "agoysti",
+      "greek": "άγουστη"
+    },
+    {
+      "latin": "agriopoy",
+      "greek": "αγριωπού"
+    },
+    {
+      "latin": "agroiko",
+      "greek": "αγροίκο"
+    },
+    {
+      "latin": "agrypne",
+      "greek": "άγρυπνε"
+    },
+    {
+      "latin": "aichi",
+      "greek": "άηχη"
+    },
+    {
+      "latin": "aideisai",
+      "greek": "αιδείσαι"
+    },
+    {
+      "latin": "aidiaza",
+      "greek": "αηδίαζα"
+    },
+    {
+      "latin": "aigiale",
+      "greek": "αιγιαλέ"
+    },
+    {
+      "latin": "aimatos",
+      "greek": "αίματος"
+    },
+    {
+      "latin": "aimodies",
+      "greek": "αιμωδίες"
+    },
+    {
+      "latin": "ainoysan",
+      "greek": "αινούσαν"
+    },
+    {
+      "latin": "aireti",
+      "greek": "αιρετή"
+    },
+    {
+      "latin": "aischre",
+      "greek": "αισχρέ"
+    },
+    {
+      "latin": "aithrioi",
+      "greek": "αίθριοι"
+    },
+    {
+      "latin": "aitiodi",
+      "greek": "αιτιώδη"
+    },
+    {
+      "latin": "akadimia",
+      "greek": "ακαδημία"
+    },
+    {
+      "latin": "akakes",
+      "greek": "άκακες"
+    },
+    {
+      "latin": "akamaton",
+      "greek": "ακάματων"
+    },
+    {
+      "latin": "akarpe",
+      "greek": "άκαρπε"
+    },
+    {
+      "latin": "akefali",
+      "greek": "ακέφαλη"
+    },
+    {
+      "latin": "akeraioy",
+      "greek": "ακέραιου"
+    },
+    {
+      "latin": "akidia",
+      "greek": "ακηδία"
+    },
+    {
+      "latin": "akiratis",
+      "greek": "ακήρατης"
+    },
+    {
+      "latin": "aklirias",
+      "greek": "ακληρίας"
+    },
+    {
+      "latin": "aklothoy",
+      "greek": "άκλωθου"
+    },
+    {
+      "latin": "akoiloy",
+      "greek": "άκοιλου"
+    },
+    {
+      "latin": "akomisti",
+      "greek": "ακόμιστη"
+    },
+    {
+      "latin": "akonises",
+      "greek": "ακόνισες"
+    },
+    {
+      "latin": "akoresto",
+      "greek": "ακόρεστο"
+    },
+    {
+      "latin": "akosmon",
+      "greek": "άκοσμων"
+    },
+    {
+      "latin": "akoygan",
+      "greek": "άκουγαν"
+    },
+    {
+      "latin": "akratos",
+      "greek": "άκρατος"
+    },
+    {
+      "latin": "akriveia",
+      "greek": "ακρίβειά"
+    },
+    {
+      "latin": "akroylas",
+      "greek": "ακρούλας"
+    },
+    {
+      "latin": "aktiniko",
+      "greek": "ακτινικό"
+    },
+    {
+      "latin": "aktypite",
+      "greek": "ακτύπητε"
+    },
+    {
+      "latin": "akymanta",
+      "greek": "ακύμαντα"
+    },
+    {
+      "latin": "akyroto",
+      "greek": "ακύρωτο"
+    },
+    {
+      "latin": "alalitoi",
+      "greek": "αλάλητοι"
+    },
+    {
+      "latin": "alargeyo",
+      "greek": "αλαργεύω"
+    },
+    {
+      "latin": "alaspote",
+      "greek": "αλάσπωτε"
+    },
+    {
+      "latin": "alatodes",
+      "greek": "αλατώδες"
+    },
+    {
+      "latin": "alavotoy",
+      "greek": "αλάβωτου"
+    },
+    {
+      "latin": "alegkro",
+      "greek": "αλέγκρο"
+    },
+    {
+      "latin": "aleiveis",
+      "greek": "αλείβεις"
+    },
+    {
+      "latin": "alesan",
+      "greek": "άλεσαν"
+    },
+    {
+      "latin": "alethan",
+      "greek": "άλεθαν"
+    },
+    {
+      "latin": "alfadies",
+      "greek": "αλφαδιές"
+    },
+    {
+      "latin": "algerino",
+      "greek": "αλγερινό"
+    },
+    {
+      "latin": "aliemeni",
+      "greek": "αλιεμένη"
+    },
+    {
+      "latin": "aligdota",
+      "greek": "αλίγδωτα"
+    },
+    {
+      "latin": "alimenis",
+      "greek": "αλίμενης"
+    },
+    {
+      "latin": "aliteia",
+      "greek": "αλητεία"
+    },
+    {
+      "latin": "alkalio",
+      "greek": "αλκάλιο"
+    },
+    {
+      "latin": "allazome",
+      "greek": "αλλάζομε"
+    },
+    {
+      "latin": "allois",
+      "greek": "άλλοις"
+    },
+    {
+      "latin": "almyriza",
+      "greek": "αλμύριζα"
+    },
+    {
+      "latin": "aloifi",
+      "greek": "αλοιφή"
+    },
+    {
+      "latin": "alonisme",
+      "greek": "αλωνισμέ"
+    },
+    {
+      "latin": "alosimi",
+      "greek": "αλώσιμη"
+    },
+    {
+      "latin": "aloystoi",
+      "greek": "άλουστοι"
+    },
+    {
+      "latin": "altikoi",
+      "greek": "αλτικοί"
+    },
+    {
+      "latin": "alypion",
+      "greek": "αλυπιών"
+    },
+    {
+      "latin": "alysone",
+      "greek": "αλύσωνε"
+    },
+    {
+      "latin": "alytroto",
+      "greek": "αλύτρωτο"
+    },
+    {
+      "latin": "amades",
+      "greek": "αμάδες"
+    },
+    {
+      "latin": "amageyti",
+      "greek": "αμάγευτη"
+    },
+    {
+      "latin": "amaxades",
+      "greek": "αμαξάδες"
+    },
+    {
+      "latin": "ameiota",
+      "greek": "αμείωτα"
+    },
+    {
+      "latin": "amelisei",
+      "greek": "αμελήσει"
+    },
+    {
+      "latin": "ameses",
+      "greek": "άμεσες"
+    },
+    {
+      "latin": "amfilogo",
+      "greek": "αμφίλογο"
+    },
+    {
+      "latin": "amilita",
+      "greek": "αμίλητα"
+    },
+    {
+      "latin": "amimiton",
+      "greek": "αμίμητων"
+    },
+    {
+      "latin": "amochthi",
+      "greek": "άμοχθη"
+    },
+    {
+      "latin": "amolage",
+      "greek": "αμόλαγε"
+    },
+    {
+      "latin": "ampakoi",
+      "greek": "άμπακοι"
+    },
+    {
+      "latin": "amvlosis",
+      "greek": "άμβλωσης"
+    },
+    {
+      "latin": "amylodon",
+      "greek": "αμυλωδών"
+    },
+    {
+      "latin": "amyneste",
+      "greek": "αμύνεστε"
+    },
+    {
+      "latin": "anadenes",
+      "greek": "ανάδενες"
+    },
+    {
+      "latin": "anaforon",
+      "greek": "αναφορών"
+    },
+    {
+      "latin": "anagrafa",
+      "greek": "ανάγραφα"
+    },
+    {
+      "latin": "anaireis",
+      "greek": "αναιρείς"
+    },
+    {
+      "latin": "anaklas",
+      "greek": "ανακλάς"
+    },
+    {
+      "latin": "analonan",
+      "greek": "ανάλωναν"
+    },
+    {
+      "latin": "anamma",
+      "greek": "άναμμα"
+    },
+    {
+      "latin": "anapidas",
+      "greek": "αναπηδάς"
+    },
+    {
+      "latin": "anarkota",
+      "greek": "ανάρκωτα"
+    },
+    {
+      "latin": "anaskiti",
+      "greek": "ανάσκητη"
+    },
+    {
+      "latin": "anatomes",
+      "greek": "ανατομές"
+    },
+    {
+      "latin": "anavasis",
+      "greek": "ανάβασης"
+    },
+    {
+      "latin": "anaylote",
+      "greek": "αναύλωτε"
+    },
+    {
+      "latin": "andiroy",
+      "greek": "ανδήρου"
+    },
+    {
+      "latin": "androse",
+      "greek": "άνδρωσε"
+    },
+    {
+      "latin": "anedya",
+      "greek": "ανέδυα"
+    },
+    {
+      "latin": "anefeloy",
+      "greek": "ανέφελου"
+    },
+    {
+      "latin": "anegnomi",
+      "greek": "ανέγνωμη"
+    },
+    {
+      "latin": "anekypte",
+      "greek": "ανέκυπτε"
+    },
+    {
+      "latin": "anelkye",
+      "greek": "ανέλκυε"
+    },
+    {
+      "latin": "anenipsa",
+      "greek": "ανένηψα"
+    },
+    {
+      "latin": "anerasto",
+      "greek": "ανέραστο"
+    },
+    {
+      "latin": "anesti",
+      "greek": "ανέστη"
+    },
+    {
+      "latin": "anevoyne",
+      "greek": "ανέβουνε"
+    },
+    {
+      "latin": "aneyroy",
+      "greek": "άνευρου"
+    },
+    {
+      "latin": "anidryse",
+      "greek": "ανίδρυσε"
+    },
+    {
+      "latin": "anifores",
+      "greek": "ανηφόρες"
+    },
+    {
+      "latin": "anikon",
+      "greek": "ανήκον"
+    },
+    {
+      "latin": "aniptoy",
+      "greek": "άνιπτου"
+    },
+    {
+      "latin": "anithiko",
+      "greek": "ανήθικο"
+    },
+    {
+      "latin": "anives",
+      "greek": "άνηβες"
+    },
+    {
+      "latin": "anoites",
+      "greek": "ανόητες"
+    },
+    {
+      "latin": "anomvroy",
+      "greek": "άνομβρου"
+    },
+    {
+      "latin": "anopte",
+      "greek": "άνοπτε"
+    },
+    {
+      "latin": "anosie",
+      "greek": "ανόσιε"
+    },
+    {
+      "latin": "anoysioi",
+      "greek": "ανούσιοι"
+    },
+    {
+      "latin": "antalis",
+      "greek": "ανταλής"
+    },
+    {
+      "latin": "antetion",
+      "greek": "αντετιών"
+    },
+    {
+      "latin": "anthire",
+      "greek": "ανθηρέ"
+    },
+    {
+      "latin": "antilalo",
+      "greek": "αντίλαλο"
+    },
+    {
+      "latin": "antrikos",
+      "greek": "αντρικός"
+    },
+    {
+      "latin": "antytes",
+      "greek": "άντυτες"
+    },
+    {
+      "latin": "anymnei",
+      "greek": "ανυμνεί"
+    },
+    {
+      "latin": "anypopti",
+      "greek": "ανύποπτη"
+    },
+    {
+      "latin": "aoros",
+      "greek": "άωρος"
+    },
+    {
+      "latin": "aortira",
+      "greek": "αορτήρα"
+    },
+    {
+      "latin": "apagogi",
+      "greek": "απαγωγή"
+    },
+    {
+      "latin": "apapa",
+      "greek": "άπαπα"
+    },
+    {
+      "latin": "apartiso",
+      "greek": "απαρτίσω"
+    },
+    {
+      "latin": "apases",
+      "greek": "άπασες"
+    },
+    {
+      "latin": "apatitos",
+      "greek": "απάτητος"
+    },
+    {
+      "latin": "apedioka",
+      "greek": "απεδίωκα"
+    },
+    {
+      "latin": "apeftha",
+      "greek": "άπεφθα"
+    },
+    {
+      "latin": "apeithes",
+      "greek": "απειθές"
+    },
+    {
+      "latin": "apeltho",
+      "greek": "απέλθω"
+    },
+    {
+      "latin": "apeptoi",
+      "greek": "άπεπτοι"
+    },
+    {
+      "latin": "apergoi",
+      "greek": "απεργοί"
+    },
+    {
+      "latin": "apespasa",
+      "greek": "απέσπασα"
+    },
+    {
+      "latin": "apetale",
+      "greek": "απέταλε"
+    },
+    {
+      "latin": "apichtoy",
+      "greek": "άπηχτου"
+    },
+    {
+      "latin": "apiko",
+      "greek": "απίκο"
+    },
+    {
+      "latin": "apinema",
+      "greek": "απήνεμα"
+    },
+    {
+      "latin": "apithoma",
+      "greek": "απίθωμα"
+    },
+    {
+      "latin": "aplasti",
+      "greek": "άπλαστη"
+    },
+    {
+      "latin": "aplomata",
+      "greek": "απλώματα"
+    },
+    {
+      "latin": "aplytos",
+      "greek": "άπλυτος"
+    },
+    {
+      "latin": "apochala",
+      "greek": "αποχάλα"
+    },
+    {
+      "latin": "apodekte",
+      "greek": "αποδεκτέ"
+    },
+    {
+      "latin": "apofanen",
+      "greek": "αποφανέν"
+    },
+    {
+      "latin": "apogonos",
+      "greek": "απόγονος"
+    },
+    {
+      "latin": "apoike",
+      "greek": "άποικε"
+    },
+    {
+      "latin": "apoktas",
+      "greek": "αποκτάς"
+    },
+    {
+      "latin": "apolemon",
+      "greek": "απόλεμων"
+    },
+    {
+      "latin": "apopare",
+      "greek": "αποπάρε"
+    },
+    {
+      "latin": "aporrite",
+      "greek": "απόρρητε"
+    },
+    {
+      "latin": "apostame",
+      "greek": "αποσταμέ"
+    },
+    {
+      "latin": "apotima",
+      "greek": "αποτίμα"
+    },
+    {
+      "latin": "apragoy",
+      "greek": "άπραγου"
+    },
+    {
+      "latin": "aprodoti",
+      "greek": "απρόδοτη"
+    },
+    {
+      "latin": "apsas",
+      "greek": "άψας"
+    },
+    {
+      "latin": "apsidone",
+      "greek": "αψίδωνε"
+    },
+    {
+      "latin": "apsogi",
+      "greek": "άψογη"
+    },
+    {
+      "latin": "apsycha",
+      "greek": "άψυχα"
+    },
+    {
+      "latin": "aptosoyn",
+      "greek": "απτόσουν"
+    },
+    {
+      "latin": "apyron",
+      "greek": "άπυρων"
+    },
+    {
+      "latin": "arachle",
+      "greek": "άραχλε"
+    },
+    {
+      "latin": "araiose",
+      "greek": "αραίωσε"
+    },
+    {
+      "latin": "arampesk",
+      "greek": "αραμπέσκ"
+    },
+    {
+      "latin": "arathyme",
+      "greek": "αράθυμε"
+    },
+    {
+      "latin": "aravida",
+      "greek": "αραβίδα"
+    },
+    {
+      "latin": "archeis",
+      "greek": "άρχεις"
+    },
+    {
+      "latin": "ardepsoy",
+      "greek": "αρδέψου"
+    },
+    {
+      "latin": "arestoys",
+      "greek": "αρεστούς"
+    },
+    {
+      "latin": "argazete",
+      "greek": "αργάζετε"
+    },
+    {
+      "latin": "argitiko",
+      "greek": "αργίτικο"
+    },
+    {
+      "latin": "argyra",
+      "greek": "αργυρά"
+    },
+    {
+      "latin": "arigotoi",
+      "greek": "αρίγωτοι"
+    },
+    {
+      "latin": "arivares",
+      "greek": "αρίβαρες"
+    },
+    {
+      "latin": "arkadika",
+      "greek": "αρκαδικά"
+    },
+    {
+      "latin": "arkesane",
+      "greek": "αρκέσανε"
+    },
+    {
+      "latin": "arloympa",
+      "greek": "αρλούμπα"
+    },
+    {
+      "latin": "armathes",
+      "greek": "αρμάθες"
+    },
+    {
+      "latin": "armegete",
+      "greek": "αρμέγετε"
+    },
+    {
+      "latin": "armoges",
+      "greek": "αρμογές"
+    },
+    {
+      "latin": "arnisio",
+      "greek": "αρνίσιο"
+    },
+    {
+      "latin": "arogo",
+      "greek": "αρωγό"
+    },
+    {
+      "latin": "arpaxte",
+      "greek": "αρπάξτε"
+    },
+    {
+      "latin": "arpiso",
+      "greek": "αρπίσω"
+    },
+    {
+      "latin": "arravona",
+      "greek": "αρραβώνα"
+    },
+    {
+      "latin": "arrikta",
+      "greek": "άρρηκτα"
+    },
+    {
+      "latin": "artaine",
+      "greek": "άρταινε"
+    },
+    {
+      "latin": "arthoyn",
+      "greek": "αρθούν"
+    },
+    {
+      "latin": "artopoie",
+      "greek": "αρτοποιέ"
+    },
+    {
+      "latin": "artyseis",
+      "greek": "αρτύσεις"
+    },
+    {
+      "latin": "aschetis",
+      "greek": "άσχετης"
+    },
+    {
+      "latin": "aseista",
+      "greek": "άσειστα"
+    },
+    {
+      "latin": "asfachto",
+      "greek": "άσφαχτο"
+    },
+    {
+      "latin": "asfyktio",
+      "greek": "ασφυκτιώ"
+    },
+    {
+      "latin": "asianoi",
+      "greek": "ασιανοί"
+    },
+    {
+      "latin": "asikotoi",
+      "greek": "ασήκωτοι"
+    },
+    {
+      "latin": "asimosa",
+      "greek": "ασήμωσα"
+    },
+    {
+      "latin": "asiptoi",
+      "greek": "άσηπτοι"
+    },
+    {
+      "latin": "asitoys",
+      "greek": "άσιτους"
+    },
+    {
+      "latin": "askafi",
+      "greek": "άσκαφη"
+    },
+    {
+      "latin": "askimoi",
+      "greek": "άσκημοι"
+    },
+    {
+      "latin": "askopis",
+      "greek": "άσκοπης"
+    },
+    {
+      "latin": "asmichti",
+      "greek": "άσμιχτη"
+    },
+    {
+      "latin": "asotes",
+      "greek": "άσωτες"
+    },
+    {
+      "latin": "asproys",
+      "greek": "άσπρους"
+    },
+    {
+      "latin": "astates",
+      "greek": "άστατες"
+    },
+    {
+      "latin": "astega",
+      "greek": "άστεγα"
+    },
+    {
+      "latin": "astorge",
+      "greek": "άστοργε"
+    },
+    {
+      "latin": "astrota",
+      "greek": "άστρωτα"
+    },
+    {
+      "latin": "astylote",
+      "greek": "αστύλωτε"
+    },
+    {
+      "latin": "asvolere",
+      "greek": "ασβολερέ"
+    },
+    {
+      "latin": "asydotis",
+      "greek": "ασύδοτης"
+    },
+    {
+      "latin": "asynepos",
+      "greek": "ασυνεπώς"
+    },
+    {
+      "latin": "atafes",
+      "greek": "άταφες"
+    },
+    {
+      "latin": "ataiste",
+      "greek": "ατάιστε"
+    },
+    {
+      "latin": "ataxika",
+      "greek": "αταξικά"
+    },
+    {
+      "latin": "atechno",
+      "greek": "άτεχνο"
+    },
+    {
+      "latin": "ateycho",
+      "greek": "άτευχο"
+    },
+    {
+      "latin": "atherma",
+      "greek": "άθερμα"
+    },
+    {
+      "latin": "athikte",
+      "greek": "άθικτε"
+    },
+    {
+      "latin": "athlitoy",
+      "greek": "αθλητού"
+    },
+    {
+      "latin": "athoosis",
+      "greek": "αθώωσής"
+    },
+    {
+      "latin": "athronon",
+      "greek": "άθρονων"
+    },
+    {
+      "latin": "atimaze",
+      "greek": "ατίμαζε"
+    },
+    {
+      "latin": "atithasi",
+      "greek": "ατίθαση"
+    },
+    {
+      "latin": "atmitoi",
+      "greek": "άτμητοι"
+    },
+    {
+      "latin": "atmodes",
+      "greek": "ατμώδες"
+    },
+    {
+      "latin": "atolmes",
+      "greek": "άτολμες"
+    },
+    {
+      "latin": "atomiki",
+      "greek": "ατομική"
+    },
+    {
+      "latin": "atonia",
+      "greek": "ατονία"
+    },
+    {
+      "latin": "atrisias",
+      "greek": "ατρησίας"
+    },
+    {
+      "latin": "atromiti",
+      "greek": "ατρόμητη"
+    },
+    {
+      "latin": "atsaline",
+      "greek": "ατσάλινε"
+    },
+    {
+      "latin": "atychoy",
+      "greek": "άτυχου"
+    },
+    {
+      "latin": "atypis",
+      "greek": "άτυπης"
+    },
+    {
+      "latin": "avalton",
+      "greek": "άβαλτων"
+    },
+    {
+      "latin": "avares",
+      "greek": "αβαρές"
+    },
+    {
+      "latin": "avasimos",
+      "greek": "αβάσιμος"
+    },
+    {
+      "latin": "averte",
+      "greek": "αβέρτε"
+    },
+    {
+      "latin": "avgaltes",
+      "greek": "άβγαλτες"
+    },
+    {
+      "latin": "avoylota",
+      "greek": "αβούλωτα"
+    },
+    {
+      "latin": "avrechta",
+      "greek": "άβρεχτα"
+    },
+    {
+      "latin": "axanto",
+      "greek": "άξαντο"
+    },
+    {
+      "latin": "axestis",
+      "greek": "άξεστης"
+    },
+    {
+      "latin": "axiothei",
+      "greek": "αξιωθεί"
+    },
+    {
+      "latin": "axises",
+      "greek": "άξισες"
+    },
+    {
+      "latin": "axystoi",
+      "greek": "άξυστοι"
+    },
+    {
+      "latin": "aylakoti",
+      "greek": "αυλακωτή"
+    },
+    {
+      "latin": "ayliti",
+      "greek": "αυλητή"
+    },
+    {
+      "latin": "aystire",
+      "greek": "αυστηρέ"
+    },
+    {
+      "latin": "aytodili",
+      "greek": "αυτόδηλη"
+    },
+    {
+      "latin": "azilo",
+      "greek": "άζηλο"
+    },
+    {
+      "latin": "azoikoi",
+      "greek": "αζωικοί"
+    },
+    {
+      "latin": "azyga",
+      "greek": "άζυγα"
+    },
+    {
+      "latin": "azymoys",
+      "greek": "άζυμους"
+    },
+    {
+      "latin": "chaftoyn",
+      "greek": "χάφτουν"
+    },
+    {
+      "latin": "chaitis",
+      "greek": "χαίτης"
+    },
+    {
+      "latin": "chalane",
+      "greek": "χαλάνε"
+    },
+    {
+      "latin": "chanoys",
+      "greek": "χάνους"
+    },
+    {
+      "latin": "chapson",
+      "greek": "χαψών"
+    },
+    {
+      "latin": "charopa",
+      "greek": "χαρωπά"
+    },
+    {
+      "latin": "chaske",
+      "greek": "χάσκε"
+    },
+    {
+      "latin": "chave",
+      "greek": "χάβε"
+    },
+    {
+      "latin": "chazeyto",
+      "greek": "χαζευτώ"
+    },
+    {
+      "latin": "cheilia",
+      "greek": "χείλια"
+    },
+    {
+      "latin": "cheriko",
+      "greek": "χερικό"
+    },
+    {
+      "latin": "chiazoy",
+      "greek": "χιάζου"
+    },
+    {
+      "latin": "chimizes",
+      "greek": "χίμιζες"
+    },
+    {
+      "latin": "chionise",
+      "greek": "χιόνισε"
+    },
+    {
+      "latin": "chiron",
+      "greek": "χήρων"
+    },
+    {
+      "latin": "chois",
+      "greek": "χοής"
+    },
+    {
+      "latin": "cholaino",
+      "greek": "χωλαίνω"
+    },
+    {
+      "latin": "chontro",
+      "greek": "χοντρό"
+    },
+    {
+      "latin": "chordisa",
+      "greek": "χόρδισα"
+    },
+    {
+      "latin": "chosan",
+      "greek": "χώσαν"
+    },
+    {
+      "latin": "chrisis",
+      "greek": "χρήσης"
+    },
+    {
+      "latin": "chronos",
+      "greek": "χρόνος"
+    },
+    {
+      "latin": "chrysoys",
+      "greek": "χρυσούς"
+    },
+    {
+      "latin": "chteniza",
+      "greek": "χτένιζα"
+    },
+    {
+      "latin": "chtistis",
+      "greek": "χτίστης"
+    },
+    {
+      "latin": "chtypisa",
+      "greek": "χτύπησα"
+    },
+    {
+      "latin": "chydaio",
+      "greek": "χυδαίο"
+    },
+    {
+      "latin": "chylo",
+      "greek": "χυλό"
+    },
+    {
+      "latin": "chymenoi",
+      "greek": "χυμένοι"
+    },
+    {
+      "latin": "dafnones",
+      "greek": "δαφνώνες"
+    },
+    {
+      "latin": "dagkoti",
+      "greek": "δαγκωτή"
+    },
+    {
+      "latin": "dakrysa",
+      "greek": "δάκρυσα"
+    },
+    {
+      "latin": "daktylio",
+      "greek": "δακτύλιο"
+    },
+    {
+      "latin": "damasko",
+      "greek": "δαμάσκο"
+    },
+    {
+      "latin": "daneikon",
+      "greek": "δανεικών"
+    },
+    {
+      "latin": "dapana",
+      "greek": "δαπάνα"
+    },
+    {
+      "latin": "darmenes",
+      "greek": "δαρμένες"
+    },
+    {
+      "latin": "darta",
+      "greek": "δαρτά"
+    },
+    {
+      "latin": "dasaki",
+      "greek": "δασάκι"
+    },
+    {
+      "latin": "dasika",
+      "greek": "δασικά"
+    },
+    {
+      "latin": "dasmo",
+      "greek": "δασμό"
+    },
+    {
+      "latin": "dasopono",
+      "greek": "δασοπόνο"
+    },
+    {
+      "latin": "deame",
+      "greek": "δέαμε"
+    },
+    {
+      "latin": "deiknye",
+      "greek": "δείκνυε"
+    },
+    {
+      "latin": "deipnon",
+      "greek": "δείπνον"
+    },
+    {
+      "latin": "deixasas",
+      "greek": "δείξασας"
+    },
+    {
+      "latin": "dekaneon",
+      "greek": "δεκανέων"
+    },
+    {
+      "latin": "delfinoi",
+      "greek": "δελφίνοι"
+    },
+    {
+      "latin": "dematioy",
+      "greek": "δεματίου"
+    },
+    {
+      "latin": "demeni",
+      "greek": "δεμένη"
+    },
+    {
+      "latin": "denoyn",
+      "greek": "δένουν"
+    },
+    {
+      "latin": "depseis",
+      "greek": "δέψεις"
+    },
+    {
+      "latin": "deratos",
+      "greek": "δέρατος"
+    },
+    {
+      "latin": "desmiki",
+      "greek": "δεσμική"
+    },
+    {
+      "latin": "dethoyne",
+      "greek": "δεθούνε"
+    },
+    {
+      "latin": "detikos",
+      "greek": "δετικός"
+    },
+    {
+      "latin": "deyteron",
+      "greek": "δευτέρων"
+    },
+    {
+      "latin": "diacheo",
+      "greek": "διαχέω"
+    },
+    {
+      "latin": "diadosia",
+      "greek": "διαδοσία"
+    },
+    {
+      "latin": "diafygon",
+      "greek": "διαφυγόν"
+    },
+    {
+      "latin": "diaitis",
+      "greek": "διαίτης"
+    },
+    {
+      "latin": "dialogi",
+      "greek": "διαλογή"
+    },
+    {
+      "latin": "dianyete",
+      "greek": "διανύετε"
+    },
+    {
+      "latin": "diaolize",
+      "greek": "διαόλιζε"
+    },
+    {
+      "latin": "diaporo",
+      "greek": "διαπορώ"
+    },
+    {
+      "latin": "diarki",
+      "greek": "διαρκή"
+    },
+    {
+      "latin": "diasosas",
+      "greek": "διασώσας"
+    },
+    {
+      "latin": "diataze",
+      "greek": "διάταζε"
+    },
+    {
+      "latin": "diavoli",
+      "greek": "διαβολή"
+    },
+    {
+      "latin": "dichton",
+      "greek": "διχτών"
+    },
+    {
+      "latin": "didaxei",
+      "greek": "διδάξει"
+    },
+    {
+      "latin": "didosoyn",
+      "greek": "διδόσουν"
+    },
+    {
+      "latin": "dieisdyo",
+      "greek": "διεισδύω"
+    },
+    {
+      "latin": "diekaige",
+      "greek": "διέκαιγε"
+    },
+    {
+      "latin": "dielathe",
+      "greek": "διέλαθε"
+    },
+    {
+      "latin": "diepoyne",
+      "greek": "διέπουνε"
+    },
+    {
+      "latin": "dierragi",
+      "greek": "διερράγη"
+    },
+    {
+      "latin": "diesoze",
+      "greek": "διέσωζε"
+    },
+    {
+      "latin": "dievala",
+      "greek": "διέβαλα"
+    },
+    {
+      "latin": "diexigan",
+      "greek": "διεξήγαν"
+    },
+    {
+      "latin": "diforoy",
+      "greek": "δίφορου"
+    },
+    {
+      "latin": "difroi",
+      "greek": "δίφροι"
+    },
+    {
+      "latin": "difyes",
+      "greek": "διφυές"
+    },
+    {
+      "latin": "diglyfe",
+      "greek": "δίγλυφε"
+    },
+    {
+      "latin": "diinekes",
+      "greek": "διηνεκές"
+    },
+    {
+      "latin": "diithisa",
+      "greek": "διήθησα"
+    },
+    {
+      "latin": "dikaston",
+      "greek": "δικαστών"
+    },
+    {
+      "latin": "diklides",
+      "greek": "δικλίδες"
+    },
+    {
+      "latin": "dikos",
+      "greek": "δικός"
+    },
+    {
+      "latin": "diktyona",
+      "greek": "δικτύωνα"
+    },
+    {
+      "latin": "dilovon",
+      "greek": "δίλοβων"
+    },
+    {
+      "latin": "dimereis",
+      "greek": "διμερείς"
+    },
+    {
+      "latin": "dimigoro",
+      "greek": "δημηγορώ"
+    },
+    {
+      "latin": "dimoi",
+      "greek": "δήμοι"
+    },
+    {
+      "latin": "diokesai",
+      "greek": "διώκεσαι"
+    },
+    {
+      "latin": "dioras",
+      "greek": "διοράς"
+    },
+    {
+      "latin": "dioxte",
+      "greek": "διώξτε"
+    },
+    {
+      "latin": "dioyrisi",
+      "greek": "διούρηση"
+    },
+    {
+      "latin": "diplosas",
+      "greek": "διπλώσας"
+    },
+    {
+      "latin": "dipolike",
+      "greek": "διπολικέ"
+    },
+    {
+      "latin": "dipsaga",
+      "greek": "δίψαγα"
+    },
+    {
+      "latin": "dipteros",
+      "greek": "δίπτερος"
+    },
+    {
+      "latin": "diskion",
+      "greek": "δισκίον"
+    },
+    {
+      "latin": "disticho",
+      "greek": "δίστιχο"
+    },
+    {
+      "latin": "ditaxio",
+      "greek": "διτάξιο"
+    },
+    {
+      "latin": "diterma",
+      "greek": "δίτερμα"
+    },
+    {
+      "latin": "dithyri",
+      "greek": "δίθυρη"
+    },
+    {
+      "latin": "divarioy",
+      "greek": "διβαριού"
+    },
+    {
+      "latin": "divoyles",
+      "greek": "δίβουλες"
+    },
+    {
+      "latin": "dokaria",
+      "greek": "δοκάρια"
+    },
+    {
+      "latin": "dolios",
+      "greek": "δολίως"
+    },
+    {
+      "latin": "dolone",
+      "greek": "δόλωνε"
+    },
+    {
+      "latin": "domoys",
+      "greek": "δόμους"
+    },
+    {
+      "latin": "doreite",
+      "greek": "δωρείτε"
+    },
+    {
+      "latin": "dorike",
+      "greek": "δωρικέ"
+    },
+    {
+      "latin": "dotiko",
+      "greek": "δοτικό"
+    },
+    {
+      "latin": "dotrias",
+      "greek": "δότριας"
+    },
+    {
+      "latin": "doxaseis",
+      "greek": "δοξάσεις"
+    },
+    {
+      "latin": "doxon",
+      "greek": "δόξων"
+    },
+    {
+      "latin": "doykesas",
+      "greek": "δουκέσας"
+    },
+    {
+      "latin": "doylikoi",
+      "greek": "δουλικοί"
+    },
+    {
+      "latin": "drachto",
+      "greek": "δραχτώ"
+    },
+    {
+      "latin": "drakes",
+      "greek": "δράκες"
+    },
+    {
+      "latin": "drasei",
+      "greek": "δράσει"
+    },
+    {
+      "latin": "drattome",
+      "greek": "δράττομε"
+    },
+    {
+      "latin": "drepsame",
+      "greek": "δρέψαμε"
+    },
+    {
+      "latin": "drimias",
+      "greek": "δριμιάς"
+    },
+    {
+      "latin": "drosia",
+      "greek": "δροσιά"
+    },
+    {
+      "latin": "droyn",
+      "greek": "δρουν"
+    },
+    {
+      "latin": "drymoy",
+      "greek": "δρυμού"
+    },
+    {
+      "latin": "dyikoys",
+      "greek": "δυικούς"
+    },
+    {
+      "latin": "dyistis",
+      "greek": "δυϊστής"
+    },
+    {
+      "latin": "dynatoi",
+      "greek": "δυνατοί"
+    },
+    {
+      "latin": "dynontan",
+      "greek": "δύνονταν"
+    },
+    {
+      "latin": "dyosaste",
+      "greek": "δυόσαστε"
+    },
+    {
+      "latin": "dyscheri",
+      "greek": "δυσχερή"
+    },
+    {
+      "latin": "dyseidis",
+      "greek": "δυσειδής"
+    },
+    {
+      "latin": "dysmikoy",
+      "greek": "δυσμικού"
+    },
+    {
+      "latin": "dysnoa",
+      "greek": "δύσνοα"
+    },
+    {
+      "latin": "dysodias",
+      "greek": "δυσωδίας"
+    },
+    {
+      "latin": "dystokis",
+      "greek": "δύστοκης"
+    },
+    {
+      "latin": "dysvasia",
+      "greek": "δυσβασία"
+    },
+    {
+      "latin": "eaytoi",
+      "greek": "εαυτοί"
+    },
+    {
+      "latin": "echaskes",
+      "greek": "έχασκες"
+    },
+    {
+      "latin": "echoses",
+      "greek": "έχωσες"
+    },
+    {
+      "latin": "echyne",
+      "greek": "έχυνε"
+    },
+    {
+      "latin": "edafiaio",
+      "greek": "εδαφιαίο"
+    },
+    {
+      "latin": "edoses",
+      "greek": "έδωσες"
+    },
+    {
+      "latin": "edreyste",
+      "greek": "εδρεύστε"
+    },
+    {
+      "latin": "efapax",
+      "greek": "εφάπαξ"
+    },
+    {
+      "latin": "efedriko",
+      "greek": "εφεδρικό"
+    },
+    {
+      "latin": "efera",
+      "greek": "έφερα"
+    },
+    {
+      "latin": "efesimoi",
+      "greek": "εφέσιμοι"
+    },
+    {
+      "latin": "efeyreis",
+      "greek": "εφεύρεις"
+    },
+    {
+      "latin": "eforoys",
+      "greek": "έφορους"
+    },
+    {
+      "latin": "eftazyma",
+      "greek": "εφτάζυμα"
+    },
+    {
+      "latin": "efthase",
+      "greek": "έφθασε"
+    },
+    {
+      "latin": "efyges",
+      "greek": "έφυγες"
+    },
+    {
+      "latin": "egcheeis",
+      "greek": "εγχέεις"
+    },
+    {
+      "latin": "egderna",
+      "greek": "έγδερνα"
+    },
+    {
+      "latin": "egersis",
+      "greek": "έγερσης"
+    },
+    {
+      "latin": "eggeioy",
+      "greek": "έγγειου"
+    },
+    {
+      "latin": "eggisame",
+      "greek": "εγγίσαμε"
+    },
+    {
+      "latin": "eggys",
+      "greek": "εγγύς"
+    },
+    {
+      "latin": "egkardio",
+      "greek": "εγκάρδιο"
+    },
+    {
+      "latin": "egklinoy",
+      "greek": "εγκλίνου"
+    },
+    {
+      "latin": "egkrine",
+      "greek": "έγκρινε"
+    },
+    {
+      "latin": "egleifes",
+      "greek": "έγλειφες"
+    },
+    {
+      "latin": "eglypses",
+      "greek": "έγλυψες"
+    },
+    {
+      "latin": "egroyxes",
+      "greek": "έγρουξες"
+    },
+    {
+      "latin": "eiditika",
+      "greek": "ειδητικά"
+    },
+    {
+      "latin": "eikaze",
+      "greek": "είκαζε"
+    },
+    {
+      "latin": "eikonize",
+      "greek": "εικόνιζε"
+    },
+    {
+      "latin": "eilitis",
+      "greek": "ειλητής"
+    },
+    {
+      "latin": "eilkyse",
+      "greek": "είλκυσε"
+    },
+    {
+      "latin": "eironiki",
+      "greek": "ειρωνική"
+    },
+    {
+      "latin": "eisevala",
+      "greek": "εισέβαλα"
+    },
+    {
+      "latin": "eispraxo",
+      "greek": "εισπράξω"
+    },
+    {
+      "latin": "ekdikaso",
+      "greek": "εκδικάσω"
+    },
+    {
+      "latin": "ekdosoy",
+      "greek": "εκδώσου"
+    },
+    {
+      "latin": "ekdromon",
+      "greek": "εκδρομών"
+    },
+    {
+      "latin": "ekdysis",
+      "greek": "έκδυσης"
+    },
+    {
+      "latin": "ekeinoy",
+      "greek": "εκείνου"
+    },
+    {
+      "latin": "ekfyseis",
+      "greek": "εκφύσεις"
+    },
+    {
+      "latin": "ekkaloyn",
+      "greek": "εκκαλούν"
+    },
+    {
+      "latin": "eklegete",
+      "greek": "εκλέγετε"
+    },
+    {
+      "latin": "eklises",
+      "greek": "έκλισες"
+    },
+    {
+      "latin": "eklogin",
+      "greek": "εκλογήν"
+    },
+    {
+      "latin": "eknomi",
+      "greek": "έκνομη"
+    },
+    {
+      "latin": "ekplixoy",
+      "greek": "εκπλήξου"
+    },
+    {
+      "latin": "ekptota",
+      "greek": "έκπτωτα"
+    },
+    {
+      "latin": "ekreate",
+      "greek": "εκρέατε"
+    },
+    {
+      "latin": "ekrixeon",
+      "greek": "εκρήξεων"
+    },
+    {
+      "latin": "ekroye",
+      "greek": "έκρουε"
+    },
+    {
+      "latin": "ekrypse",
+      "greek": "έκρυψε"
+    },
+    {
+      "latin": "ekskafto",
+      "greek": "εκσκαφτώ"
+    },
+    {
+      "latin": "ektenoys",
+      "greek": "εκτενούς"
+    },
+    {
+      "latin": "ektiman",
+      "greek": "εκτιμάν"
+    },
+    {
+      "latin": "ektomion",
+      "greek": "εκτομιών"
+    },
+    {
+      "latin": "ektrefe",
+      "greek": "έκτρεφε"
+    },
+    {
+      "latin": "ektyposo",
+      "greek": "εκτυπώσω"
+    },
+    {
+      "latin": "ekypsan",
+      "greek": "έκυψαν"
+    },
+    {
+      "latin": "elache",
+      "greek": "έλαχε"
+    },
+    {
+      "latin": "elafrioi",
+      "greek": "ελαφριοί"
+    },
+    {
+      "latin": "elaion",
+      "greek": "έλαιον"
+    },
+    {
+      "latin": "elatinos",
+      "greek": "ελάτινος"
+    },
+    {
+      "latin": "elavan",
+      "greek": "έλαβαν"
+    },
+    {
+      "latin": "elkodi",
+      "greek": "ελκώδη"
+    },
+    {
+      "latin": "elkysoyn",
+      "greek": "ελκύσουν"
+    },
+    {
+      "latin": "elliniza",
+      "greek": "ελλήνιζα"
+    },
+    {
+      "latin": "elovioys",
+      "greek": "ελόβιους"
+    },
+    {
+      "latin": "eloyzes",
+      "greek": "έλουζες"
+    },
+    {
+      "latin": "elpizeis",
+      "greek": "ελπίζεις"
+    },
+    {
+      "latin": "elthei",
+      "greek": "έλθει"
+    },
+    {
+      "latin": "elytron",
+      "greek": "έλυτρον"
+    },
+    {
+      "latin": "emfysisi",
+      "greek": "εμφύσηση"
+    },
+    {
+      "latin": "eminya",
+      "greek": "εμήνυα"
+    },
+    {
+      "latin": "emoiazan",
+      "greek": "έμοιαζαν"
+    },
+    {
+      "latin": "empainan",
+      "greek": "έμπαιναν"
+    },
+    {
+      "latin": "empeso",
+      "greek": "εμπέσω"
+    },
+    {
+      "latin": "emplokon",
+      "greek": "εμπλοκών"
+    },
+    {
+      "latin": "empneei",
+      "greek": "εμπνέει"
+    },
+    {
+      "latin": "empyres",
+      "greek": "έμπυρες"
+    },
+    {
+      "latin": "emvado",
+      "greek": "εμβαδό"
+    },
+    {
+      "latin": "emvie",
+      "greek": "έμβιε"
+    },
+    {
+      "latin": "emvolize",
+      "greek": "εμβόλιζε"
+    },
+    {
+      "latin": "enaerios",
+      "greek": "εναέριος"
+    },
+    {
+      "latin": "enaretes",
+      "greek": "ενάρετες"
+    },
+    {
+      "latin": "enaskise",
+      "greek": "ενάσκησε"
+    },
+    {
+      "latin": "enatoys",
+      "greek": "ένατους"
+    },
+    {
+      "latin": "endikoi",
+      "greek": "ένδικοι"
+    },
+    {
+      "latin": "endythei",
+      "greek": "ενδυθεί"
+    },
+    {
+      "latin": "enedres",
+      "greek": "ενέδρες"
+    },
+    {
+      "latin": "eneimes",
+      "greek": "ένειμες"
+    },
+    {
+      "latin": "enepnean",
+      "greek": "ενέπνεαν"
+    },
+    {
+      "latin": "enethe",
+      "greek": "ένεθε"
+    },
+    {
+      "latin": "enevale",
+      "greek": "ενέβαλε"
+    },
+    {
+      "latin": "eniayton",
+      "greek": "ενιαυτών"
+    },
+    {
+      "latin": "enidrya",
+      "greek": "ενίδρυα"
+    },
+    {
+      "latin": "enige",
+      "greek": "ενήγε"
+    },
+    {
+      "latin": "enismos",
+      "greek": "ενισμός"
+    },
+    {
+      "latin": "enniaria",
+      "greek": "εννιάρια"
+    },
+    {
+      "latin": "ennooyn",
+      "greek": "εννοούν"
+    },
+    {
+      "latin": "enonetai",
+      "greek": "ενώνεται"
+    },
+    {
+      "latin": "enoplis",
+      "greek": "ένοπλης"
+    },
+    {
+      "latin": "enorgano",
+      "greek": "ενόργανο"
+    },
+    {
+      "latin": "enothen",
+      "greek": "ενωθέν"
+    },
+    {
+      "latin": "enthesoy",
+      "greek": "ενθέσου"
+    },
+    {
+      "latin": "entopioi",
+      "greek": "εντόπιοι"
+    },
+    {
+      "latin": "enydrida",
+      "greek": "ενυδρίδα"
+    },
+    {
+      "latin": "enzyma",
+      "greek": "ένζυμα"
+    },
+    {
+      "latin": "eortazes",
+      "greek": "εόρταζες"
+    },
+    {
+      "latin": "eothines",
+      "greek": "εωθινές"
+    },
+    {
+      "latin": "epagogis",
+      "greek": "επαγωγής"
+    },
+    {
+      "latin": "epaiti",
+      "greek": "επαίτη"
+    },
+    {
+      "latin": "epaktoys",
+      "greek": "επακτούς"
+    },
+    {
+      "latin": "epalxeis",
+      "greek": "επάλξεις"
+    },
+    {
+      "latin": "eparki",
+      "greek": "επαρκή"
+    },
+    {
+      "latin": "epaylis",
+      "greek": "έπαυλης"
+    },
+    {
+      "latin": "epedioke",
+      "greek": "επεδίωκε"
+    },
+    {
+      "latin": "epeigeis",
+      "greek": "επείγεις"
+    },
+    {
+      "latin": "epempes",
+      "greek": "έπεμπες"
+    },
+    {
+      "latin": "epenergo",
+      "greek": "επενεργώ"
+    },
+    {
+      "latin": "epesan",
+      "greek": "έπεσαν"
+    },
+    {
+      "latin": "epethese",
+      "greek": "επέθεσε"
+    },
+    {
+      "latin": "epidioxa",
+      "greek": "επιδίωξα"
+    },
+    {
+      "latin": "epifovoi",
+      "greek": "επίφοβοι"
+    },
+    {
+      "latin": "epigeioi",
+      "greek": "επίγειοι"
+    },
+    {
+      "latin": "epilyste",
+      "greek": "επιλύστε"
+    },
+    {
+      "latin": "epimonos",
+      "greek": "επίμονος"
+    },
+    {
+      "latin": "epineyso",
+      "greek": "επινεύσω"
+    },
+    {
+      "latin": "epiorkoy",
+      "greek": "επίορκου"
+    },
+    {
+      "latin": "epiployn",
+      "greek": "επίπλουν"
+    },
+    {
+      "latin": "epirmeno",
+      "greek": "επηρμένο"
+    },
+    {
+      "latin": "epistite",
+      "greek": "επιστητέ"
+    },
+    {
+      "latin": "epixa",
+      "greek": "έπηξα"
+    },
+    {
+      "latin": "epleysan",
+      "greek": "έπλευσαν"
+    },
+    {
+      "latin": "epnea",
+      "greek": "έπνεα"
+    },
+    {
+      "latin": "epoazame",
+      "greek": "επωάζαμε"
+    },
+    {
+      "latin": "epochis",
+      "greek": "εποχής"
+    },
+    {
+      "latin": "epodynon",
+      "greek": "επώδυνων"
+    },
+    {
+      "latin": "epoikise",
+      "greek": "εποίκησε"
+    },
+    {
+      "latin": "epontan",
+      "greek": "έπονταν"
+    },
+    {
+      "latin": "epsyxes",
+      "greek": "έψυξες"
+    },
+    {
+      "latin": "eptaori",
+      "greek": "επτάωρη"
+    },
+    {
+      "latin": "eptyssan",
+      "greek": "έπτυσσαν"
+    },
+    {
+      "latin": "eranos",
+      "greek": "έρανος"
+    },
+    {
+      "latin": "erapta",
+      "greek": "έραπτα"
+    },
+    {
+      "latin": "erasmio",
+      "greek": "εράσμιο"
+    },
+    {
+      "latin": "eratai",
+      "greek": "εράται"
+    },
+    {
+      "latin": "ereygmo",
+      "greek": "ερευγμό"
+    },
+    {
+      "latin": "ergasian",
+      "greek": "εργασίαν"
+    },
+    {
+      "latin": "ergeniki",
+      "greek": "εργένικη"
+    },
+    {
+      "latin": "ergolavo",
+      "greek": "εργολάβο"
+    },
+    {
+      "latin": "erixe",
+      "greek": "έριξε"
+    },
+    {
+      "latin": "ermata",
+      "greek": "έρματα"
+    },
+    {
+      "latin": "erodio",
+      "greek": "ερωδιό"
+    },
+    {
+      "latin": "erponta",
+      "greek": "έρποντα"
+    },
+    {
+      "latin": "erree",
+      "greek": "έρρεε"
+    },
+    {
+      "latin": "esarpon",
+      "greek": "εσαρπών"
+    },
+    {
+      "latin": "eseian",
+      "greek": "έσειαν"
+    },
+    {
+      "latin": "esfalan",
+      "greek": "έσφαλαν"
+    },
+    {
+      "latin": "eskave",
+      "greek": "έσκαβε"
+    },
+    {
+      "latin": "eskiaxa",
+      "greek": "έσκιαξα"
+    },
+    {
+      "latin": "esmixa",
+      "greek": "έσμιξα"
+    },
+    {
+      "latin": "esotate",
+      "greek": "εσώτατε"
+    },
+    {
+      "latin": "espazan",
+      "greek": "έσπαζαν"
+    },
+    {
+      "latin": "esperine",
+      "greek": "εσπερινέ"
+    },
+    {
+      "latin": "estaxes",
+      "greek": "έσταξες"
+    },
+    {
+      "latin": "estelne",
+      "greek": "έστελνε"
+    },
+    {
+      "latin": "estilvan",
+      "greek": "έστιλβαν"
+    },
+    {
+      "latin": "estyfe",
+      "greek": "έστυφε"
+    },
+    {
+      "latin": "eteina",
+      "greek": "έτεινα"
+    },
+    {
+      "latin": "etrapi",
+      "greek": "ετράπη"
+    },
+    {
+      "latin": "etreche",
+      "greek": "έτρεχε"
+    },
+    {
+      "latin": "etyme",
+      "greek": "έτυμε"
+    },
+    {
+      "latin": "evalles",
+      "greek": "έβαλλες"
+    },
+    {
+      "latin": "evenon",
+      "greek": "έβενων"
+    },
+    {
+      "latin": "evgalan",
+      "greek": "έβγαλαν"
+    },
+    {
+      "latin": "evrizes",
+      "greek": "έβριζες"
+    },
+    {
+      "latin": "exagoyne",
+      "greek": "εξάγουνε"
+    },
+    {
+      "latin": "exameron",
+      "greek": "εξαμερών"
+    },
+    {
+      "latin": "exaplo",
+      "greek": "εξαπλό"
+    },
+    {
+      "latin": "exelyse",
+      "greek": "εξέλυσε"
+    },
+    {
+      "latin": "exepipta",
+      "greek": "εξέπιπτα"
+    },
+    {
+      "latin": "exetazei",
+      "greek": "εξετάζει"
+    },
+    {
+      "latin": "exochiki",
+      "greek": "εξοχική"
+    },
+    {
+      "latin": "exodoy",
+      "greek": "εξόδου"
+    },
+    {
+      "latin": "exoryxis",
+      "greek": "εξόρυξης"
+    },
+    {
+      "latin": "exoteros",
+      "greek": "εξώτερος"
+    },
+    {
+      "latin": "exymneis",
+      "greek": "εξυμνείς"
+    },
+    {
+      "latin": "eyaeron",
+      "greek": "ευάερων"
+    },
+    {
+      "latin": "eychyma",
+      "greek": "εύχυμα"
+    },
+    {
+      "latin": "eyeidis",
+      "greek": "ευειδής"
+    },
+    {
+      "latin": "eyfonia",
+      "greek": "ευφωνία"
+    },
+    {
+      "latin": "eyfradi",
+      "greek": "ευφραδή"
+    },
+    {
+      "latin": "eyglotti",
+      "greek": "εύγλωττη"
+    },
+    {
+      "latin": "eyikoo",
+      "greek": "ευήκοο"
+    },
+    {
+      "latin": "eyilies",
+      "greek": "ευήλιες"
+    },
+    {
+      "latin": "eykinite",
+      "greek": "ευκίνητε"
+    },
+    {
+      "latin": "eykosma",
+      "greek": "εύκοσμα"
+    },
+    {
+      "latin": "eykraton",
+      "greek": "εύκρατων"
+    },
+    {
+      "latin": "eylipton",
+      "greek": "εύληπτων"
+    },
+    {
+      "latin": "eylogoys",
+      "greek": "εύλογους"
+    },
+    {
+      "latin": "eyoderoi",
+      "greek": "ευωδεροί"
+    },
+    {
+      "latin": "eyosmoy",
+      "greek": "εύοσμου"
+    },
+    {
+      "latin": "eypepton",
+      "greek": "εύπεπτων"
+    },
+    {
+      "latin": "eypistis",
+      "greek": "εύπιστης"
+    },
+    {
+      "latin": "eypore",
+      "greek": "εύπορε"
+    },
+    {
+      "latin": "eyriskei",
+      "greek": "ευρίσκει"
+    },
+    {
+      "latin": "eyros",
+      "greek": "εύρος"
+    },
+    {
+      "latin": "eyrynan",
+      "greek": "εύρυναν"
+    },
+    {
+      "latin": "eystocho",
+      "greek": "ευστοχώ"
+    },
+    {
+      "latin": "eytaxia",
+      "greek": "ευταξία"
+    },
+    {
+      "latin": "eytharsi",
+      "greek": "ευθαρσή"
+    },
+    {
+      "latin": "eytonoi",
+      "greek": "εύτονοι"
+    },
+    {
+      "latin": "eyvoyloi",
+      "greek": "εύβουλοι"
+    },
+    {
+      "latin": "eyzonoys",
+      "greek": "ευζώνους"
+    },
+    {
+      "latin": "ezechna",
+      "greek": "έζεχνα"
+    },
+    {
+      "latin": "ezesa",
+      "greek": "έζεσα"
+    },
+    {
+      "latin": "eziloyte",
+      "greek": "εζηλούτε"
+    },
+    {
+      "latin": "ezitise",
+      "greek": "εζήτησε"
+    },
+    {
+      "latin": "faeini",
+      "greek": "φαεινή"
+    },
+    {
+      "latin": "falakri",
+      "greek": "φαλακρή"
+    },
+    {
+      "latin": "falkis",
+      "greek": "φάλκης"
+    },
+    {
+      "latin": "fantaizi",
+      "greek": "φανταιζί"
+    },
+    {
+      "latin": "fardyno",
+      "greek": "φαρδύνω"
+    },
+    {
+      "latin": "faretra",
+      "greek": "φαρέτρα"
+    },
+    {
+      "latin": "farikoi",
+      "greek": "φαρικοί"
+    },
+    {
+      "latin": "farmakon",
+      "greek": "φάρμακον"
+    },
+    {
+      "latin": "farsoma",
+      "greek": "φάρσωμα"
+    },
+    {
+      "latin": "fasiso",
+      "greek": "φασίσω"
+    },
+    {
+      "latin": "faskeloy",
+      "greek": "φάσκελου"
+    },
+    {
+      "latin": "fasolies",
+      "greek": "φασολιές"
+    },
+    {
+      "latin": "fatiki",
+      "greek": "φατική"
+    },
+    {
+      "latin": "fatriaki",
+      "greek": "φατριακή"
+    },
+    {
+      "latin": "feggiso",
+      "greek": "φεγγίσω"
+    },
+    {
+      "latin": "felachoi",
+      "greek": "φελάχοι"
+    },
+    {
+      "latin": "fereggya",
+      "greek": "φερέγγυα"
+    },
+    {
+      "latin": "ferontes",
+      "greek": "φέροντες"
+    },
+    {
+      "latin": "fetfa",
+      "greek": "φετφά"
+    },
+    {
+      "latin": "fetos",
+      "greek": "φέτος"
+    },
+    {
+      "latin": "feygalea",
+      "greek": "φευγαλέα"
+    },
+    {
+      "latin": "fialotos",
+      "greek": "φιαλωτός"
+    },
+    {
+      "latin": "filarcha",
+      "greek": "φίλαρχα"
+    },
+    {
+      "latin": "filise",
+      "greek": "φίλησε"
+    },
+    {
+      "latin": "filmare",
+      "greek": "φίλμαρε"
+    },
+    {
+      "latin": "filozoe",
+      "greek": "φιλόζωε"
+    },
+    {
+      "latin": "fimizoyn",
+      "greek": "φημίζουν"
+    },
+    {
+      "latin": "fimomena",
+      "greek": "φιμωμένα"
+    },
+    {
+      "latin": "fiogkoy",
+      "greek": "φιόγκου"
+    },
+    {
+      "latin": "flegmata",
+      "greek": "φλέγματα"
+    },
+    {
+      "latin": "flogises",
+      "greek": "φλόγισες"
+    },
+    {
+      "latin": "floydero",
+      "greek": "φλουδερό"
+    },
+    {
+      "latin": "foinix",
+      "greek": "φοίνιξ"
+    },
+    {
+      "latin": "foititon",
+      "greek": "φοιτητών"
+    },
+    {
+      "latin": "foleyes",
+      "greek": "φώλευες"
+    },
+    {
+      "latin": "foliaste",
+      "greek": "φωλιάστε"
+    },
+    {
+      "latin": "foloys",
+      "greek": "φώλους"
+    },
+    {
+      "latin": "fonakla",
+      "greek": "φωνάκλα"
+    },
+    {
+      "latin": "foreon",
+      "greek": "φορέων"
+    },
+    {
+      "latin": "foriesai",
+      "greek": "φοριέσαι"
+    },
+    {
+      "latin": "formara",
+      "greek": "φόρμαρα"
+    },
+    {
+      "latin": "fortio",
+      "greek": "φορτίο"
+    },
+    {
+      "latin": "foteinoi",
+      "greek": "φωτεινοί"
+    },
+    {
+      "latin": "foverize",
+      "greek": "φοβέριζε"
+    },
+    {
+      "latin": "fovismon",
+      "greek": "φοβισμών"
+    },
+    {
+      "latin": "foychtes",
+      "greek": "φούχτες"
+    },
+    {
+      "latin": "foyntas",
+      "greek": "φούντας"
+    },
+    {
+      "latin": "foyskota",
+      "greek": "φουσκωτά"
+    },
+    {
+      "latin": "frachtes",
+      "greek": "φράχτες"
+    },
+    {
+      "latin": "fragmoi",
+      "greek": "φραγμοί"
+    },
+    {
+      "latin": "fraxoyme",
+      "greek": "φράξουμε"
+    },
+    {
+      "latin": "fregaton",
+      "greek": "φρεγατών"
+    },
+    {
+      "latin": "freniko",
+      "greek": "φρενικό"
+    },
+    {
+      "latin": "freskis",
+      "greek": "φρέσκης"
+    },
+    {
+      "latin": "frichtos",
+      "greek": "φριχτός"
+    },
+    {
+      "latin": "fronoyn",
+      "greek": "φρονούν"
+    },
+    {
+      "latin": "froyrio",
+      "greek": "φρούριο"
+    },
+    {
+      "latin": "fryazoyn",
+      "greek": "φρυάζουν"
+    },
+    {
+      "latin": "frychto",
+      "greek": "φρυχτό"
+    },
+    {
+      "latin": "frydata",
+      "greek": "φρυδάτα"
+    },
+    {
+      "latin": "ftaixei",
+      "greek": "φταίξει"
+    },
+    {
+      "latin": "ftaneis",
+      "greek": "φτάνεις"
+    },
+    {
+      "latin": "ftenon",
+      "greek": "φτενών"
+    },
+    {
+      "latin": "fternion",
+      "greek": "φτερνιών"
+    },
+    {
+      "latin": "ftheggo",
+      "greek": "φθέγγω"
+    },
+    {
+      "latin": "fthoniso",
+      "greek": "φθονήσω"
+    },
+    {
+      "latin": "ftiachta",
+      "greek": "φτιαχτά"
+    },
+    {
+      "latin": "ftinoi",
+      "greek": "φτηνοί"
+    },
+    {
+      "latin": "ftochoys",
+      "greek": "φτωχούς"
+    },
+    {
+      "latin": "ftyarizo",
+      "greek": "φτυαρίζω"
+    },
+    {
+      "latin": "fygis",
+      "greek": "φυγής"
+    },
+    {
+      "latin": "fymaton",
+      "greek": "φυμάτων"
+    },
+    {
+      "latin": "fyrane",
+      "greek": "φύρανε"
+    },
+    {
+      "latin": "fysiki",
+      "greek": "φυσική"
+    },
+    {
+      "latin": "fyteyei",
+      "greek": "φυτεύει"
+    },
+    {
+      "latin": "fytron",
+      "greek": "φυτρών"
+    },
+    {
+      "latin": "gagglion",
+      "greek": "γάγγλιον"
+    },
+    {
+      "latin": "gaiosake",
+      "greek": "γαιόσακε"
+    },
+    {
+      "latin": "galanada",
+      "greek": "γαλανάδα"
+    },
+    {
+      "latin": "galines",
+      "greek": "γαληνές"
+    },
+    {
+      "latin": "ganiazes",
+      "greek": "γάνιαζες"
+    },
+    {
+      "latin": "ganomeno",
+      "greek": "γανωμένο"
+    },
+    {
+      "latin": "gantzono",
+      "greek": "γαντζώνω"
+    },
+    {
+      "latin": "gatoyla",
+      "greek": "γατούλα"
+    },
+    {
+      "latin": "gaygizan",
+      "greek": "γαύγιζαν"
+    },
+    {
+      "latin": "gazion",
+      "greek": "γαζιών"
+    },
+    {
+      "latin": "gazotoy",
+      "greek": "γαζωτού"
+    },
+    {
+      "latin": "gdartis",
+      "greek": "γδάρτης"
+    },
+    {
+      "latin": "gdernete",
+      "greek": "γδέρνετε"
+    },
+    {
+      "latin": "gdymena",
+      "greek": "γδυμένα"
+    },
+    {
+      "latin": "gdytoy",
+      "greek": "γδυτού"
+    },
+    {
+      "latin": "geioseis",
+      "greek": "γειώσεις"
+    },
+    {
+      "latin": "geireis",
+      "greek": "γείρεις"
+    },
+    {
+      "latin": "geisa",
+      "greek": "γείσα"
+    },
+    {
+      "latin": "gelekioy",
+      "greek": "γελεκιού"
+    },
+    {
+      "latin": "geloysan",
+      "greek": "γελούσαν"
+    },
+    {
+      "latin": "gemizoy",
+      "greek": "γεμίζου"
+    },
+    {
+      "latin": "genato",
+      "greek": "γενάτο"
+    },
+    {
+      "latin": "genos",
+      "greek": "γένος"
+    },
+    {
+      "latin": "geofili",
+      "greek": "γεώφιλη"
+    },
+    {
+      "latin": "geografo",
+      "greek": "γεωγράφο"
+    },
+    {
+      "latin": "geologe",
+      "greek": "γεωλόγε"
+    },
+    {
+      "latin": "georgon",
+      "greek": "γεωργών"
+    },
+    {
+      "latin": "geotrisi",
+      "greek": "γεώτρηση"
+    },
+    {
+      "latin": "geraso",
+      "greek": "γεράσω"
+    },
+    {
+      "latin": "gerikis",
+      "greek": "γέρικης"
+    },
+    {
+      "latin": "gernoyn",
+      "greek": "γέρνουν"
+    },
+    {
+      "latin": "geronta",
+      "greek": "γέροντα"
+    },
+    {
+      "latin": "giachnia",
+      "greek": "γιαχνιά"
+    },
+    {
+      "latin": "giardes",
+      "greek": "γιάρδες"
+    },
+    {
+      "latin": "giortase",
+      "greek": "γιόρτασε"
+    },
+    {
+      "latin": "giraleas",
+      "greek": "γηραλέας"
+    },
+    {
+      "latin": "gitema",
+      "greek": "γήτεμα"
+    },
+    {
+      "latin": "gkarize",
+      "greek": "γκάριζε"
+    },
+    {
+      "latin": "gkavoso",
+      "greek": "γκαβώσω"
+    },
+    {
+      "latin": "gkazaki",
+      "greek": "γκαζάκι"
+    },
+    {
+      "latin": "gkoynta",
+      "greek": "γκούντα"
+    },
+    {
+      "latin": "gkrena",
+      "greek": "γκρενά"
+    },
+    {
+      "latin": "glastra",
+      "greek": "γλάστρα"
+    },
+    {
+      "latin": "glitsa",
+      "greek": "γλίτσα"
+    },
+    {
+      "latin": "glyfises",
+      "greek": "γλύφισες"
+    },
+    {
+      "latin": "glyptoys",
+      "greek": "γλυπτούς"
+    },
+    {
+      "latin": "gnafea",
+      "greek": "γναφέα"
+    },
+    {
+      "latin": "gnematon",
+      "greek": "γνεμάτων"
+    },
+    {
+      "latin": "gnepste",
+      "greek": "γνέψτε"
+    },
+    {
+      "latin": "gneyate",
+      "greek": "γνεύατε"
+    },
+    {
+      "latin": "gnomikoi",
+      "greek": "γνωμικοί"
+    },
+    {
+      "latin": "gnosei",
+      "greek": "γνώσει"
+    },
+    {
+      "latin": "goggo",
+      "greek": "γογγώ"
+    },
+    {
+      "latin": "gomfosi",
+      "greek": "γόμφωση"
+    },
+    {
+      "latin": "goniaie",
+      "greek": "γωνιαίε"
+    },
+    {
+      "latin": "gonoi",
+      "greek": "γόνοι"
+    },
+    {
+      "latin": "gorgoys",
+      "greek": "γοργούς"
+    },
+    {
+      "latin": "goyliane",
+      "greek": "γουλιανέ"
+    },
+    {
+      "latin": "goymenon",
+      "greek": "γούμενων"
+    },
+    {
+      "latin": "goyrike",
+      "greek": "γούρικε"
+    },
+    {
+      "latin": "grafetai",
+      "greek": "γράφεται"
+    },
+    {
+      "latin": "graikoy",
+      "greek": "γραικού"
+    },
+    {
+      "latin": "graniti",
+      "greek": "γρανίτη"
+    },
+    {
+      "latin": "graos",
+      "greek": "γραός"
+    },
+    {
+      "latin": "grapsan",
+      "greek": "γράψαν"
+    },
+    {
+      "latin": "grikage",
+      "greek": "γρίκαγε"
+    },
+    {
+      "latin": "groyxete",
+      "greek": "γρούξετε"
+    },
+    {
+      "latin": "grylisa",
+      "greek": "γρύλισα"
+    },
+    {
+      "latin": "gyalenie",
+      "greek": "γυαλένιε"
+    },
+    {
+      "latin": "gymnoi",
+      "greek": "γυμνοί"
+    },
+    {
+      "latin": "gypsosis",
+      "greek": "γύψωσης"
+    },
+    {
+      "latin": "gyrizome",
+      "greek": "γυρίζομε"
+    },
+    {
+      "latin": "gyrofera",
+      "greek": "γυρόφερα"
+    },
+    {
+      "latin": "iasmena",
+      "greek": "ιασμένα"
+    },
+    {
+      "latin": "iaspis",
+      "greek": "ίασπις"
+    },
+    {
+      "latin": "ichologo",
+      "greek": "ηχολογώ"
+    },
+    {
+      "latin": "idanike",
+      "greek": "ιδανικέ"
+    },
+    {
+      "latin": "ideati",
+      "greek": "ιδεατή"
+    },
+    {
+      "latin": "idikoi",
+      "greek": "ιδικοί"
+    },
+    {
+      "latin": "idiotype",
+      "greek": "ιδιότυπε"
+    },
+    {
+      "latin": "idones",
+      "greek": "ηδονές"
+    },
+    {
+      "latin": "idoyme",
+      "greek": "ιδούμε"
+    },
+    {
+      "latin": "idrona",
+      "greek": "ίδρωνα"
+    },
+    {
+      "latin": "idryasas",
+      "greek": "ιδρύασας"
+    },
+    {
+      "latin": "idyneste",
+      "greek": "ηδύνεστε"
+    },
+    {
+      "latin": "idypotoy",
+      "greek": "ηδύποτου"
+    },
+    {
+      "latin": "ieroi",
+      "greek": "ιεροί"
+    },
+    {
+      "latin": "igetida",
+      "greek": "ηγέτιδα"
+    },
+    {
+      "latin": "iggella",
+      "greek": "ήγγελλα"
+    },
+    {
+      "latin": "iggla",
+      "greek": "ίγγλα"
+    },
+    {
+      "latin": "igithika",
+      "greek": "ηγήθηκα"
+    },
+    {
+      "latin": "igorase",
+      "greek": "ηγόρασε"
+    },
+    {
+      "latin": "ikesia",
+      "greek": "ικεσία"
+    },
+    {
+      "latin": "iketika",
+      "greek": "ικετικά"
+    },
+    {
+      "latin": "ilaron",
+      "greek": "ιλαρόν"
+    },
+    {
+      "latin": "ilayne",
+      "greek": "ήλαυνε"
+    },
+    {
+      "latin": "iliasis",
+      "greek": "ηλίασης"
+    },
+    {
+      "latin": "illyriko",
+      "greek": "ιλλυρικό"
+    },
+    {
+      "latin": "ilyos",
+      "greek": "ιλύος"
+    },
+    {
+      "latin": "imatioy",
+      "greek": "ιματίου"
+    },
+    {
+      "latin": "imerida",
+      "greek": "ημερίδα"
+    },
+    {
+      "latin": "imifoton",
+      "greek": "ημίφωτων"
+    },
+    {
+      "latin": "imiglyko",
+      "greek": "ημίγλυκο"
+    },
+    {
+      "latin": "imileyko",
+      "greek": "ημίλευκο"
+    },
+    {
+      "latin": "imitonis",
+      "greek": "ημίτονης"
+    },
+    {
+      "latin": "iniakis",
+      "greek": "ινιακής"
+    },
+    {
+      "latin": "inidio",
+      "greek": "ινίδιο"
+    },
+    {
+      "latin": "intsas",
+      "greek": "ίντσας"
+    },
+    {
+      "latin": "iochroa",
+      "greek": "ιόχροα"
+    },
+    {
+      "latin": "iodis",
+      "greek": "ιώδης"
+    },
+    {
+      "latin": "ionies",
+      "greek": "ιόνιες"
+    },
+    {
+      "latin": "iostefes",
+      "greek": "ιοστεφές"
+    },
+    {
+      "latin": "ipioy",
+      "greek": "ήπιου"
+    },
+    {
+      "latin": "iremi",
+      "greek": "ήρεμη"
+    },
+    {
+      "latin": "iridizan",
+      "greek": "ιρίδιζαν"
+    },
+    {
+      "latin": "isale",
+      "greek": "ίσαλε"
+    },
+    {
+      "latin": "ischnane",
+      "greek": "ίσχνανε"
+    },
+    {
+      "latin": "isiazeis",
+      "greek": "ισιάζεις"
+    },
+    {
+      "latin": "isies",
+      "greek": "ίσιες"
+    },
+    {
+      "latin": "iskieron",
+      "greek": "ισκιερών"
+    },
+    {
+      "latin": "isogonie",
+      "greek": "ισογώνιε"
+    },
+    {
+      "latin": "isoklino",
+      "greek": "ισόκλινο"
+    },
+    {
+      "latin": "isomeros",
+      "greek": "ισομερώς"
+    },
+    {
+      "latin": "isonomoy",
+      "greek": "ισόνομου"
+    },
+    {
+      "latin": "isopedoi",
+      "greek": "ισόπεδοι"
+    },
+    {
+      "latin": "isorropa",
+      "greek": "ισόρροπα"
+    },
+    {
+      "latin": "isotoni",
+      "greek": "ισότονη"
+    },
+    {
+      "latin": "isovion",
+      "greek": "ισοβίων"
+    },
+    {
+      "latin": "isoymeni",
+      "greek": "ισούμενη"
+    },
+    {
+      "latin": "isthmioi",
+      "greek": "ίσθμιοι"
+    },
+    {
+      "latin": "istories",
+      "greek": "ιστορίες"
+    },
+    {
+      "latin": "isychies",
+      "greek": "ησυχίες"
+    },
+    {
+      "latin": "italiki",
+      "greek": "ιταλική"
+    },
+    {
+      "latin": "ithela",
+      "greek": "ήθελα"
+    },
+    {
+      "latin": "ithiko",
+      "greek": "ηθικό"
+    },
+    {
+      "latin": "ithme",
+      "greek": "ηθμέ"
+    },
+    {
+      "latin": "ithyneis",
+      "greek": "ιθύνεις"
+    },
+    {
+      "latin": "ittomeni",
+      "greek": "ηττώμενη"
+    },
+    {
+      "latin": "ixoys",
+      "greek": "ιξούς"
+    },
+    {
+      "latin": "izanomai",
+      "greek": "ιζάνομαι"
+    },
+    {
+      "latin": "kadmeias",
+      "greek": "καδμείας"
+    },
+    {
+      "latin": "kakiso",
+      "greek": "κακίσω"
+    },
+    {
+      "latin": "kakopesa",
+      "greek": "κακόπεσα"
+    },
+    {
+      "latin": "kalamini",
+      "greek": "καλάμινη"
+    },
+    {
+      "latin": "kaldera",
+      "greek": "καλδέρα"
+    },
+    {
+      "latin": "kaleite",
+      "greek": "καλείτε"
+    },
+    {
+      "latin": "kaligoso",
+      "greek": "καλιγώσω"
+    },
+    {
+      "latin": "kalmaro",
+      "greek": "καλμάρω"
+    },
+    {
+      "latin": "kalodo",
+      "greek": "καλοδώ"
+    },
+    {
+      "latin": "kalyptei",
+      "greek": "καλύπτει"
+    },
+    {
+      "latin": "kamakose",
+      "greek": "καμάκωσε"
+    },
+    {
+      "latin": "kameis",
+      "greek": "κάμεις"
+    },
+    {
+      "latin": "kamineyo",
+      "greek": "καμινεύω"
+    },
+    {
+      "latin": "kampoys",
+      "greek": "κάμπους"
+    },
+    {
+      "latin": "kanation",
+      "greek": "κανατιών"
+    },
+    {
+      "latin": "kanes",
+      "greek": "κάνες"
+    },
+    {
+      "latin": "kaniforo",
+      "greek": "κανηφόρο"
+    },
+    {
+      "latin": "kantemi",
+      "greek": "καντέμη"
+    },
+    {
+      "latin": "kapantai",
+      "greek": "καπάνταη"
+    },
+    {
+      "latin": "kapten",
+      "greek": "κάπτεν"
+    },
+    {
+      "latin": "karavos",
+      "greek": "κάραβος"
+    },
+    {
+      "latin": "karinon",
+      "greek": "καρινών"
+    },
+    {
+      "latin": "karotsia",
+      "greek": "καρότσια"
+    },
+    {
+      "latin": "karpetas",
+      "greek": "καρπέτας"
+    },
+    {
+      "latin": "kartali",
+      "greek": "καρτάλι"
+    },
+    {
+      "latin": "karvoyno",
+      "greek": "κάρβουνο"
+    },
+    {
+      "latin": "karyon",
+      "greek": "κάρυον"
+    },
+    {
+      "latin": "kaselas",
+      "greek": "κασέλας"
+    },
+    {
+      "latin": "kastoron",
+      "greek": "καστόρων"
+    },
+    {
+      "latin": "katamono",
+      "greek": "κατάμονο"
+    },
+    {
+      "latin": "katevato",
+      "greek": "κατεβατό"
+    },
+    {
+      "latin": "katharia",
+      "greek": "καθάρια"
+    },
+    {
+      "latin": "katogi",
+      "greek": "κατώγι"
+    },
+    {
+      "latin": "kavalate",
+      "greek": "καβαλάτε"
+    },
+    {
+      "latin": "kavos",
+      "greek": "κάβος"
+    },
+    {
+      "latin": "kayteroy",
+      "greek": "καυτερού"
+    },
+    {
+      "latin": "kedros",
+      "greek": "κέδρος"
+    },
+    {
+      "latin": "kefalo",
+      "greek": "κέφαλο"
+    },
+    {
+      "latin": "kelarysa",
+      "greek": "κελάρυσα"
+    },
+    {
+      "latin": "kelepsoy",
+      "greek": "κελέψου"
+    },
+    {
+      "latin": "kelis",
+      "greek": "κέλης"
+    },
+    {
+      "latin": "kenonei",
+      "greek": "κενώνει"
+    },
+    {
+      "latin": "kentroe",
+      "greek": "κεντρώε"
+    },
+    {
+      "latin": "kerastis",
+      "greek": "κεραστής"
+    },
+    {
+      "latin": "kerdiso",
+      "greek": "κερδίσω"
+    },
+    {
+      "latin": "kerithra",
+      "greek": "κερήθρα"
+    },
+    {
+      "latin": "kernao",
+      "greek": "κερνάω"
+    },
+    {
+      "latin": "kerosame",
+      "greek": "κερώσαμε"
+    },
+    {
+      "latin": "kervero",
+      "greek": "κέρβερο"
+    },
+    {
+      "latin": "kideya",
+      "greek": "κήδευα"
+    },
+    {
+      "latin": "kigklida",
+      "greek": "κιγκλίδα"
+    },
+    {
+      "latin": "kilimion",
+      "greek": "κιλιμιών"
+    },
+    {
+      "latin": "kiloton",
+      "greek": "κιλοτών"
+    },
+    {
+      "latin": "kineis",
+      "greek": "κινείς"
+    },
+    {
+      "latin": "kinithei",
+      "greek": "κινηθεί"
+    },
+    {
+      "latin": "kintyne",
+      "greek": "κίντυνε"
+    },
+    {
+      "latin": "kipeyete",
+      "greek": "κηπεύετε"
+    },
+    {
+      "latin": "kirsodon",
+      "greek": "κιρσωδών"
+    },
+    {
+      "latin": "kissoy",
+      "greek": "κισσού"
+    },
+    {
+      "latin": "kitries",
+      "greek": "κιτριές"
+    },
+    {
+      "latin": "kivdilo",
+      "greek": "κίβδηλο"
+    },
+    {
+      "latin": "kivotia",
+      "greek": "κιβώτια"
+    },
+    {
+      "latin": "kladike",
+      "greek": "κλαδικέ"
+    },
+    {
+      "latin": "klaker",
+      "greek": "κλακέρ"
+    },
+    {
+      "latin": "klari",
+      "greek": "κλαρί"
+    },
+    {
+      "latin": "klasika",
+      "greek": "κλασικά"
+    },
+    {
+      "latin": "klaytoy",
+      "greek": "κλαυτού"
+    },
+    {
+      "latin": "kleftiki",
+      "greek": "κλέφτικη"
+    },
+    {
+      "latin": "kleiste",
+      "greek": "κλείστε"
+    },
+    {
+      "latin": "kleptoyn",
+      "greek": "κλέπτουν"
+    },
+    {
+      "latin": "klevame",
+      "greek": "κλέβαμε"
+    },
+    {
+      "latin": "klimaton",
+      "greek": "κλημάτων"
+    },
+    {
+      "latin": "klinikoy",
+      "greek": "κλινικού"
+    },
+    {
+      "latin": "kliroys",
+      "greek": "κλήρους"
+    },
+    {
+      "latin": "kliti",
+      "greek": "κλίτη"
+    },
+    {
+      "latin": "kloios",
+      "greek": "κλοιός"
+    },
+    {
+      "latin": "kloniza",
+      "greek": "κλόνιζα"
+    },
+    {
+      "latin": "klosisei",
+      "greek": "κλωσήσει"
+    },
+    {
+      "latin": "kloyvios",
+      "greek": "κλούβιος"
+    },
+    {
+      "latin": "knodala",
+      "greek": "κνώδαλα"
+    },
+    {
+      "latin": "koazate",
+      "greek": "κοάζατε"
+    },
+    {
+      "latin": "kodoniso",
+      "greek": "κωδωνίσω"
+    },
+    {
+      "latin": "kofeysei",
+      "greek": "κωφεύσει"
+    },
+    {
+      "latin": "kofina",
+      "greek": "κοφινά"
+    },
+    {
+      "latin": "koiladas",
+      "greek": "κοιλάδας"
+    },
+    {
+      "latin": "koimiste",
+      "greek": "κοιμίστε"
+    },
+    {
+      "latin": "kokke",
+      "greek": "κόκκε"
+    },
+    {
+      "latin": "kolakes",
+      "greek": "κόλακες"
+    },
+    {
+      "latin": "kollyvo",
+      "greek": "κόλλυβο"
+    },
+    {
+      "latin": "kolpoys",
+      "greek": "κόλπους"
+    },
+    {
+      "latin": "kolysame",
+      "greek": "κωλύσαμε"
+    },
+    {
+      "latin": "komazoyn",
+      "greek": "κωμάζουν"
+    },
+    {
+      "latin": "kommenos",
+      "greek": "κομμένος"
+    },
+    {
+      "latin": "komodias",
+      "greek": "κωμωδίας"
+    },
+    {
+      "latin": "konikes",
+      "greek": "κωνικές"
+    },
+    {
+      "latin": "konofora",
+      "greek": "κωνοφόρα"
+    },
+    {
+      "latin": "konxas",
+      "greek": "κόνξας"
+    },
+    {
+      "latin": "kopeles",
+      "greek": "κοπέλες"
+    },
+    {
+      "latin": "kopitsas",
+      "greek": "κόπιτσας"
+    },
+    {
+      "latin": "koposeis",
+      "greek": "κοπώσεις"
+    },
+    {
+      "latin": "kopriti",
+      "greek": "κοπρίτη"
+    },
+    {
+      "latin": "kopseos",
+      "greek": "κόψεως"
+    },
+    {
+      "latin": "koptes",
+      "greek": "κόπτες"
+    },
+    {
+      "latin": "korakati",
+      "greek": "κορακάτη"
+    },
+    {
+      "latin": "kormaki",
+      "greek": "κορμάκι"
+    },
+    {
+      "latin": "kornetas",
+      "greek": "κορνέτας"
+    },
+    {
+      "latin": "kortares",
+      "greek": "κόρταρες"
+    },
+    {
+      "latin": "kosmos",
+      "greek": "κόσμος"
+    },
+    {
+      "latin": "kotronon",
+      "greek": "κοτρόνων"
+    },
+    {
+      "latin": "koyiz",
+      "greek": "κουίζ"
+    },
+    {
+      "latin": "koylaina",
+      "greek": "κούλαινα"
+    },
+    {
+      "latin": "koympoma",
+      "greek": "κούμπωμα"
+    },
+    {
+      "latin": "koyname",
+      "greek": "κουνάμε"
+    },
+    {
+      "latin": "koyreon",
+      "greek": "κουρέων"
+    },
+    {
+      "latin": "koyvaria",
+      "greek": "κουβάρια"
+    },
+    {
+      "latin": "kradanan",
+      "greek": "κράδαναν"
+    },
+    {
+      "latin": "kramvis",
+      "greek": "κράμβης"
+    },
+    {
+      "latin": "krania",
+      "greek": "κρανία"
+    },
+    {
+      "latin": "krasati",
+      "greek": "κρασάτη"
+    },
+    {
+      "latin": "kratimon",
+      "greek": "κρατημών"
+    },
+    {
+      "latin": "kraxoyne",
+      "greek": "κράξουνε"
+    },
+    {
+      "latin": "kraygaza",
+      "greek": "κραύγαζα"
+    },
+    {
+      "latin": "kreatia",
+      "greek": "κρεατιά"
+    },
+    {
+      "latin": "kremasi",
+      "greek": "κρέμαση"
+    },
+    {
+      "latin": "krikos",
+      "greek": "κρίκος"
+    },
+    {
+      "latin": "krimnizo",
+      "greek": "κρημνίζω"
+    },
+    {
+      "latin": "kriname",
+      "greek": "κρίναμε"
+    },
+    {
+      "latin": "krisei",
+      "greek": "κρίσει"
+    },
+    {
+      "latin": "kritis",
+      "greek": "κρητίς"
+    },
+    {
+      "latin": "kroxoyn",
+      "greek": "κρώξουν"
+    },
+    {
+      "latin": "kroynoys",
+      "greek": "κρουνούς"
+    },
+    {
+      "latin": "kryades",
+      "greek": "κρυάδες"
+    },
+    {
+      "latin": "kryfton",
+      "greek": "κρυφτών"
+    },
+    {
+      "latin": "kryosa",
+      "greek": "κρύωσα"
+    },
+    {
+      "latin": "krypsame",
+      "greek": "κρύψαμε"
+    },
+    {
+      "latin": "kryvotan",
+      "greek": "κρυβόταν"
+    },
+    {
+      "latin": "ktasai",
+      "greek": "κτάσαι"
+    },
+    {
+      "latin": "ktise",
+      "greek": "κτίσε"
+    },
+    {
+      "latin": "ktizoyme",
+      "greek": "κτίζουμε"
+    },
+    {
+      "latin": "kyanopa",
+      "greek": "κυανωπά"
+    },
+    {
+      "latin": "kydonata",
+      "greek": "κυδωνάτα"
+    },
+    {
+      "latin": "kyfotiki",
+      "greek": "κυφωτική"
+    },
+    {
+      "latin": "kyklika",
+      "greek": "κυκλικά"
+    },
+    {
+      "latin": "kylate",
+      "greek": "κυλάτε"
+    },
+    {
+      "latin": "kyloyn",
+      "greek": "κυλούν"
+    },
+    {
+      "latin": "kynige",
+      "greek": "κυνηγέ"
+    },
+    {
+      "latin": "kyoforei",
+      "greek": "κυοφορεί"
+    },
+    {
+      "latin": "kyriotis",
+      "greek": "κυριότης"
+    },
+    {
+      "latin": "kyroys",
+      "greek": "κύρους"
+    },
+    {
+      "latin": "kyrtosan",
+      "greek": "κύρτωσαν"
+    },
+    {
+      "latin": "kystikoi",
+      "greek": "κυστικοί"
+    },
+    {
+      "latin": "kytion",
+      "greek": "κυτίον"
+    },
+    {
+      "latin": "kyviso",
+      "greek": "κυβίσω"
+    },
+    {
+      "latin": "lacheio",
+      "greek": "λαχείο"
+    },
+    {
+      "latin": "ladosan",
+      "greek": "λάδωσαν"
+    },
+    {
+      "latin": "laganas",
+      "greek": "λαγάνας"
+    },
+    {
+      "latin": "lagna",
+      "greek": "λάγνα"
+    },
+    {
+      "latin": "laikizei",
+      "greek": "λαϊκίζει"
+    },
+    {
+      "latin": "lakke",
+      "greek": "λάκκε"
+    },
+    {
+      "latin": "laktozi",
+      "greek": "λακτόζη"
+    },
+    {
+      "latin": "lamas",
+      "greek": "λάμας"
+    },
+    {
+      "latin": "lampei",
+      "greek": "λάμπει"
+    },
+    {
+      "latin": "lanaria",
+      "greek": "λανάρια"
+    },
+    {
+      "latin": "laoymioy",
+      "greek": "λαουμιού"
+    },
+    {
+      "latin": "lapathon",
+      "greek": "λάπαθον"
+    },
+    {
+      "latin": "lapsanas",
+      "greek": "λαψάνας"
+    },
+    {
+      "latin": "lason",
+      "greek": "λάσων"
+    },
+    {
+      "latin": "laspi",
+      "greek": "λάσπη"
+    },
+    {
+      "latin": "latheyto",
+      "greek": "λαθευτώ"
+    },
+    {
+      "latin": "latiniki",
+      "greek": "λατινική"
+    },
+    {
+      "latin": "latomion",
+      "greek": "λατομιών"
+    },
+    {
+      "latin": "latron",
+      "greek": "λατρών"
+    },
+    {
+      "latin": "lavoste",
+      "greek": "λαβώστε"
+    },
+    {
+      "latin": "lavrakia",
+      "greek": "λαβράκια"
+    },
+    {
+      "latin": "lechona",
+      "greek": "λεχώνα"
+    },
+    {
+      "latin": "lefto",
+      "greek": "λεφτό"
+    },
+    {
+      "latin": "legeis",
+      "greek": "λέγεις"
+    },
+    {
+      "latin": "leiansoy",
+      "greek": "λειάνσου"
+    },
+    {
+      "latin": "leioy",
+      "greek": "λείου"
+    },
+    {
+      "latin": "leipeis",
+      "greek": "λείπεις"
+    },
+    {
+      "latin": "lepris",
+      "greek": "λεπρής"
+    },
+    {
+      "latin": "leviton",
+      "greek": "λεβήτων"
+    },
+    {
+      "latin": "lexika",
+      "greek": "λεξικά"
+    },
+    {
+      "latin": "lexoylas",
+      "greek": "λεξούλας"
+    },
+    {
+      "latin": "leykos",
+      "greek": "λευκός"
+    },
+    {
+      "latin": "leyteria",
+      "greek": "λευτεριά"
+    },
+    {
+      "latin": "liakon",
+      "greek": "λιακών"
+    },
+    {
+      "latin": "lianeyes",
+      "greek": "λιάνευες"
+    },
+    {
+      "latin": "liastei",
+      "greek": "λιαστεί"
+    },
+    {
+      "latin": "liazate",
+      "greek": "λιάζατε"
+    },
+    {
+      "latin": "lichnon",
+      "greek": "λίχνων"
+    },
+    {
+      "latin": "ligdoste",
+      "greek": "λιγδώστε"
+    },
+    {
+      "latin": "ligmene",
+      "greek": "ληγμένε"
+    },
+    {
+      "latin": "liknizan",
+      "greek": "λίκνιζαν"
+    },
+    {
+      "latin": "limariko",
+      "greek": "λιμάρικο"
+    },
+    {
+      "latin": "limma",
+      "greek": "λήμμα"
+    },
+    {
+      "latin": "liomenes",
+      "greek": "λιωμένες"
+    },
+    {
+      "latin": "lipaname",
+      "greek": "λιπάναμε"
+    },
+    {
+      "latin": "lipidioy",
+      "greek": "λιπιδίου"
+    },
+    {
+      "latin": "livadioy",
+      "greek": "λιβαδιού"
+    },
+    {
+      "latin": "lochion",
+      "greek": "λοχιών"
+    },
+    {
+      "latin": "logcheyo",
+      "greek": "λογχεύω"
+    },
+    {
+      "latin": "logikeyo",
+      "greek": "λογικεύω"
+    },
+    {
+      "latin": "loisthie",
+      "greek": "λοίσθιε"
+    },
+    {
+      "latin": "lolanate",
+      "greek": "λωλάνατε"
+    },
+    {
+      "latin": "lovotoi",
+      "greek": "λοβωτοί"
+    },
+    {
+      "latin": "loxigkas",
+      "greek": "λόξιγκας"
+    },
+    {
+      "latin": "loyfazes",
+      "greek": "λούφαζες"
+    },
+    {
+      "latin": "loyki",
+      "greek": "λούκι"
+    },
+    {
+      "latin": "loylaki",
+      "greek": "λουλάκι"
+    },
+    {
+      "latin": "loyra",
+      "greek": "λούρα"
+    },
+    {
+      "latin": "loyzei",
+      "greek": "λούζει"
+    },
+    {
+      "latin": "lychniti",
+      "greek": "λυχνίτη"
+    },
+    {
+      "latin": "lydies",
+      "greek": "λύδιες"
+    },
+    {
+      "latin": "lyeis",
+      "greek": "λύεις"
+    },
+    {
+      "latin": "lygaxame",
+      "greek": "λυγάξαμε"
+    },
+    {
+      "latin": "lynomai",
+      "greek": "λύνομαι"
+    },
+    {
+      "latin": "lypimo",
+      "greek": "λυπημό"
+    },
+    {
+      "latin": "lyssaxei",
+      "greek": "λυσσάξει"
+    },
+    {
+      "latin": "lytheis",
+      "greek": "λυθείς"
+    },
+    {
+      "latin": "lytrosei",
+      "greek": "λυτρώσει"
+    },
+    {
+      "latin": "madari",
+      "greek": "μαδαρή"
+    },
+    {
+      "latin": "mafias",
+      "greek": "μαφίας"
+    },
+    {
+      "latin": "mageies",
+      "greek": "μαγείες"
+    },
+    {
+      "latin": "magganio",
+      "greek": "μαγγάνιο"
+    },
+    {
+      "latin": "magkosoy",
+      "greek": "μαγκώσου"
+    },
+    {
+      "latin": "maimoy",
+      "greek": "μαϊμού"
+    },
+    {
+      "latin": "makarioy",
+      "greek": "μακάριου"
+    },
+    {
+      "latin": "maketon",
+      "greek": "μακετών"
+    },
+    {
+      "latin": "makrinin",
+      "greek": "μακρινήν"
+    },
+    {
+      "latin": "malattan",
+      "greek": "μάλατταν"
+    },
+    {
+      "latin": "mallinos",
+      "greek": "μάλλινος"
+    },
+    {
+      "latin": "manatzer",
+      "greek": "μάνατζερ"
+    },
+    {
+      "latin": "maniake",
+      "greek": "μανιακέ"
+    },
+    {
+      "latin": "manteias",
+      "greek": "μαντείας"
+    },
+    {
+      "latin": "maonioy",
+      "greek": "μαονιού"
+    },
+    {
+      "latin": "maoynes",
+      "greek": "μαούνες"
+    },
+    {
+      "latin": "marafeti",
+      "greek": "μαραφέτι"
+    },
+    {
+      "latin": "maregkes",
+      "greek": "μαρέγκες"
+    },
+    {
+      "latin": "marxismo",
+      "greek": "μαρξισμό"
+    },
+    {
+      "latin": "masiotan",
+      "greek": "μασιόταν"
+    },
+    {
+      "latin": "mastropo",
+      "greek": "μαστροπό"
+    },
+    {
+      "latin": "mataies",
+      "greek": "μάταιες"
+    },
+    {
+      "latin": "matise",
+      "greek": "μάτισε"
+    },
+    {
+      "latin": "matonane",
+      "greek": "ματώνανε"
+    },
+    {
+      "latin": "matsoles",
+      "greek": "ματσόλες"
+    },
+    {
+      "latin": "mavioi",
+      "greek": "μαβιοί"
+    },
+    {
+      "latin": "maxeis",
+      "greek": "μάξεις"
+    },
+    {
+      "latin": "mayros",
+      "greek": "μαύρος"
+    },
+    {
+      "latin": "mefitiki",
+      "greek": "μεφιτική"
+    },
+    {
+      "latin": "megaron",
+      "greek": "μέγαρον"
+    },
+    {
+      "latin": "megkeni",
+      "greek": "μέγκενη"
+    },
+    {
+      "latin": "meignyo",
+      "greek": "μειγνύω"
+    },
+    {
+      "latin": "meiosoyn",
+      "greek": "μειώσουν"
+    },
+    {
+      "latin": "meixame",
+      "greek": "μείξαμε"
+    },
+    {
+      "latin": "meizones",
+      "greek": "μείζονες"
+    },
+    {
+      "latin": "melases",
+      "greek": "μελάσες"
+    },
+    {
+      "latin": "melenie",
+      "greek": "μελένιε"
+    },
+    {
+      "latin": "melichri",
+      "greek": "μελιχρή"
+    },
+    {
+      "latin": "meloste",
+      "greek": "μελώστε"
+    },
+    {
+      "latin": "menonta",
+      "greek": "μένοντα"
+    },
+    {
+      "latin": "merioy",
+      "greek": "μεριού"
+    },
+    {
+      "latin": "mesato",
+      "greek": "μεσάτο"
+    },
+    {
+      "latin": "mesofori",
+      "greek": "μεσοφόρι"
+    },
+    {
+      "latin": "metevale",
+      "greek": "μετέβαλε"
+    },
+    {
+      "latin": "methame",
+      "greek": "μεθάμε"
+    },
+    {
+      "latin": "metopon",
+      "greek": "μέτωπον"
+    },
+    {
+      "latin": "metresas",
+      "greek": "μετρέσας"
+    },
+    {
+      "latin": "mianoyme",
+      "greek": "μιάνουμε"
+    },
+    {
+      "latin": "michanis",
+      "greek": "μηχανής"
+    },
+    {
+      "latin": "mikados",
+      "greek": "μικάδος"
+    },
+    {
+      "latin": "mikonia",
+      "greek": "μηκώνια"
+    },
+    {
+      "latin": "mikran",
+      "greek": "μικράν"
+    },
+    {
+      "latin": "milao",
+      "greek": "μιλάω"
+    },
+    {
+      "latin": "milisoy",
+      "greek": "μιλήσου"
+    },
+    {
+      "latin": "miloyses",
+      "greek": "μιλούσες"
+    },
+    {
+      "latin": "minos",
+      "greek": "μηνός"
+    },
+    {
+      "latin": "minysoy",
+      "greek": "μηνύσου"
+    },
+    {
+      "latin": "miriaie",
+      "greek": "μηριαίε"
+    },
+    {
+      "latin": "mischon",
+      "greek": "μίσχων"
+    },
+    {
+      "latin": "misepse",
+      "greek": "μίσεψε"
+    },
+    {
+      "latin": "misontas",
+      "greek": "μισώντας"
+    },
+    {
+      "latin": "misthias",
+      "greek": "μίσθιας"
+    },
+    {
+      "latin": "mitis",
+      "greek": "μήτις"
+    },
+    {
+      "latin": "mitrooy",
+      "greek": "μητρώου"
+    },
+    {
+      "latin": "mnistra",
+      "greek": "μνήστρα"
+    },
+    {
+      "latin": "mochloy",
+      "greek": "μοχλού"
+    },
+    {
+      "latin": "moiazame",
+      "greek": "μοιάζαμε"
+    },
+    {
+      "latin": "moiradi",
+      "greek": "μοιράδι"
+    },
+    {
+      "latin": "mokas",
+      "greek": "μόκας"
+    },
+    {
+      "latin": "molepsan",
+      "greek": "μόλεψαν"
+    },
+    {
+      "latin": "mologaei",
+      "greek": "μολογάει"
+    },
+    {
+      "latin": "molyno",
+      "greek": "μολύνω"
+    },
+    {
+      "latin": "monasa",
+      "greek": "μόνασα"
+    },
+    {
+      "latin": "monisme",
+      "greek": "μονισμέ"
+    },
+    {
+      "latin": "monodo",
+      "greek": "μονωδό"
+    },
+    {
+      "latin": "montaran",
+      "greek": "μόνταραν"
+    },
+    {
+      "latin": "moranan",
+      "greek": "μώραναν"
+    },
+    {
+      "latin": "morfes",
+      "greek": "μορφές"
+    },
+    {
+      "latin": "moriakoy",
+      "greek": "μοριακού"
+    },
+    {
+      "latin": "mortitis",
+      "greek": "μορτίτης"
+    },
+    {
+      "latin": "moschati",
+      "greek": "μοσχάτη"
+    },
+    {
+      "latin": "moskoi",
+      "greek": "μόσκοι"
+    },
+    {
+      "latin": "moygkos",
+      "greek": "μουγκός"
+    },
+    {
+      "latin": "moylos",
+      "greek": "μούλος"
+    },
+    {
+      "latin": "moyrle",
+      "greek": "μουρλέ"
+    },
+    {
+      "latin": "moystaki",
+      "greek": "μουστάκι"
+    },
+    {
+      "latin": "moytsoy",
+      "greek": "μούτσου"
+    },
+    {
+      "latin": "mpairaki",
+      "greek": "μπαϊράκι"
+    },
+    {
+      "latin": "mpalti",
+      "greek": "μπαλτή"
+    },
+    {
+      "latin": "mpankon",
+      "greek": "μπάνκων"
+    },
+    {
+      "latin": "mpara",
+      "greek": "μπάρα"
+    },
+    {
+      "latin": "mpaso",
+      "greek": "μπάσο"
+    },
+    {
+      "latin": "mpatikoy",
+      "greek": "μπατικού"
+    },
+    {
+      "latin": "mpazei",
+      "greek": "μπάζει"
+    },
+    {
+      "latin": "mpeiki",
+      "greek": "μπέικη"
+    },
+    {
+      "latin": "mpela",
+      "greek": "μπελά"
+    },
+    {
+      "latin": "mperdeyo",
+      "greek": "μπερδεύω"
+    },
+    {
+      "latin": "mpichto",
+      "greek": "μπηχτό"
+    },
+    {
+      "latin": "mpigate",
+      "greek": "μπήγατε"
+    },
+    {
+      "latin": "mpimpelo",
+      "greek": "μπιμπελό"
+    },
+    {
+      "latin": "mpleko",
+      "greek": "μπλέκω"
+    },
+    {
+      "latin": "mplokoi",
+      "greek": "μπλόκοι"
+    },
+    {
+      "latin": "mpodisei",
+      "greek": "μποδίσει"
+    },
+    {
+      "latin": "mporese",
+      "greek": "μπόρεσε"
+    },
+    {
+      "latin": "mpotinia",
+      "greek": "μποτίνια"
+    },
+    {
+      "latin": "mpoyston",
+      "greek": "μπούστων"
+    },
+    {
+      "latin": "mydion",
+      "greek": "μυδιών"
+    },
+    {
+      "latin": "mydralio",
+      "greek": "μυδράλιο"
+    },
+    {
+      "latin": "myeliki",
+      "greek": "μυελική"
+    },
+    {
+      "latin": "myikon",
+      "greek": "μυικών"
+    },
+    {
+      "latin": "myitheis",
+      "greek": "μυηθείς"
+    },
+    {
+      "latin": "mykatai",
+      "greek": "μυκάται"
+    },
+    {
+      "latin": "myrisa",
+      "greek": "μύρισα"
+    },
+    {
+      "latin": "myrodato",
+      "greek": "μυρωδάτο"
+    },
+    {
+      "latin": "myrtinos",
+      "greek": "μύρτινος"
+    },
+    {
+      "latin": "mytaroy",
+      "greek": "μυταρού"
+    },
+    {
+      "latin": "myteros",
+      "greek": "μυτερός"
+    },
+    {
+      "latin": "mytisoy",
+      "greek": "μυτίσου"
+    },
+    {
+      "latin": "nadir",
+      "greek": "ναδίρ"
+    },
+    {
+      "latin": "nanismon",
+      "greek": "νανισμών"
+    },
+    {
+      "latin": "narthika",
+      "greek": "νάρθηκα"
+    },
+    {
+      "latin": "natoikoy",
+      "greek": "νατοϊκού"
+    },
+    {
+      "latin": "nayagiso",
+      "greek": "ναυαγήσω"
+    },
+    {
+      "latin": "nefelion",
+      "greek": "νεφέλιον"
+    },
+    {
+      "latin": "nefokama",
+      "greek": "νεφόκαμα"
+    },
+    {
+      "latin": "neodmite",
+      "greek": "νεόδμητε"
+    },
+    {
+      "latin": "neoferto",
+      "greek": "νεόφερτο"
+    },
+    {
+      "latin": "neognon",
+      "greek": "νεογνόν"
+    },
+    {
+      "latin": "neokoron",
+      "greek": "νεωκόρων"
+    },
+    {
+      "latin": "neolaio",
+      "greek": "νεολαίο"
+    },
+    {
+      "latin": "neonymfa",
+      "greek": "νεόνυμφα"
+    },
+    {
+      "latin": "neossoi",
+      "greek": "νεοσσοί"
+    },
+    {
+      "latin": "neotitas",
+      "greek": "νεότητάς"
+    },
+    {
+      "latin": "neroyloy",
+      "greek": "νερουλού"
+    },
+    {
+      "latin": "neyoyme",
+      "greek": "νεύουμε"
+    },
+    {
+      "latin": "neysi",
+      "greek": "νεύση"
+    },
+    {
+      "latin": "nikimeno",
+      "greek": "νικημένο"
+    },
+    {
+      "latin": "nineme",
+      "greek": "νήνεμε"
+    },
+    {
+      "latin": "niopsia",
+      "greek": "νηοψία"
+    },
+    {
+      "latin": "niotho",
+      "greek": "νιώθω"
+    },
+    {
+      "latin": "nioys",
+      "greek": "νιους"
+    },
+    {
+      "latin": "nipiake",
+      "greek": "νηπιακέ"
+    },
+    {
+      "latin": "nipsate",
+      "greek": "νίψατε"
+    },
+    {
+      "latin": "nistepso",
+      "greek": "νηστέψω"
+    },
+    {
+      "latin": "nitro",
+      "greek": "νίτρο"
+    },
+    {
+      "latin": "nivontan",
+      "greek": "νίβονταν"
+    },
+    {
+      "latin": "noeisai",
+      "greek": "νοείσαι"
+    },
+    {
+      "latin": "noiosame",
+      "greek": "νοιώσαμε"
+    },
+    {
+      "latin": "noise",
+      "greek": "νόησε"
+    },
+    {
+      "latin": "noitikos",
+      "greek": "νοητικός"
+    },
+    {
+      "latin": "nomadiki",
+      "greek": "νομαδική"
+    },
+    {
+      "latin": "nomize",
+      "greek": "νόμιζε"
+    },
+    {
+      "latin": "nooysame",
+      "greek": "νοούσαμε"
+    },
+    {
+      "latin": "nopoy",
+      "greek": "νωπού"
+    },
+    {
+      "latin": "nothes",
+      "greek": "νόθες"
+    },
+    {
+      "latin": "notinis",
+      "greek": "νοτινής"
+    },
+    {
+      "latin": "notoys",
+      "greek": "νότους"
+    },
+    {
+      "latin": "ntaglara",
+      "greek": "νταγλαρά"
+    },
+    {
+      "latin": "ntopie",
+      "greek": "ντόπιε"
+    },
+    {
+      "latin": "ntoynias",
+      "greek": "ντουνιάς"
+    },
+    {
+      "latin": "ntrilioy",
+      "greek": "ντριλιού"
+    },
+    {
+      "latin": "ntropi",
+      "greek": "ντροπή"
+    },
+    {
+      "latin": "ntymenis",
+      "greek": "ντυμένης"
+    },
+    {
+      "latin": "ntynetai",
+      "greek": "ντύνεται"
+    },
+    {
+      "latin": "ntythike",
+      "greek": "ντύθηκε"
+    },
+    {
+      "latin": "nychaki",
+      "greek": "νυχάκι"
+    },
+    {
+      "latin": "nyktes",
+      "greek": "νύκτες"
+    },
+    {
+      "latin": "nymfona",
+      "greek": "νυμφώνα"
+    },
+    {
+      "latin": "nystaze",
+      "greek": "νύσταζε"
+    },
+    {
+      "latin": "oagogo",
+      "greek": "ωαγωγό"
+    },
+    {
+      "latin": "ochetoy",
+      "greek": "οχετού"
+    },
+    {
+      "latin": "ochima",
+      "greek": "όχημά"
+    },
+    {
+      "latin": "ochliro",
+      "greek": "οχληρό"
+    },
+    {
+      "latin": "ochtades",
+      "greek": "οχτάδες"
+    },
+    {
+      "latin": "odepsoyn",
+      "greek": "οδέψουν"
+    },
+    {
+      "latin": "odeyes",
+      "greek": "όδευες"
+    },
+    {
+      "latin": "odigisa",
+      "greek": "οδήγησα"
+    },
+    {
+      "latin": "odika",
+      "greek": "οδικά"
+    },
+    {
+      "latin": "ofeos",
+      "greek": "όφεως"
+    },
+    {
+      "latin": "ofset",
+      "greek": "όφσετ"
+    },
+    {
+      "latin": "ogdoi",
+      "greek": "ογδόη"
+    },
+    {
+      "latin": "ogkidio",
+      "greek": "ογκίδιο"
+    },
+    {
+      "latin": "ogkopage",
+      "greek": "ογκόπαγε"
+    },
+    {
+      "latin": "oikeies",
+      "greek": "οικείες"
+    },
+    {
+      "latin": "oikiskon",
+      "greek": "οικίσκων"
+    },
+    {
+      "latin": "oikon",
+      "greek": "οίκον"
+    },
+    {
+      "latin": "oinikis",
+      "greek": "οινικής"
+    },
+    {
+      "latin": "oinodeis",
+      "greek": "οινώδεις"
+    },
+    {
+      "latin": "oionisme",
+      "greek": "οιωνισμέ"
+    },
+    {
+      "latin": "okimon",
+      "greek": "ώκιμον"
+    },
+    {
+      "latin": "okneysa",
+      "greek": "όκνευσα"
+    },
+    {
+      "latin": "okniris",
+      "greek": "οκνηρής"
+    },
+    {
+      "latin": "oktaplos",
+      "greek": "οκταπλός"
+    },
+    {
+      "latin": "olakeres",
+      "greek": "ολάκερες"
+    },
+    {
+      "latin": "oligoeti",
+      "greek": "ολιγοετή"
+    },
+    {
+      "latin": "olkos",
+      "greek": "ολκός"
+    },
+    {
+      "latin": "ologiomi",
+      "greek": "ολόγιομη"
+    },
+    {
+      "latin": "olvie",
+      "greek": "όλβιε"
+    },
+    {
+      "latin": "omalizei",
+      "greek": "ομαλίζει"
+    },
+    {
+      "latin": "omireie",
+      "greek": "ομήρειε"
+    },
+    {
+      "latin": "omnyete",
+      "greek": "ομνύετε"
+    },
+    {
+      "latin": "omodoxa",
+      "greek": "ομόδοξα"
+    },
+    {
+      "latin": "omofonoy",
+      "greek": "ομοφώνου"
+    },
+    {
+      "latin": "omografo",
+      "greek": "ομόγραφο"
+    },
+    {
+      "latin": "omoiones",
+      "greek": "ομοίωνες"
+    },
+    {
+      "latin": "omonoei",
+      "greek": "ομονοεί"
+    },
+    {
+      "latin": "omopsifi",
+      "greek": "ομόψηφη"
+    },
+    {
+      "latin": "omositos",
+      "greek": "ομόσιτος"
+    },
+    {
+      "latin": "omotera",
+      "greek": "ωμότερα"
+    },
+    {
+      "latin": "omozyga",
+      "greek": "ομόζυγα"
+    },
+    {
+      "latin": "ompreles",
+      "greek": "ομπρέλες"
+    },
+    {
+      "latin": "omvrio",
+      "greek": "όμβριο"
+    },
+    {
+      "latin": "oneidise",
+      "greek": "ονείδισε"
+    },
+    {
+      "latin": "onilati",
+      "greek": "ονηλάτη"
+    },
+    {
+      "latin": "oniskoi",
+      "greek": "ονίσκοι"
+    },
+    {
+      "latin": "onomase",
+      "greek": "ονόμασε"
+    },
+    {
+      "latin": "oogonoys",
+      "greek": "ωογόνους"
+    },
+    {
+      "latin": "oosfaira",
+      "greek": "ωόσφαιρα"
+    },
+    {
+      "latin": "oothikes",
+      "greek": "ωοθήκες"
+    },
+    {
+      "latin": "ootoke",
+      "greek": "ωοτόκε"
+    },
+    {
+      "latin": "opalinas",
+      "greek": "οπαλίνας"
+    },
+    {
+      "latin": "oplisme",
+      "greek": "οπλισμέ"
+    },
+    {
+      "latin": "opoian",
+      "greek": "οποίαν"
+    },
+    {
+      "latin": "oposakis",
+      "greek": "οποσάκις"
+    },
+    {
+      "latin": "opsimoi",
+      "greek": "όψιμοι"
+    },
+    {
+      "latin": "orasis",
+      "greek": "όρασής"
+    },
+    {
+      "latin": "ordia",
+      "greek": "ορδιά"
+    },
+    {
+      "latin": "orektiki",
+      "greek": "ορεκτική"
+    },
+    {
+      "latin": "orexatos",
+      "greek": "ορεξάτος"
+    },
+    {
+      "latin": "orfanon",
+      "greek": "ορφανών"
+    },
+    {
+      "latin": "orfikes",
+      "greek": "ορφικές"
+    },
+    {
+      "latin": "orgisoy",
+      "greek": "οργίσου"
+    },
+    {
+      "latin": "orgoneis",
+      "greek": "οργώνεις"
+    },
+    {
+      "latin": "oriaki",
+      "greek": "οριακή"
+    },
+    {
+      "latin": "orimaso",
+      "greek": "ωριμάσω"
+    },
+    {
+      "latin": "oristika",
+      "greek": "ορίστηκα"
+    },
+    {
+      "latin": "orizane",
+      "greek": "ορίζανε"
+    },
+    {
+      "latin": "orkota",
+      "greek": "ορκωτά"
+    },
+    {
+      "latin": "ormitis",
+      "greek": "ορμητής"
+    },
+    {
+      "latin": "ormoni",
+      "greek": "ορμόνη"
+    },
+    {
+      "latin": "orois",
+      "greek": "όροις"
+    },
+    {
+      "latin": "orologa",
+      "greek": "ωρολογά"
+    },
+    {
+      "latin": "orthoste",
+      "greek": "ορθώστε"
+    },
+    {
+      "latin": "oryate",
+      "greek": "ωρύατε"
+    },
+    {
+      "latin": "oryomena",
+      "greek": "ωρυόμενα"
+    },
+    {
+      "latin": "osiotata",
+      "greek": "οσιότατα"
+    },
+    {
+      "latin": "otalgion",
+      "greek": "ωταλγιών"
+    },
+    {
+      "latin": "othisoy",
+      "greek": "ωθήσου"
+    },
+    {
+      "latin": "othneioi",
+      "greek": "οθνείοι"
+    },
+    {
+      "latin": "oxyichi",
+      "greek": "οξύηχη"
+    },
+    {
+      "latin": "oxynoon",
+      "greek": "οξύνοών"
+    },
+    {
+      "latin": "oxyvelis",
+      "greek": "οξυβελής"
+    },
+    {
+      "latin": "oydetera",
+      "greek": "ουδέτερα"
+    },
+    {
+      "latin": "oygia",
+      "greek": "ούγια"
+    },
+    {
+      "latin": "oylame",
+      "greek": "ουλαμέ"
+    },
+    {
+      "latin": "oyraies",
+      "greek": "ουραίες"
+    },
+    {
+      "latin": "oyrikes",
+      "greek": "ουρικές"
+    },
+    {
+      "latin": "oyroyses",
+      "greek": "ουρούσες"
+    },
+    {
+      "latin": "pachnes",
+      "greek": "πάχνες"
+    },
+    {
+      "latin": "paflazei",
+      "greek": "παφλάζει"
+    },
+    {
+      "latin": "pageton",
+      "greek": "παγετών"
+    },
+    {
+      "latin": "pagiotho",
+      "greek": "παγιωθώ"
+    },
+    {
+      "latin": "pagkaki",
+      "greek": "πάγκακη"
+    },
+    {
+      "latin": "pagose",
+      "greek": "πάγωσε"
+    },
+    {
+      "latin": "pagra",
+      "greek": "πάγρα"
+    },
+    {
+      "latin": "paideysi",
+      "greek": "παίδευση"
+    },
+    {
+      "latin": "paketa",
+      "greek": "πακέτα"
+    },
+    {
+      "latin": "palatia",
+      "greek": "παλάτια"
+    },
+    {
+      "latin": "pallaike",
+      "greek": "παλλαϊκέ"
+    },
+    {
+      "latin": "pamfoti",
+      "greek": "πάμφωτη"
+    },
+    {
+      "latin": "panaxios",
+      "greek": "πανάξιος"
+    },
+    {
+      "latin": "panermoy",
+      "greek": "πανέρμου"
+    },
+    {
+      "latin": "panieres",
+      "greek": "πανίερες"
+    },
+    {
+      "latin": "panorioy",
+      "greek": "πανώριου"
+    },
+    {
+      "latin": "pansepte",
+      "greek": "πάνσεπτε"
+    },
+    {
+      "latin": "pantelos",
+      "greek": "παντελώς"
+    },
+    {
+      "latin": "papadia",
+      "greek": "παπαδιά"
+    },
+    {
+      "latin": "papismoy",
+      "greek": "παπισμού"
+    },
+    {
+      "latin": "papyro",
+      "greek": "πάπυρο"
+    },
+    {
+      "latin": "paragoy",
+      "greek": "παράγου"
+    },
+    {
+      "latin": "parete",
+      "greek": "πάρετε"
+    },
+    {
+      "latin": "parie",
+      "greek": "πάριε"
+    },
+    {
+      "latin": "parlas",
+      "greek": "πάρλας"
+    },
+    {
+      "latin": "paroiko",
+      "greek": "πάροικο"
+    },
+    {
+      "latin": "parthena",
+      "greek": "παρθένα"
+    },
+    {
+      "latin": "pasare",
+      "greek": "πάσαρε"
+    },
+    {
+      "latin": "paskiste",
+      "greek": "πασκίστε"
+    },
+    {
+      "latin": "pastreya",
+      "greek": "πάστρευα"
+    },
+    {
+      "latin": "pataxis",
+      "greek": "πάταξης"
+    },
+    {
+      "latin": "pathi",
+      "greek": "πάθη"
+    },
+    {
+      "latin": "patiti",
+      "greek": "πατητή"
+    },
+    {
+      "latin": "patoys",
+      "greek": "πάτους"
+    },
+    {
+      "latin": "payeis",
+      "greek": "παύεις"
+    },
+    {
+      "latin": "pedion",
+      "greek": "πεδίον"
+    },
+    {
+      "latin": "peiragma",
+      "greek": "πείραγμα"
+    },
+    {
+      "latin": "peismeni",
+      "greek": "πεισμένη"
+    },
+    {
+      "latin": "pelagio",
+      "greek": "πελάγιο"
+    },
+    {
+      "latin": "pelekion",
+      "greek": "πελεκιών"
+    },
+    {
+      "latin": "pempeis",
+      "greek": "πέμπεις"
+    },
+    {
+      "latin": "peneste",
+      "greek": "πένεστε"
+    },
+    {
+      "latin": "pentola",
+      "greek": "πέντολα"
+    },
+    {
+      "latin": "peptikoi",
+      "greek": "πεπτικοί"
+    },
+    {
+      "latin": "perittis",
+      "greek": "περιττής"
+    },
+    {
+      "latin": "perones",
+      "greek": "περόνες"
+    },
+    {
+      "latin": "persikis",
+      "greek": "περσικής"
+    },
+    {
+      "latin": "pesane",
+      "greek": "πέσανε"
+    },
+    {
+      "latin": "petaloso",
+      "greek": "πεταλώσω"
+    },
+    {
+      "latin": "petheroi",
+      "greek": "πεθεροί"
+    },
+    {
+      "latin": "peton",
+      "greek": "πέτων"
+    },
+    {
+      "latin": "petrias",
+      "greek": "πετριάς"
+    },
+    {
+      "latin": "petsone",
+      "greek": "πέτσωνε"
+    },
+    {
+      "latin": "peykino",
+      "greek": "πεύκινο"
+    },
+    {
+      "latin": "pezeyete",
+      "greek": "πεζεύετε"
+    },
+    {
+      "latin": "pianolas",
+      "greek": "πιανόλας"
+    },
+    {
+      "latin": "piasto",
+      "greek": "πιαστώ"
+    },
+    {
+      "latin": "piataki",
+      "greek": "πιατάκι"
+    },
+    {
+      "latin": "pichyaia",
+      "greek": "πηχυαία"
+    },
+    {
+      "latin": "piditike",
+      "greek": "πηδητικέ"
+    },
+    {
+      "latin": "pieses",
+      "greek": "πίεσες"
+    },
+    {
+      "latin": "piezome",
+      "greek": "πιέζομε"
+    },
+    {
+      "latin": "pigadioy",
+      "greek": "πηγαδιού"
+    },
+    {
+      "latin": "pikarete",
+      "greek": "πικάρετε"
+    },
+    {
+      "latin": "pikrikon",
+      "greek": "πικρικών"
+    },
+    {
+      "latin": "piktoy",
+      "greek": "πηκτού"
+    },
+    {
+      "latin": "pilalisa",
+      "greek": "πιλάλησα"
+    },
+    {
+      "latin": "pilote",
+      "greek": "πιλότε"
+    },
+    {
+      "latin": "pinaki",
+      "greek": "πίνακι"
+    },
+    {
+      "latin": "pinezon",
+      "greek": "πινεζών"
+    },
+    {
+      "latin": "pistoli",
+      "greek": "πιστόλι"
+    },
+    {
+      "latin": "pitzama",
+      "greek": "πιτζάμα"
+    },
+    {
+      "latin": "pixoyme",
+      "greek": "πήξουμε"
+    },
+    {
+      "latin": "plakeri",
+      "greek": "πλάκερη"
+    },
+    {
+      "latin": "plastika",
+      "greek": "πλάστηκα"
+    },
+    {
+      "latin": "platagis",
+      "greek": "πλαταγής"
+    },
+    {
+      "latin": "plekeis",
+      "greek": "πλέκεις"
+    },
+    {
+      "latin": "plenoyne",
+      "greek": "πλένουνε"
+    },
+    {
+      "latin": "pleome",
+      "greek": "πλέομε"
+    },
+    {
+      "latin": "plexi",
+      "greek": "πλέξη"
+    },
+    {
+      "latin": "pleysimo",
+      "greek": "πλεύσιμο"
+    },
+    {
+      "latin": "plimni",
+      "greek": "πλήμνη"
+    },
+    {
+      "latin": "plinthoy",
+      "greek": "πλίνθου"
+    },
+    {
+      "latin": "plisiaze",
+      "greek": "πλησίαζε"
+    },
+    {
+      "latin": "plixane",
+      "greek": "πλήξανε"
+    },
+    {
+      "latin": "ploikes",
+      "greek": "πλοϊκές"
+    },
+    {
+      "latin": "plorizo",
+      "greek": "πλωρίζω"
+    },
+    {
+      "latin": "plyston",
+      "greek": "πλυστών"
+    },
+    {
+      "latin": "pneotan",
+      "greek": "πνεόταν"
+    },
+    {
+      "latin": "pneysoyn",
+      "greek": "πνεύσουν"
+    },
+    {
+      "latin": "pnichton",
+      "greek": "πνιχτών"
+    },
+    {
+      "latin": "pnigoys",
+      "greek": "πνίγους"
+    },
+    {
+      "latin": "pniktiko",
+      "greek": "πνικτικό"
+    },
+    {
+      "latin": "pnixeis",
+      "greek": "πνίξεις"
+    },
+    {
+      "latin": "podiskon",
+      "greek": "ποδίσκων"
+    },
+    {
+      "latin": "podotes",
+      "greek": "ποδότες"
+    },
+    {
+      "latin": "pogona",
+      "greek": "πώγωνα"
+    },
+    {
+      "latin": "poieitai",
+      "greek": "ποιείται"
+    },
+    {
+      "latin": "poikiloy",
+      "greek": "ποικίλου"
+    },
+    {
+      "latin": "poimane",
+      "greek": "ποίμανε"
+    },
+    {
+      "latin": "poiotike",
+      "greek": "ποιοτικέ"
+    },
+    {
+      "latin": "polemiko",
+      "greek": "πολεμικό"
+    },
+    {
+      "latin": "politeye",
+      "greek": "πολίτευε"
+    },
+    {
+      "latin": "polkas",
+      "greek": "πόλκας"
+    },
+    {
+      "latin": "polli",
+      "greek": "πολλή"
+    },
+    {
+      "latin": "polosei",
+      "greek": "πολώσει"
+    },
+    {
+      "latin": "poltodis",
+      "greek": "πολτώδης"
+    },
+    {
+      "latin": "polyfoto",
+      "greek": "πολύφωτο"
+    },
+    {
+      "latin": "pomakiki",
+      "greek": "πομακική"
+    },
+    {
+      "latin": "pompeyo",
+      "greek": "πομπεύω"
+    },
+    {
+      "latin": "ponagan",
+      "greek": "πόναγαν"
+    },
+    {
+      "latin": "pontare",
+      "greek": "πόνταρε"
+    },
+    {
+      "latin": "poreia",
+      "greek": "πορεία"
+    },
+    {
+      "latin": "porisma",
+      "greek": "πόρισμά"
+    },
+    {
+      "latin": "porodon",
+      "greek": "πορωδών"
+    },
+    {
+      "latin": "portreta",
+      "greek": "πορτρέτα"
+    },
+    {
+      "latin": "posimoy",
+      "greek": "ποσίμου"
+    },
+    {
+      "latin": "potapos",
+      "greek": "ποταπός"
+    },
+    {
+      "latin": "pothites",
+      "greek": "ποθητές"
+    },
+    {
+      "latin": "potisto",
+      "greek": "ποτιστώ"
+    },
+    {
+      "latin": "poylo",
+      "greek": "πουλώ"
+    },
+    {
+      "latin": "poymes",
+      "greek": "πούμες"
+    },
+    {
+      "latin": "pramaton",
+      "greek": "πραμάτων"
+    },
+    {
+      "latin": "praotis",
+      "greek": "πραότης"
+    },
+    {
+      "latin": "preki",
+      "greek": "πρέκι"
+    },
+    {
+      "latin": "prepe",
+      "greek": "πρεπε"
+    },
+    {
+      "latin": "proagoge",
+      "greek": "προαγωγέ"
+    },
+    {
+      "latin": "prodroma",
+      "greek": "πρόδρομα"
+    },
+    {
+      "latin": "proimies",
+      "greek": "πρωιμιές"
+    },
+    {
+      "latin": "prokrito",
+      "greek": "πρόκριτο"
+    },
+    {
+      "latin": "promache",
+      "greek": "πρόμαχε"
+    },
+    {
+      "latin": "pronooyn",
+      "greek": "προνοούν"
+    },
+    {
+      "latin": "propompo",
+      "greek": "προπομπό"
+    },
+    {
+      "latin": "proskopo",
+      "greek": "προσκοπώ"
+    },
+    {
+      "latin": "protono",
+      "greek": "πρότονο"
+    },
+    {
+      "latin": "provoyme",
+      "greek": "προβούμε"
+    },
+    {
+      "latin": "proxenei",
+      "greek": "προξενεί"
+    },
+    {
+      "latin": "proza",
+      "greek": "πρόζα"
+    },
+    {
+      "latin": "prymisei",
+      "greek": "πρυμίσει"
+    },
+    {
+      "latin": "psachnon",
+      "greek": "ψαχνών"
+    },
+    {
+      "latin": "psalle",
+      "greek": "ψάλλε"
+    },
+    {
+      "latin": "psarepse",
+      "greek": "ψάρεψε"
+    },
+    {
+      "latin": "psatha",
+      "greek": "ψάθα"
+    },
+    {
+      "latin": "psayseis",
+      "greek": "ψαύσεις"
+    },
+    {
+      "latin": "psegmene",
+      "greek": "ψεγμένε"
+    },
+    {
+      "latin": "pseirize",
+      "greek": "ψείριζε"
+    },
+    {
+      "latin": "psekases",
+      "greek": "ψέκασες"
+    },
+    {
+      "latin": "pselno",
+      "greek": "ψέλνω"
+    },
+    {
+      "latin": "psichalo",
+      "greek": "ψίχαλο"
+    },
+    {
+      "latin": "psifisis",
+      "greek": "ψήφισης"
+    },
+    {
+      "latin": "psilonan",
+      "greek": "ψήλωναν"
+    },
+    {
+      "latin": "psistes",
+      "greek": "ψήστες"
+    },
+    {
+      "latin": "psomisan",
+      "greek": "ψώμισαν"
+    },
+    {
+      "latin": "psychame",
+      "greek": "ψύχαμε"
+    },
+    {
+      "latin": "pteleas",
+      "greek": "πτελέας"
+    },
+    {
+      "latin": "ptilodis",
+      "greek": "πτιλώδης"
+    },
+    {
+      "latin": "ptitiko",
+      "greek": "πτητικό"
+    },
+    {
+      "latin": "ptocheia",
+      "greek": "πτωχεία"
+    },
+    {
+      "latin": "ptoiste",
+      "greek": "πτοήστε"
+    },
+    {
+      "latin": "ptooynto",
+      "greek": "πτοούντο"
+    },
+    {
+      "latin": "ptyxte",
+      "greek": "πτύξτε"
+    },
+    {
+      "latin": "pygaioi",
+      "greek": "πυγαίοι"
+    },
+    {
+      "latin": "pygmache",
+      "greek": "πυγμάχε"
+    },
+    {
+      "latin": "pylaias",
+      "greek": "πυλαίας"
+    },
+    {
+      "latin": "pyraylos",
+      "greek": "πύραυλος"
+    },
+    {
+      "latin": "pyretika",
+      "greek": "πυρετικά"
+    },
+    {
+      "latin": "pyrfora",
+      "greek": "πυρφόρα"
+    },
+    {
+      "latin": "pyrgosa",
+      "greek": "πύργωσα"
+    },
+    {
+      "latin": "pyrosi",
+      "greek": "πύρωση"
+    },
+    {
+      "latin": "pyxaria",
+      "greek": "πυξάρια"
+    },
+    {
+      "latin": "rachiaia",
+      "greek": "ραχιαία"
+    },
+    {
+      "latin": "rafanis",
+      "greek": "ραφανίς"
+    },
+    {
+      "latin": "rafioy",
+      "greek": "ραφιού"
+    },
+    {
+      "latin": "raiso",
+      "greek": "ραΐσω"
+    },
+    {
+      "latin": "rammata",
+      "greek": "ράμματα"
+    },
+    {
+      "latin": "ranidas",
+      "greek": "ρανίδας"
+    },
+    {
+      "latin": "rantisto",
+      "greek": "ραντιστώ"
+    },
+    {
+      "latin": "rapisame",
+      "greek": "ραπίσαμε"
+    },
+    {
+      "latin": "rapsodo",
+      "greek": "ραψωδό"
+    },
+    {
+      "latin": "raptete",
+      "greek": "ράπτετε"
+    },
+    {
+      "latin": "rasoforo",
+      "greek": "ρασοφόρο"
+    },
+    {
+      "latin": "ratsismo",
+      "greek": "ρατσισμό"
+    },
+    {
+      "latin": "ravaisia",
+      "greek": "ραβαΐσια"
+    },
+    {
+      "latin": "ravdoys",
+      "greek": "ράβδους"
+    },
+    {
+      "latin": "ravei",
+      "greek": "ράβει"
+    },
+    {
+      "latin": "ravosoyn",
+      "greek": "ραβόσουν"
+    },
+    {
+      "latin": "reflex",
+      "greek": "ρεφλέξ"
+    },
+    {
+      "latin": "regchate",
+      "greek": "ρέγχατε"
+    },
+    {
+      "latin": "regoylo",
+      "greek": "ρέγουλο"
+    },
+    {
+      "latin": "reithron",
+      "greek": "ρείθρον"
+    },
+    {
+      "latin": "rekasoyn",
+      "greek": "ρεκάσουν"
+    },
+    {
+      "latin": "rektes",
+      "greek": "ρέκτες"
+    },
+    {
+      "latin": "rematies",
+      "greek": "ρεματιές"
+    },
+    {
+      "latin": "restis",
+      "greek": "ρέστης"
+    },
+    {
+      "latin": "reystos",
+      "greek": "ρευστός"
+    },
+    {
+      "latin": "rezili",
+      "greek": "ρεζίλη"
+    },
+    {
+      "latin": "richtoyn",
+      "greek": "ριχτούν"
+    },
+    {
+      "latin": "riknoi",
+      "greek": "ρικνοί"
+    },
+    {
+      "latin": "rimaxoy",
+      "greek": "ρημάξου"
+    },
+    {
+      "latin": "rinizame",
+      "greek": "ρινίζαμε"
+    },
+    {
+      "latin": "rinto",
+      "greek": "ριντό"
+    },
+    {
+      "latin": "ripseon",
+      "greek": "ρίψεων"
+    },
+    {
+      "latin": "riptesai",
+      "greek": "ρίπτεσαι"
+    },
+    {
+      "latin": "ritora",
+      "greek": "ρήτορα"
+    },
+    {
+      "latin": "rixoyne",
+      "greek": "ρίξουνε"
+    },
+    {
+      "latin": "riziko",
+      "greek": "ριζικό"
+    },
+    {
+      "latin": "rizone",
+      "greek": "ρίζωνε"
+    },
+    {
+      "latin": "rodine",
+      "greek": "ρόδινε"
+    },
+    {
+      "latin": "rodonero",
+      "greek": "ροδόνερο"
+    },
+    {
+      "latin": "rofiti",
+      "greek": "ροφητή"
+    },
+    {
+      "latin": "rogcho",
+      "greek": "ρόγχο"
+    },
+    {
+      "latin": "roies",
+      "greek": "ροιές"
+    },
+    {
+      "latin": "rokon",
+      "greek": "ροκών"
+    },
+    {
+      "latin": "roografo",
+      "greek": "ροογράφο"
+    },
+    {
+      "latin": "rovithi",
+      "greek": "ροβίθι"
+    },
+    {
+      "latin": "roygon",
+      "greek": "ρούγων"
+    },
+    {
+      "latin": "royketon",
+      "greek": "ρουκετών"
+    },
+    {
+      "latin": "royloy",
+      "greek": "ρουλού"
+    },
+    {
+      "latin": "roympoy",
+      "greek": "ρούμπου"
+    },
+    {
+      "latin": "roziazei",
+      "greek": "ροζιάζει"
+    },
+    {
+      "latin": "rozoys",
+      "greek": "ρόζους"
+    },
+    {
+      "latin": "rypantho",
+      "greek": "ρυπανθώ"
+    },
+    {
+      "latin": "rypoi",
+      "greek": "ρύποι"
+    },
+    {
+      "latin": "rytidosi",
+      "greek": "ρυτίδωση"
+    },
+    {
+      "latin": "ryzogala",
+      "greek": "ρυζόγαλα"
+    },
+    {
+      "latin": "safinoys",
+      "greek": "σαφηνούς"
+    },
+    {
+      "latin": "sagmaton",
+      "greek": "σαγμάτων"
+    },
+    {
+      "latin": "sagoni",
+      "greek": "σαγόνι"
+    },
+    {
+      "latin": "saint",
+      "greek": "σάιντ"
+    },
+    {
+      "latin": "saition",
+      "greek": "σαϊτιών"
+    },
+    {
+      "latin": "sakiazes",
+      "greek": "σάκιαζες"
+    },
+    {
+      "latin": "sakoyla",
+      "greek": "σακούλα"
+    },
+    {
+      "latin": "salago",
+      "greek": "σάλαγο"
+    },
+    {
+      "latin": "saleyes",
+      "greek": "σάλευες"
+    },
+    {
+      "latin": "saliono",
+      "greek": "σαλιώνω"
+    },
+    {
+      "latin": "salonioy",
+      "greek": "σαλονιού"
+    },
+    {
+      "latin": "samiake",
+      "greek": "σαμιακέ"
+    },
+    {
+      "latin": "sarison",
+      "greek": "σαρισών"
+    },
+    {
+      "latin": "sarka",
+      "greek": "σάρκα"
+    },
+    {
+      "latin": "saroseon",
+      "greek": "σαρώσεων"
+    },
+    {
+      "latin": "satirize",
+      "greek": "σατίριζε"
+    },
+    {
+      "latin": "savanono",
+      "greek": "σαβανώνω"
+    },
+    {
+      "latin": "sayra",
+      "greek": "σαύρα"
+    },
+    {
+      "latin": "schaze",
+      "greek": "σχάζε"
+    },
+    {
+      "latin": "schedia",
+      "greek": "σχέδιά"
+    },
+    {
+      "latin": "schizate",
+      "greek": "σχίζατε"
+    },
+    {
+      "latin": "selemise",
+      "greek": "σελέμισε"
+    },
+    {
+      "latin": "selosame",
+      "greek": "σελώσαμε"
+    },
+    {
+      "latin": "semprike",
+      "greek": "σεμπρικέ"
+    },
+    {
+      "latin": "senarion",
+      "greek": "σεναρίων"
+    },
+    {
+      "latin": "sentinas",
+      "greek": "σεντίνας"
+    },
+    {
+      "latin": "sergiani",
+      "greek": "σεργιάνι"
+    },
+    {
+      "latin": "sertikoi",
+      "greek": "σέρτικοι"
+    },
+    {
+      "latin": "servikon",
+      "greek": "σέρβικων"
+    },
+    {
+      "latin": "sevomeno",
+      "greek": "σεβόμενο"
+    },
+    {
+      "latin": "sfazane",
+      "greek": "σφάζανε"
+    },
+    {
+      "latin": "sfixi",
+      "greek": "σφίξη"
+    },
+    {
+      "latin": "sfondyle",
+      "greek": "σφόνδυλε"
+    },
+    {
+      "latin": "sfyriza",
+      "greek": "σφύριζα"
+    },
+    {
+      "latin": "sgompo",
+      "greek": "σγόμπο"
+    },
+    {
+      "latin": "sgoyros",
+      "greek": "σγουρός"
+    },
+    {
+      "latin": "sialose",
+      "greek": "σιάλωσε"
+    },
+    {
+      "latin": "sifoynes",
+      "greek": "σίφουνες"
+    },
+    {
+      "latin": "sigaloi",
+      "greek": "σιγαλοί"
+    },
+    {
+      "latin": "sikaton",
+      "greek": "σικάτων"
+    },
+    {
+      "latin": "sikome",
+      "greek": "σηκωμέ"
+    },
+    {
+      "latin": "simata",
+      "greek": "σήματά"
+    },
+    {
+      "latin": "simosete",
+      "greek": "σιμώσετε"
+    },
+    {
+      "latin": "siopame",
+      "greek": "σιωπάμε"
+    },
+    {
+      "latin": "siptikes",
+      "greek": "σηπτικές"
+    },
+    {
+      "latin": "sitas",
+      "greek": "σήτας"
+    },
+    {
+      "latin": "sitepse",
+      "greek": "σίτεψε"
+    },
+    {
+      "latin": "sitisan",
+      "greek": "σίτισαν"
+    },
+    {
+      "latin": "sivirike",
+      "greek": "σιβηρικέ"
+    },
+    {
+      "latin": "skafes",
+      "greek": "σκάφες"
+    },
+    {
+      "latin": "skalepsa",
+      "greek": "σκάλεψα"
+    },
+    {
+      "latin": "skandali",
+      "greek": "σκανδάλη"
+    },
+    {
+      "latin": "skaptiko",
+      "greek": "σκαπτικό"
+    },
+    {
+      "latin": "skaroso",
+      "greek": "σκαρώσω"
+    },
+    {
+      "latin": "skastoi",
+      "greek": "σκαστοί"
+    },
+    {
+      "latin": "skeftiko",
+      "greek": "σκεφτικό"
+    },
+    {
+      "latin": "skelidi",
+      "greek": "σκελίδι"
+    },
+    {
+      "latin": "sketi",
+      "greek": "σκέτη"
+    },
+    {
+      "latin": "skeyasa",
+      "greek": "σκεύασα"
+    },
+    {
+      "latin": "skiazeis",
+      "greek": "σκιάζεις"
+    },
+    {
+      "latin": "skisthei",
+      "greek": "σκισθεί"
+    },
+    {
+      "latin": "skitsoy",
+      "greek": "σκίτσου"
+    },
+    {
+      "latin": "sklavoys",
+      "greek": "σκλάβους"
+    },
+    {
+      "latin": "sklire",
+      "greek": "σκληρέ"
+    },
+    {
+      "latin": "skoli",
+      "greek": "σκόλη"
+    },
+    {
+      "latin": "skonto",
+      "greek": "σκόντο"
+    },
+    {
+      "latin": "skope",
+      "greek": "σκοπέ"
+    },
+    {
+      "latin": "skorpia",
+      "greek": "σκόρπια"
+    },
+    {
+      "latin": "skotones",
+      "greek": "σκότωνες"
+    },
+    {
+      "latin": "skoyfies",
+      "greek": "σκούφιες"
+    },
+    {
+      "latin": "skyfta",
+      "greek": "σκυφτά"
+    },
+    {
+      "latin": "skylaki",
+      "greek": "σκυλάκι"
+    },
+    {
+      "latin": "skyrota",
+      "greek": "σκυρωτά"
+    },
+    {
+      "latin": "skytales",
+      "greek": "σκυτάλες"
+    },
+    {
+      "latin": "smigetai",
+      "greek": "σμίγεται"
+    },
+    {
+      "latin": "smileyei",
+      "greek": "σμιλεύει"
+    },
+    {
+      "latin": "smyrtion",
+      "greek": "σμυρτιών"
+    },
+    {
+      "latin": "sodomika",
+      "greek": "σοδομικά"
+    },
+    {
+      "latin": "sofariza",
+      "greek": "σοφάριζα"
+    },
+    {
+      "latin": "sofer",
+      "greek": "σοφέρ"
+    },
+    {
+      "latin": "sofistei",
+      "greek": "σοφιστεί"
+    },
+    {
+      "latin": "solas",
+      "greek": "σόλας"
+    },
+    {
+      "latin": "soloikon",
+      "greek": "σόλοικων"
+    },
+    {
+      "latin": "somataki",
+      "greek": "σωματάκι"
+    },
+    {
+      "latin": "sonares",
+      "greek": "σόναρες"
+    },
+    {
+      "latin": "soreyeis",
+      "greek": "σωρεύεις"
+    },
+    {
+      "latin": "soriasma",
+      "greek": "σώριασμα"
+    },
+    {
+      "latin": "soropioy",
+      "greek": "σοροπιού"
+    },
+    {
+      "latin": "sotaro",
+      "greek": "σοτάρω"
+    },
+    {
+      "latin": "sovatzi",
+      "greek": "σοβατζή"
+    },
+    {
+      "latin": "soymadas",
+      "greek": "σουμάδας"
+    },
+    {
+      "latin": "soyroton",
+      "greek": "σουρωτών"
+    },
+    {
+      "latin": "soyston",
+      "greek": "σουστών"
+    },
+    {
+      "latin": "soyvas",
+      "greek": "σουβάς"
+    },
+    {
+      "latin": "sozontan",
+      "greek": "σώζονταν"
+    },
+    {
+      "latin": "sparazan",
+      "greek": "σπάραζαν"
+    },
+    {
+      "latin": "spastei",
+      "greek": "σπαστεί"
+    },
+    {
+      "latin": "spate",
+      "greek": "σπάτε"
+    },
+    {
+      "latin": "spazate",
+      "greek": "σπάζατε"
+    },
+    {
+      "latin": "spernon",
+      "greek": "σπέρνον"
+    },
+    {
+      "latin": "speydo",
+      "greek": "σπεύδω"
+    },
+    {
+      "latin": "spilaia",
+      "greek": "σπήλαια"
+    },
+    {
+      "latin": "spinoy",
+      "greek": "σπίνου"
+    },
+    {
+      "latin": "spitikoi",
+      "greek": "σπιτικοί"
+    },
+    {
+      "latin": "splines",
+      "greek": "σπλήνες"
+    },
+    {
+      "latin": "spoggon",
+      "greek": "σπόγγων"
+    },
+    {
+      "latin": "sproxe",
+      "greek": "σπρώξε"
+    },
+    {
+      "latin": "stachia",
+      "greek": "στάχια"
+    },
+    {
+      "latin": "stafidon",
+      "greek": "σταφίδων"
+    },
+    {
+      "latin": "staltiko",
+      "greek": "σταλτικό"
+    },
+    {
+      "latin": "stamatan",
+      "greek": "σταματάν"
+    },
+    {
+      "latin": "staras",
+      "greek": "σταράς"
+    },
+    {
+      "latin": "stavlizo",
+      "greek": "σταβλίζω"
+    },
+    {
+      "latin": "stayrosa",
+      "greek": "σταύρωσα"
+    },
+    {
+      "latin": "steftoyn",
+      "greek": "στεφτούν"
+    },
+    {
+      "latin": "stegasei",
+      "greek": "στεγάσει"
+    },
+    {
+      "latin": "steiron",
+      "greek": "στείρων"
+    },
+    {
+      "latin": "stekomai",
+      "greek": "στέκομαι"
+    },
+    {
+      "latin": "stenaxa",
+      "greek": "στέναξα"
+    },
+    {
+      "latin": "stepseis",
+      "greek": "στέψεις"
+    },
+    {
+      "latin": "sternoys",
+      "greek": "στερνούς"
+    },
+    {
+      "latin": "stigmi",
+      "greek": "στιγμή"
+    },
+    {
+      "latin": "stilpni",
+      "greek": "στιλπνή"
+    },
+    {
+      "latin": "stimonon",
+      "greek": "στημόνων"
+    },
+    {
+      "latin": "stinoyn",
+      "greek": "στήνουν"
+    },
+    {
+      "latin": "stirizo",
+      "greek": "στηρίζω"
+    },
+    {
+      "latin": "stisate",
+      "greek": "στήσατε"
+    },
+    {
+      "latin": "stithiki",
+      "greek": "στηθική"
+    },
+    {
+      "latin": "stokaro",
+      "greek": "στοκάρω"
+    },
+    {
+      "latin": "stolo",
+      "greek": "στόλο"
+    },
+    {
+      "latin": "stoypion",
+      "greek": "στουπιών"
+    },
+    {
+      "latin": "strafike",
+      "greek": "στράφηκε"
+    },
+    {
+      "latin": "strefon",
+      "greek": "στρέφον"
+    },
+    {
+      "latin": "strimoxe",
+      "greek": "στρίμωξε"
+    },
+    {
+      "latin": "strofes",
+      "greek": "στροφές"
+    },
+    {
+      "latin": "styfadas",
+      "greek": "στυφάδας"
+    },
+    {
+      "latin": "stygera",
+      "greek": "στυγερά"
+    },
+    {
+      "latin": "sygklito",
+      "greek": "σύγκλητο"
+    },
+    {
+      "latin": "sygnefon",
+      "greek": "σύγνεφον"
+    },
+    {
+      "latin": "sygyria",
+      "greek": "συγύρια"
+    },
+    {
+      "latin": "sykinoys",
+      "greek": "σύκινους"
+    },
+    {
+      "latin": "sylane",
+      "greek": "συλάνε"
+    },
+    {
+      "latin": "sylisoyn",
+      "greek": "συλήσουν"
+    },
+    {
+      "latin": "syllege",
+      "greek": "σύλλεγε"
+    },
+    {
+      "latin": "symforoy",
+      "greek": "σύμφορου"
+    },
+    {
+      "latin": "sympixei",
+      "greek": "συμπήξει"
+    },
+    {
+      "latin": "synama",
+      "greek": "συνάμα"
+    },
+    {
+      "latin": "syndeei",
+      "greek": "συνδέει"
+    },
+    {
+      "latin": "synepes",
+      "greek": "συνεπές"
+    },
+    {
+      "latin": "synigate",
+      "greek": "συνήγατε"
+    },
+    {
+      "latin": "synoliko",
+      "greek": "συνολικό"
+    },
+    {
+      "latin": "syntagma",
+      "greek": "σύνταγμά"
+    },
+    {
+      "latin": "sypsycho",
+      "greek": "σύψυχο"
+    },
+    {
+      "latin": "syrigmoy",
+      "greek": "συριγμού"
+    },
+    {
+      "latin": "syromena",
+      "greek": "συρόμενα"
+    },
+    {
+      "latin": "syrroin",
+      "greek": "συρροήν"
+    },
+    {
+      "latin": "syrse",
+      "greek": "συρσε"
+    },
+    {
+      "latin": "syrthei",
+      "greek": "συρθεί"
+    },
+    {
+      "latin": "syspane",
+      "greek": "συσπάνε"
+    },
+    {
+      "latin": "systyli",
+      "greek": "σύστυλη"
+    },
+    {
+      "latin": "syzontas",
+      "greek": "συζώντας"
+    },
+    {
+      "latin": "tachino",
+      "greek": "ταχινό"
+    },
+    {
+      "latin": "tafro",
+      "greek": "τάφρο"
+    },
+    {
+      "latin": "tagkiso",
+      "greek": "ταγκίσω"
+    },
+    {
+      "latin": "taistra",
+      "greek": "ταΐστρα"
+    },
+    {
+      "latin": "takti",
+      "greek": "τακτή"
+    },
+    {
+      "latin": "tamata",
+      "greek": "τάματα"
+    },
+    {
+      "latin": "tameno",
+      "greek": "ταμένο"
+    },
+    {
+      "latin": "tamies",
+      "greek": "ταμίες"
+    },
+    {
+      "latin": "tampake",
+      "greek": "ταμπάκε"
+    },
+    {
+      "latin": "tanyso",
+      "greek": "τανύσω"
+    },
+    {
+      "latin": "taposoy",
+      "greek": "ταπώσου"
+    },
+    {
+      "latin": "tarattei",
+      "greek": "ταράττει"
+    },
+    {
+      "latin": "tarsikes",
+      "greek": "ταρσικές"
+    },
+    {
+      "latin": "taseos",
+      "greek": "τάσεως"
+    },
+    {
+      "latin": "taxete",
+      "greek": "τάξετε"
+    },
+    {
+      "latin": "taxikis",
+      "greek": "ταξικής"
+    },
+    {
+      "latin": "tazeis",
+      "greek": "τάζεις"
+    },
+    {
+      "latin": "telemeni",
+      "greek": "τελεμένη"
+    },
+    {
+      "latin": "temenon",
+      "greek": "τεμενών"
+    },
+    {
+      "latin": "temnesai",
+      "greek": "τέμνεσαι"
+    },
+    {
+      "latin": "terpesai",
+      "greek": "τέρπεσαι"
+    },
+    {
+      "latin": "tessaras",
+      "greek": "τεσσάρας"
+    },
+    {
+      "latin": "tethoyme",
+      "greek": "τεθούμε"
+    },
+    {
+      "latin": "tetrapla",
+      "greek": "τετραπλά"
+    },
+    {
+      "latin": "thalames",
+      "greek": "θαλάμες"
+    },
+    {
+      "latin": "thampos",
+      "greek": "θάμπος"
+    },
+    {
+      "latin": "thaptoy",
+      "greek": "θάπτου"
+    },
+    {
+      "latin": "theiiko",
+      "greek": "θειικό"
+    },
+    {
+      "latin": "theliasa",
+      "greek": "θέλιασα"
+    },
+    {
+      "latin": "themelon",
+      "greek": "θέμελων"
+    },
+    {
+      "latin": "theoysa",
+      "greek": "θεούσα"
+    },
+    {
+      "latin": "thermoy",
+      "greek": "θερμού"
+    },
+    {
+      "latin": "thesfata",
+      "greek": "θέσφατα"
+    },
+    {
+      "latin": "thetane",
+      "greek": "θέτανε"
+    },
+    {
+      "latin": "thiasoys",
+      "greek": "θιάσους"
+    },
+    {
+      "latin": "thilion",
+      "greek": "θηλιών"
+    },
+    {
+      "latin": "thnitoy",
+      "greek": "θνητού"
+    },
+    {
+      "latin": "tholero",
+      "greek": "θολερό"
+    },
+    {
+      "latin": "thopeya",
+      "greek": "θώπευα"
+    },
+    {
+      "latin": "thoreis",
+      "greek": "θωρείς"
+    },
+    {
+      "latin": "threftei",
+      "greek": "θρεφτεί"
+    },
+    {
+      "latin": "throizoy",
+      "greek": "θροΐζου"
+    },
+    {
+      "latin": "thymidia",
+      "greek": "θυμηδία"
+    },
+    {
+      "latin": "thyomeno",
+      "greek": "θυόμενο"
+    },
+    {
+      "latin": "thyridos",
+      "greek": "θυρίδος"
+    },
+    {
+      "latin": "tiganias",
+      "greek": "τηγανιάς"
+    },
+    {
+      "latin": "tiktetai",
+      "greek": "τίκτεται"
+    },
+    {
+      "latin": "timoyme",
+      "greek": "τιμούμε"
+    },
+    {
+      "latin": "tiroyn",
+      "greek": "τηρούν"
+    },
+    {
+      "latin": "tithento",
+      "greek": "τίθεντο"
+    },
+    {
+      "latin": "tmitoy",
+      "greek": "τμητού"
+    },
+    {
+      "latin": "toichoys",
+      "greek": "τοίχους"
+    },
+    {
+      "latin": "tokisto",
+      "greek": "τοκιστώ"
+    },
+    {
+      "latin": "tokos",
+      "greek": "τόκος"
+    },
+    {
+      "latin": "tomias",
+      "greek": "τομίας"
+    },
+    {
+      "latin": "tonisane",
+      "greek": "τονίσανε"
+    },
+    {
+      "latin": "tonones",
+      "greek": "τόνωνες"
+    },
+    {
+      "latin": "toreya",
+      "greek": "τόρευα"
+    },
+    {
+      "latin": "torinis",
+      "greek": "τωρινής"
+    },
+    {
+      "latin": "torneyse",
+      "greek": "τόρνευσε"
+    },
+    {
+      "latin": "tosis",
+      "greek": "τόσης"
+    },
+    {
+      "latin": "totemika",
+      "greek": "τοτεμικά"
+    },
+    {
+      "latin": "toxeyete",
+      "greek": "τοξεύετε"
+    },
+    {
+      "latin": "toyfekia",
+      "greek": "τουφέκια"
+    },
+    {
+      "latin": "toympon",
+      "greek": "τούμπων"
+    },
+    {
+      "latin": "toyrles",
+      "greek": "τούρλες"
+    },
+    {
+      "latin": "trafei",
+      "greek": "τραφεί"
+    },
+    {
+      "latin": "tragisie",
+      "greek": "τραγίσιε"
+    },
+    {
+      "latin": "trampa",
+      "greek": "τράμπα"
+    },
+    {
+      "latin": "trani",
+      "greek": "τρανή"
+    },
+    {
+      "latin": "trava",
+      "greek": "τράβα"
+    },
+    {
+      "latin": "trefoyne",
+      "greek": "τρέφουνε"
+    },
+    {
+      "latin": "tremate",
+      "greek": "τρέματε"
+    },
+    {
+      "latin": "tresa",
+      "greek": "τρέσα"
+    },
+    {
+      "latin": "triadike",
+      "greek": "τριαδικέ"
+    },
+    {
+      "latin": "trigona",
+      "greek": "τρίγωνα"
+    },
+    {
+      "latin": "triklize",
+      "greek": "τρίκλιζε"
+    },
+    {
+      "latin": "trilies",
+      "greek": "τρίλιες"
+    },
+    {
+      "latin": "triodias",
+      "greek": "τριωδίας"
+    },
+    {
+      "latin": "tripsame",
+      "greek": "τρίψαμε"
+    },
+    {
+      "latin": "tritosa",
+      "greek": "τρίτωσα"
+    },
+    {
+      "latin": "trochile",
+      "greek": "τροχίλε"
+    },
+    {
+      "latin": "trofime",
+      "greek": "τρόφιμε"
+    },
+    {
+      "latin": "trogoyme",
+      "greek": "τρώγουμε"
+    },
+    {
+      "latin": "tromere",
+      "greek": "τρομερέ"
+    },
+    {
+      "latin": "tropiko",
+      "greek": "τροπικό"
+    },
+    {
+      "latin": "troylote",
+      "greek": "τρουλωτέ"
+    },
+    {
+      "latin": "trygises",
+      "greek": "τρύγησες"
+    },
+    {
+      "latin": "trypiste",
+      "greek": "τρυπήστε"
+    },
+    {
+      "latin": "tryxate",
+      "greek": "τρύξατε"
+    },
+    {
+      "latin": "tryzoyme",
+      "greek": "τρύζουμε"
+    },
+    {
+      "latin": "tsakotho",
+      "greek": "τσακωθώ"
+    },
+    {
+      "latin": "tsanakes",
+      "greek": "τσανάκες"
+    },
+    {
+      "latin": "tsaoyses",
+      "greek": "τσαούσες"
+    },
+    {
+      "latin": "tsapizei",
+      "greek": "τσαπίζει"
+    },
+    {
+      "latin": "tsatila",
+      "greek": "τσατίλα"
+    },
+    {
+      "latin": "tseposo",
+      "greek": "τσεπώσω"
+    },
+    {
+      "latin": "tsetoyla",
+      "greek": "τσέτουλα"
+    },
+    {
+      "latin": "tsiftiki",
+      "greek": "τσίφτικη"
+    },
+    {
+      "latin": "tsikniso",
+      "greek": "τσικνίσω"
+    },
+    {
+      "latin": "tsimpan",
+      "greek": "τσιμπάν"
+    },
+    {
+      "latin": "tsirixte",
+      "greek": "τσιρίξτε"
+    },
+    {
+      "latin": "tsitoses",
+      "greek": "τσίτωσες"
+    },
+    {
+      "latin": "tsoglani",
+      "greek": "τσογλάνι"
+    },
+    {
+      "latin": "tsotres",
+      "greek": "τσότρες"
+    },
+    {
+      "latin": "tsoylao",
+      "greek": "τσουλάω"
+    },
+    {
+      "latin": "tychei",
+      "greek": "τύχει"
+    },
+    {
+      "latin": "tyflas",
+      "greek": "τύφλας"
+    },
+    {
+      "latin": "tylichte",
+      "greek": "τυλιχτέ"
+    },
+    {
+      "latin": "tylon",
+      "greek": "τύλων"
+    },
+    {
+      "latin": "tymvoy",
+      "greek": "τύμβου"
+    },
+    {
+      "latin": "typaste",
+      "greek": "τυπάστε"
+    },
+    {
+      "latin": "typonome",
+      "greek": "τυπώνομε"
+    },
+    {
+      "latin": "tzampo",
+      "greek": "τζάμπο"
+    },
+    {
+      "latin": "tzire",
+      "greek": "τζίρε"
+    },
+    {
+      "latin": "tzoyfioi",
+      "greek": "τζούφιοι"
+    },
+    {
+      "latin": "vadizon",
+      "greek": "βαδίζον"
+    },
+    {
+      "latin": "vafeio",
+      "greek": "βαφείο"
+    },
+    {
+      "latin": "valmenis",
+      "greek": "βαλμένης"
+    },
+    {
+      "latin": "valsama",
+      "greek": "βάλσαμα"
+    },
+    {
+      "latin": "valthei",
+      "greek": "βαλθεί"
+    },
+    {
+      "latin": "vammenos",
+      "greek": "βαμμένος"
+    },
+    {
+      "latin": "vamvakes",
+      "greek": "βάμβακες"
+    },
+    {
+      "latin": "vanaysa",
+      "greek": "βάναυσα"
+    },
+    {
+      "latin": "vandaloy",
+      "greek": "βάνδαλου"
+    },
+    {
+      "latin": "vanilies",
+      "greek": "βανίλιες"
+    },
+    {
+      "latin": "vapsei",
+      "greek": "βάψει"
+    },
+    {
+      "latin": "varemeni",
+      "greek": "βαρεμένη"
+    },
+    {
+      "latin": "varidia",
+      "greek": "βαρίδια"
+    },
+    {
+      "latin": "varytata",
+      "greek": "βαρύτατα"
+    },
+    {
+      "latin": "vasanos",
+      "greek": "βάσανος"
+    },
+    {
+      "latin": "vaskikis",
+      "greek": "βασκικής"
+    },
+    {
+      "latin": "vastas",
+      "greek": "βαστάς"
+    },
+    {
+      "latin": "vatepses",
+      "greek": "βάτεψες"
+    },
+    {
+      "latin": "vatheias",
+      "greek": "βαθειάς"
+    },
+    {
+      "latin": "vazon",
+      "greek": "βάζων"
+    },
+    {
+      "latin": "vdomadas",
+      "greek": "βδομάδας"
+    },
+    {
+      "latin": "vedikos",
+      "greek": "βεδικός"
+    },
+    {
+      "latin": "vedoyron",
+      "greek": "βεδούρων"
+    },
+    {
+      "latin": "velaxoyn",
+      "greek": "βελάξουν"
+    },
+    {
+      "latin": "venthon",
+      "greek": "βενθών"
+    },
+    {
+      "latin": "venzolon",
+      "greek": "βενζολών"
+    },
+    {
+      "latin": "vespas",
+      "greek": "βέσπας"
+    },
+    {
+      "latin": "vgalei",
+      "greek": "βγάλει"
+    },
+    {
+      "latin": "vgaze",
+      "greek": "βγάζε"
+    },
+    {
+      "latin": "vgeite",
+      "greek": "βγείτε"
+    },
+    {
+      "latin": "viaoi",
+      "greek": "βίαοι"
+    },
+    {
+      "latin": "vichoyne",
+      "greek": "βήχουνε"
+    },
+    {
+      "latin": "vidotoy",
+      "greek": "βιδωτού"
+    },
+    {
+      "latin": "viles",
+      "greek": "βίλες"
+    },
+    {
+      "latin": "vimatiso",
+      "greek": "βηματίσω"
+    },
+    {
+      "latin": "violisti",
+      "greek": "βιολιστή"
+    },
+    {
+      "latin": "vionika",
+      "greek": "βιονικά"
+    },
+    {
+      "latin": "viosis",
+      "greek": "βίωσης"
+    },
+    {
+      "latin": "virarate",
+      "greek": "βιράρατε"
+    },
+    {
+      "latin": "viryllos",
+      "greek": "βήρυλλος"
+    },
+    {
+      "latin": "vitsizes",
+      "greek": "βίτσιζες"
+    },
+    {
+      "latin": "vivaria",
+      "greek": "βιβάρια"
+    },
+    {
+      "latin": "vivloi",
+      "greek": "βίβλοι"
+    },
+    {
+      "latin": "vlacho",
+      "greek": "βλάχο"
+    },
+    {
+      "latin": "vlaptiki",
+      "greek": "βλαπτική"
+    },
+    {
+      "latin": "vlennas",
+      "greek": "βλέννας"
+    },
+    {
+      "latin": "vlogiara",
+      "greek": "βλογιάρα"
+    },
+    {
+      "latin": "vlosyroy",
+      "greek": "βλοσυρού"
+    },
+    {
+      "latin": "voeros",
+      "greek": "βοερός"
+    },
+    {
+      "latin": "vogkon",
+      "greek": "βόγκων"
+    },
+    {
+      "latin": "voimikon",
+      "greek": "βοημικών"
+    },
+    {
+      "latin": "voisate",
+      "greek": "βοήσατε"
+    },
+    {
+      "latin": "voitha",
+      "greek": "βοήθα"
+    },
+    {
+      "latin": "voletos",
+      "greek": "βολετός"
+    },
+    {
+      "latin": "volizes",
+      "greek": "βόλιζες"
+    },
+    {
+      "latin": "vomvoys",
+      "greek": "βόμβους"
+    },
+    {
+      "latin": "vooyn",
+      "greek": "βοούν"
+    },
+    {
+      "latin": "voriades",
+      "greek": "βοριάδες"
+    },
+    {
+      "latin": "voron",
+      "greek": "βορών"
+    },
+    {
+      "latin": "voskage",
+      "greek": "βόσκαγε"
+    },
+    {
+      "latin": "voxiti",
+      "greek": "βωξίτη"
+    },
+    {
+      "latin": "voyixte",
+      "greek": "βουίξτε"
+    },
+    {
+      "latin": "voykina",
+      "greek": "βούκινα"
+    },
+    {
+      "latin": "voylosei",
+      "greek": "βουλώσει"
+    },
+    {
+      "latin": "voynodis",
+      "greek": "βουνώδης"
+    },
+    {
+      "latin": "voyrkoys",
+      "greek": "βούρκους"
+    },
+    {
+      "latin": "voytoyne",
+      "greek": "βουτούνε"
+    },
+    {
+      "latin": "voyva",
+      "greek": "βουβά"
+    },
+    {
+      "latin": "vradeia",
+      "greek": "βραδεία"
+    },
+    {
+      "latin": "vraktio",
+      "greek": "βράκτιο"
+    },
+    {
+      "latin": "vraso",
+      "greek": "βράσω"
+    },
+    {
+      "latin": "vrithei",
+      "greek": "βρίθει"
+    },
+    {
+      "latin": "vrizeste",
+      "greek": "βρίζεστε"
+    },
+    {
+      "latin": "vromiste",
+      "greek": "βρομήστε"
+    },
+    {
+      "latin": "vronton",
+      "greek": "βροντών"
+    },
+    {
+      "latin": "vyssinon",
+      "greek": "βύσσινον"
+    },
+    {
+      "latin": "vythizes",
+      "greek": "βύθιζες"
+    },
+    {
+      "latin": "xafniasa",
+      "greek": "ξάφνιασα"
+    },
+    {
+      "latin": "xafrisei",
+      "greek": "ξαφρίσει"
+    },
+    {
+      "latin": "xagia",
+      "greek": "ξάγια"
+    },
+    {
+      "latin": "xamoneis",
+      "greek": "ξαμώνεις"
+    },
+    {
+      "latin": "xanaeide",
+      "greek": "ξαναείδε"
+    },
+    {
+      "latin": "xanemizo",
+      "greek": "ξανεμίζω"
+    },
+    {
+      "latin": "xastero",
+      "greek": "ξάστερο"
+    },
+    {
+      "latin": "xechyses",
+      "greek": "ξέχυσες"
+    },
+    {
+      "latin": "xedesame",
+      "greek": "ξεδέσαμε"
+    },
+    {
+      "latin": "xeeipes",
+      "greek": "ξεείπες"
+    },
+    {
+      "latin": "xefeyge",
+      "greek": "ξέφευγε"
+    },
+    {
+      "latin": "xefteri",
+      "greek": "ξεφτέρι"
+    },
+    {
+      "latin": "xefysaei",
+      "greek": "ξεφυσάει"
+    },
+    {
+      "latin": "xegyrizo",
+      "greek": "ξεγυρίζω"
+    },
+    {
+      "latin": "xeidrono",
+      "greek": "ξεϊδρώνω"
+    },
+    {
+      "latin": "xekame",
+      "greek": "ξέκαμε"
+    },
+    {
+      "latin": "xekinan",
+      "greek": "ξεκινάν"
+    },
+    {
+      "latin": "xekopsa",
+      "greek": "ξέκοψα"
+    },
+    {
+      "latin": "xekrines",
+      "greek": "ξέκρινες"
+    },
+    {
+      "latin": "xelynei",
+      "greek": "ξελύνει"
+    },
+    {
+      "latin": "xemena",
+      "greek": "ξέμενα"
+    },
+    {
+      "latin": "xemytaei",
+      "greek": "ξεμυτάει"
+    },
+    {
+      "latin": "xenagisi",
+      "greek": "ξενάγηση"
+    },
+    {
+      "latin": "xenistes",
+      "greek": "ξενιστές"
+    },
+    {
+      "latin": "xenon",
+      "greek": "ξένον"
+    },
+    {
+      "latin": "xeoysas",
+      "greek": "ξέουσας"
+    },
+    {
+      "latin": "xepeta",
+      "greek": "ξεπέτα"
+    },
+    {
+      "latin": "xepidage",
+      "greek": "ξεπήδαγε"
+    },
+    {
+      "latin": "xeres",
+      "greek": "ξέρες"
+    },
+    {
+      "latin": "xerixeis",
+      "greek": "ξερίξεις"
+    },
+    {
+      "latin": "xernane",
+      "greek": "ξερνάνε"
+    },
+    {
+      "latin": "xeskazei",
+      "greek": "ξεσκάζει"
+    },
+    {
+      "latin": "xespaze",
+      "greek": "ξέσπαζε"
+    },
+    {
+      "latin": "xetinaxa",
+      "greek": "ξετίναξα"
+    },
+    {
+      "latin": "xevgoyn",
+      "greek": "ξεβγούν"
+    },
+    {
+      "latin": "xevidono",
+      "greek": "ξεβιδώνω"
+    },
+    {
+      "latin": "xezalisa",
+      "greek": "ξεζάλισα"
+    },
+    {
+      "latin": "xifaskia",
+      "greek": "ξιφασκία"
+    },
+    {
+      "latin": "xifias",
+      "greek": "ξιφίας"
+    },
+    {
+      "latin": "xigitis",
+      "greek": "ξηγητής"
+    },
+    {
+      "latin": "xiloname",
+      "greek": "ξηλώναμε"
+    },
+    {
+      "latin": "xipastei",
+      "greek": "ξιπαστεί"
+    },
+    {
+      "latin": "xiraneis",
+      "greek": "ξηράνεις"
+    },
+    {
+      "latin": "xirotate",
+      "greek": "ξηρότατε"
+    },
+    {
+      "latin": "xisto",
+      "greek": "ξηστό"
+    },
+    {
+      "latin": "xofloyn",
+      "greek": "ξοφλούν"
+    },
+    {
+      "latin": "xoklisi",
+      "greek": "ξωκλήσι"
+    },
+    {
+      "latin": "xomenete",
+      "greek": "ξωμένετε"
+    },
+    {
+      "latin": "xorkize",
+      "greek": "ξόρκιζε"
+    },
+    {
+      "latin": "xyliazan",
+      "greek": "ξύλιαζαν"
+    },
+    {
+      "latin": "xypniso",
+      "greek": "ξυπνήσω"
+    },
+    {
+      "latin": "xypolame",
+      "greek": "ξυπολάμε"
+    },
+    {
+      "latin": "xyrizei",
+      "greek": "ξυρίζει"
+    },
+    {
+      "latin": "xystos",
+      "greek": "ξυστός"
+    },
+    {
+      "latin": "ydrepsoy",
+      "greek": "υδρέψου"
+    },
+    {
+      "latin": "ydrovioi",
+      "greek": "υδρόβιοι"
+    },
+    {
+      "latin": "yfaina",
+      "greek": "ύφαινα"
+    },
+    {
+      "latin": "yfalmyre",
+      "greek": "υφάλμυρε"
+    },
+    {
+      "latin": "yfantiki",
+      "greek": "υφαντική"
+    },
+    {
+      "latin": "ygranes",
+      "greek": "ύγρανες"
+    },
+    {
+      "latin": "ymenikon",
+      "greek": "υμενικών"
+    },
+    {
+      "latin": "ymnimeno",
+      "greek": "υμνημένο"
+    },
+    {
+      "latin": "ymnodo",
+      "greek": "υμνωδό"
+    },
+    {
+      "latin": "ypageis",
+      "greek": "υπάγεις"
+    },
+    {
+      "latin": "ypaktika",
+      "greek": "υπακτικά"
+    },
+    {
+      "latin": "ypallagi",
+      "greek": "υπαλλαγή"
+    },
+    {
+      "latin": "yparxi",
+      "greek": "ύπαρξή"
+    },
+    {
+      "latin": "ypateye",
+      "greek": "υπάτευε"
+    },
+    {
+      "latin": "ypekaige",
+      "greek": "υπέκαιγε"
+    },
+    {
+      "latin": "yperogko",
+      "greek": "υπέρογκο"
+    },
+    {
+      "latin": "ypetrixe",
+      "greek": "υπέτριξε"
+    },
+    {
+      "latin": "ypnona",
+      "greek": "ύπνωνα"
+    },
+    {
+      "latin": "ypochrea",
+      "greek": "υπόχρεα"
+    },
+    {
+      "latin": "ypodochi",
+      "greek": "υποδοχή"
+    },
+    {
+      "latin": "ypoloipo",
+      "greek": "υπόλοιπο"
+    },
+    {
+      "latin": "ypomazie",
+      "greek": "υπομάζιε"
+    },
+    {
+      "latin": "ypotaxte",
+      "greek": "υποτάξτε"
+    },
+    {
+      "latin": "ypovosko",
+      "greek": "υποβόσκω"
+    },
+    {
+      "latin": "ypsifoni",
+      "greek": "υψίφωνη"
+    },
+    {
+      "latin": "ypsoseon",
+      "greek": "υψώσεων"
+    },
+    {
+      "latin": "yptiaso",
+      "greek": "υπτιάσω"
+    },
+    {
+      "latin": "ysteris",
+      "greek": "ύστερης"
+    },
+    {
+      "latin": "yvoys",
+      "greek": "υβούς"
+    },
+    {
+      "latin": "yvridiki",
+      "greek": "υβριδική"
+    },
+    {
+      "latin": "zakonia",
+      "greek": "ζακόνια"
+    },
+    {
+      "latin": "zarothei",
+      "greek": "ζαρωθεί"
+    },
+    {
+      "latin": "zavoi",
+      "greek": "ζαβοί"
+    },
+    {
+      "latin": "zemenoi",
+      "greek": "ζεμένοι"
+    },
+    {
+      "latin": "zeysoyne",
+      "greek": "ζεύσουνε"
+    },
+    {
+      "latin": "zileyete",
+      "greek": "ζηλεύετε"
+    },
+    {
+      "latin": "zilon",
+      "greek": "ζήλων"
+    },
+    {
+      "latin": "zitao",
+      "greek": "ζητάω"
+    },
+    {
+      "latin": "zitiesai",
+      "greek": "ζητιέσαι"
+    },
+    {
+      "latin": "zoagoron",
+      "greek": "ζωαγορών"
+    },
+    {
+      "latin": "zoferos",
+      "greek": "ζοφερός"
+    },
+    {
+      "latin": "zoirepse",
+      "greek": "ζωήρεψε"
+    },
+    {
+      "latin": "zonontan",
+      "greek": "ζώνονταν"
+    },
+    {
+      "latin": "zontania",
+      "greek": "ζωντάνια"
+    },
+    {
+      "latin": "zoofytoy",
+      "greek": "ζωόφυτου"
+    },
+    {
+      "latin": "zosmenos",
+      "greek": "ζωσμένος"
+    },
+    {
+      "latin": "zostoyme",
+      "greek": "ζωστούμε"
+    },
+    {
+      "latin": "zoylixo",
+      "greek": "ζουλήξω"
+    },
+    {
+      "latin": "zoypoyn",
+      "greek": "ζουπούν"
+    },
+    {
+      "latin": "zygizame",
+      "greek": "ζυγίζαμε"
+    },
+    {
+      "latin": "zygoys",
+      "greek": "ζυγούς"
+    },
+    {
+      "latin": "zymones",
+      "greek": "ζύμωνες"
+    }
+  ]
+}
