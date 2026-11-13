@@ -114,6 +114,29 @@ try{
  assert.equal(await reduced.page.getByRole('textbox',{name:'Message ICARUS',exact:true}).inputValue(),'');
  await shot(reduced.page,'home-no-device-reduced-motion');await reduced.context.close();
  report.checks.push('Four mobile navigation destinations remain available','Typing on Home preserves layout','Clear resets and focuses draft','No-device voice remains disabled','Reduced-motion layout verified');
+ for(const [width,height] of [[393,852],[852,393]]){
+  const {context,page}=await setup(width,height);
+  await context.addInitScript(()=>{window.IcarusMapHost={begin(){window.icarusMapLocation({state:'started'});window.icarusMapLocation({state:'fix',latitude:47.6,longitude:-122.33,accuracy:5,timestamp:Date.now(),speed:0});},stop(){},close(){}};});
+  await context.route('https://tile.openstreetmap.org/**',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#152c3c"/><path d="M0 128H256M128 0V256" stroke="#426176" stroke-width="12"/><text x="8" y="24" fill="#9fc4dd" font-size="12">TEST MAP TILE</text></svg>'}));
+  await context.route('https://routing.openstreetmap.de/**',route=>{
+   const pairs=new URL(route.request().url()).pathname.split('/driving/')[1].split(';').map(p=>p.split(',').map(Number));
+   return route.fulfill({json:{code:'Ok',waypoints:[{distance:0},{distance:0}],routes:[{distance:500,duration:90,geometry:{type:'LineString',coordinates:[pairs[0],[pairs[1][0],pairs[0][1]],pairs[1]]}}]}});
+  });
+  await page.goto(origin+'/assets/web/live-map/index.html');
+  assert.equal(await page.locator('.leaflet-tile').count(),0);
+  await page.getByRole('button',{name:'Start live map',exact:true}).click();
+  await page.locator('.leaflet-tile-loaded').first().waitFor();
+  await page.locator('#map').click({position:{x:150,y:130}});
+  await page.getByRole('button',{name:'Calculate route',exact:true}).click();
+  await page.locator('path[stroke="#13badf"]').waitFor();
+  await noOverflow(page,`${width}px live map`);await shot(page,`live-map-fixture-${width}x${height}`);
+  await page.evaluate(()=>window.icarusMapLocation({state:'waiting'}));
+  assert.equal(await page.locator('#speed').textContent(),'—');
+  assert.equal(await page.getByRole('button',{name:'Calculate route',exact:true}).isDisabled(),true);
+  await page.getByRole('button',{name:'Stop map & GPS',exact:true}).click();
+  assert.equal(await page.locator('#session').isVisible(),false);await context.close();
+ }
+ report.checks.push('Live map fixtures draw returned route geometry','Live map starts only on consent','Lost GPS hides speed and blocks route calculation','Stop removes the map session');
  assert.deepEqual(report.consoleErrors,[]);
  report.result='passed';
 }catch(error){report.result='failed';report.error=String(error);throw error;}

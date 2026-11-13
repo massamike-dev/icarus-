@@ -59,6 +59,8 @@
             android:name="libOpenCL.so"
             android:required="false" />
 
+        <activity android:name=".driving.LiveMapActivity" android:exported="false" />
+
         <activity
             android:name=".MontageActivity"
             android:exported="false" />
