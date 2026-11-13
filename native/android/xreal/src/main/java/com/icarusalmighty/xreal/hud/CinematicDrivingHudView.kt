@@ -50,6 +50,7 @@ open class CinematicDrivingHudView(
     private val normal = Typeface.create("sans-serif", Typeface.NORMAL)
     private val medium = Typeface.create("sans-serif-medium", Typeface.NORMAL)
     private val light = Typeface.create("sans-serif-light", Typeface.NORMAL)
+    private val speedFace = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC)
     private val path = Path()
     private val arc = RectF()
     private var state = CinematicDrivingScene()
@@ -151,18 +152,13 @@ open class CinematicDrivingHudView(
         val cx = 256f
         val cy = 375f
         val radius = 175f
-        // Four fine concentric contours and separate measured-speed segments.
-        ring(canvas, cx, cy, radius + 15f, 137f, 276f, blue, 1f, 145)
-        ring(canvas, cx, cy, radius + 6f, 140f, 269f, cyan, 1.2f, 92)
-        ring(canvas, cx, cy, radius - 7f, 145f, 250f, blue, 10f, 34)
-        ring(canvas, cx, cy, radius - 21f, 145f, 250f, cyan, 1f, 120)
-        ring(canvas, cx, cy, radius - 30f, 147f, 246f, gold, .8f, 90)
-        for (i in 0..40) {
-            val angle = Math.toRadians((145 + i * 6.25).toDouble())
-            val inner = radius - if (i % 5 == 0) 38f else 31f
-            stroke(blue, if (i % 5 == 0) 1.7f else .8f, if (i % 5 == 0) 160 else 78)
-            canvas.drawLine(cx + cos(angle).toFloat() * inner, cy + sin(angle).toFloat() * inner,
-                cx + cos(angle).toFloat() * (radius - 24f), cy + sin(angle).toFloat() * (radius - 24f), paint)
+        // Racing-inspired, low-clutter speed cluster. No decorative speed values.
+        ring(canvas, cx, cy, radius - 7f, 145f, 250f, blue, 8f, 55)
+        for (i in 0..8) {
+            val angle = Math.toRadians((145 + i * 31.25).toDouble())
+            stroke(cyan, 2f, 120)
+            canvas.drawLine(cx + cos(angle).toFloat() * (radius - 24f), cy + sin(angle).toFloat() * (radius - 24f),
+                cx + cos(angle).toFloat() * (radius - 16f), cy + sin(angle).toFloat() * (radius - 16f), paint)
         }
         state.speedMph?.let { speed ->
             val sweep = speed.coerceIn(0, 160) / 160f * 250f
@@ -176,7 +172,7 @@ open class CinematicDrivingHudView(
             paint.color = gold
             canvas.drawCircle(px, py, 3.3f, paint)
         }
-        text(canvas, state.speedMph?.toString() ?: "—", cx, cy + 25f, 106f, white, Paint.Align.CENTER, light)
+        text(canvas, state.speedMph?.toString() ?: "—", cx, cy + 25f, 112f, white, Paint.Align.CENTER, speedFace)
         text(canvas, "MPH", cx, cy + 64f, 25f, white, Paint.Align.CENTER)
         // Unknown remains a dash, never zero. The gold divider is ornamental.
         paint.style = Paint.Style.FILL
