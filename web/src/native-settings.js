@@ -4,10 +4,10 @@ import {subscribeNative} from './device-actions.js';
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value);
 export const VOICE_PRESETS={deep_warm:{rate:0.88,pitch:0.82},standard:{rate:1,pitch:1}};
 export function validVoiceSettings(value) {
-  return object(value)&&value.supported===true&&['deep_warm','standard','custom'].includes(value.profile)&&typeof value.voiceName==='string'&&Number.isFinite(value.rate)&&value.rate>=0.5&&value.rate<=1.5&&Number.isFinite(value.pitch)&&value.pitch>=0.5&&value.pitch<=1.5;
+  return object(value)&&value.supported===true&&['deep_warm','standard','custom'].includes(value.profile)&&typeof value.voiceName==='string'&&(value.language===undefined||/^[a-zA-Z]{2,3}(-[a-zA-Z0-9]{2,8})*$/.test(value.language))&&Number.isFinite(value.rate)&&value.rate>=0.5&&value.rate<=1.5&&Number.isFinite(value.pitch)&&value.pitch>=0.5&&value.pitch<=1.5;
 }
-export function voiceDraft(value) {return {profile:value.profile,voiceName:value.voiceName,rate:value.rate,pitch:value.pitch};}
-export function sameVoice(a,b) {return Boolean(a&&b)&&a.profile===b.profile&&a.voiceName===b.voiceName&&Math.abs(a.rate-b.rate)<0.001&&Math.abs(a.pitch-b.pitch)<0.001;}
+export function voiceDraft(value) {return {language:value.language||'en-US',profile:value.profile,voiceName:value.voiceName,rate:value.rate,pitch:value.pitch};}
+export function sameVoice(a,b) {return Boolean(a&&b)&&(a.language||'en-US')===(b.language||'en-US')&&a.profile===b.profile&&a.voiceName===b.voiceName&&Math.abs(a.rate-b.rate)<0.001&&Math.abs(a.pitch-b.pitch)<0.001;}
 
 // Settings requests share the same dispatcher as Chat, diagnostics and the companion.
 // Only this request's acknowledgement can settle its UI; timeouts never claim a save.

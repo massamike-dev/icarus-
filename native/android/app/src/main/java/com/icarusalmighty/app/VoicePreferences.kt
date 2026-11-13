@@ -17,10 +17,12 @@ object VoicePreferences {
             p.getString("tts_profile", "deep_warm") ?: "deep_warm",
             p.getString("tts_voice_name", "") ?: "",
             p.getFloat("tts_rate", 0.88f), p.getFloat("tts_pitch", 0.82f),
+            p.getString("tts_language", "en-US") ?: "en-US",
         ) }.getOrDefault(VoiceSettings())
     }
 
     fun save(context: Context, settings: VoiceSettings): Boolean = prefs(context).edit()
+        .putString("tts_language", settings.language)
         .putString("tts_profile", settings.profile)
         .putString("tts_voice_name", settings.voiceName)
         .putFloat("tts_rate", settings.rate)
@@ -28,12 +30,12 @@ object VoicePreferences {
         .commit()
 
     fun summary(settings: VoiceSettings): JSONObject = JSONObject()
-        .put("supported", true).put("profile", settings.profile)
+        .put("language", settings.language).put("supported", true).put("profile", settings.profile)
         .put("voiceName", settings.voiceName).put("rate", settings.rate.toString().toDouble())
         .put("pitch", settings.pitch.toString().toDouble())
 
-    private fun englishVoices(engine: TextToSpeech): List<Voice> = engine.voices.orEmpty()
-        .filter { it.locale.language.equals("en", true) &&
+    private fun installedVoices(engine: TextToSpeech): List<Voice> = engine.voices.orEmpty()
+        .filter { it.locale.language.isNotBlank() &&
             TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features.orEmpty() }
         .sortedWith(compareBy<Voice> { it.isNetworkConnectionRequired }
             .thenBy { !it.locale.country.equals("US", true) }.thenBy { it.name })
@@ -43,18 +45,18 @@ object VoicePreferences {
     /** Call only after a successful TTS initialization callback. */
     fun apply(context: Context, engine: TextToSpeech): Applied {
         val settings = read(context)
-        val language = engine.setLanguage(Locale.US)
+        val language = engine.setLanguage(Locale.forLanguageTag(settings.language))
         check(language >= TextToSpeech.LANG_AVAILABLE) {
             if (language == TextToSpeech.LANG_MISSING_DATA)
-                "English voice data is missing. Install a voice in Android text-to-speech settings."
-            else "An English voice is unavailable. Choose an English voice in Android text-to-speech settings."
+                "Voice data for this language is missing. Install it, then refresh voices."
+            else "The selected speech language is unavailable. Install its voice data, then refresh voices."
         }
-        val choices = englishVoices(engine)
+        val choices = installedVoices(engine).filter { it.locale.toLanguageTag().equals(settings.language, true) }
         val requested = choices.firstOrNull { it.name == settings.voiceName }
         val candidates = listOfNotNull(requested) + choices.filter { it !== requested }
         val selected = candidates.firstOrNull { engine.setVoice(it) == TextToSpeech.SUCCESS }
-        check(selected != null || engine.voice?.locale?.language.equals("en", true)) {
-            "Android could not load an English voice. Check text-to-speech settings."
+        check(selected != null || engine.voice?.locale?.toLanguageTag().equals(settings.language, true)) {
+            "The speech engine could not load this language. Install its voice data, then refresh voices."
         }
         check(engine.setSpeechRate(settings.rate) == TextToSpeech.SUCCESS &&
             engine.setPitch(settings.pitch) == TextToSpeech.SUCCESS) {
@@ -62,7 +64,7 @@ object VoicePreferences {
         }
         val activeName = engine.voice?.name.orEmpty()
         return Applied(settings, activeName, if (settings.voiceName.isNotEmpty() && settings.voiceName != activeName)
-            "The saved voice is unavailable in this engine. Using an available English voice; choose and preview another voice if needed."
+            "The saved voice is unavailable in this engine. Using an available selected-language voice; choose and preview another voice if needed."
         else null)
     }
 
@@ -71,9 +73,10 @@ object VoicePreferences {
         .put("engine", engine.defaultEngine ?: "android_tts")
         .put("activeVoiceName", applied.activeVoiceName)
         .put("voices", JSONArray().apply {
-            englishVoices(engine).forEach { voice -> put(JSONObject()
+            installedVoices(engine).sortedBy { it.name }.forEachIndexed { index, voice ->
+                put(JSONObject()
                 .put("name", voice.name)
-                .put("label", "${voice.locale.getDisplayName(Locale.US)} · ${voice.name}")
+                .put("label", "${listOf("Alex", "Casey", "Jordan", "Riley", "Taylor", "Avery")[index % 6]} ${index / 6 + 1} — ${voice.locale.getDisplayName(Locale.US)}")
                 .put("locale", voice.locale.toLanguageTag())
                 .put("networkRequired", voice.isNetworkConnectionRequired)) }
         })

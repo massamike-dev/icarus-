@@ -5,6 +5,17 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class VoiceSettingsTest {
+    @Test fun languageIsIndependentOfVoiceStyleAndDefaultsForOlderSettings() {
+        assertEquals("en-US", VoiceSettings.create("deep_warm", "", 1f, 1f).language)
+        val spanish = VoiceSettings.create("deep_warm", "es-voice", 1f, 1f, "es-MX")
+        assertEquals("es-MX", spanish.language)
+        assertEquals("es-voice", spanish.voiceName)
+        assertEquals(0.88f, spanish.rate)
+        assertThrows(IllegalArgumentException::class.java) {
+            VoiceSettings.create("standard", "", 1f, 1f, "not a locale")
+        }
+    }
+
     @Test fun namedProfilesRestoreTheirOwnValuesWhileKeepingSelectedVoice() {
         assertEquals(VoiceSettings(voiceName = "English voice"), VoiceSettings.create("deep_warm", "English voice", 1.4f, 1.3f))
         assertEquals(VoiceSettings("standard", "English voice", 1f, 1f), VoiceSettings.create("standard", "English voice", 0.6f, 0.7f))

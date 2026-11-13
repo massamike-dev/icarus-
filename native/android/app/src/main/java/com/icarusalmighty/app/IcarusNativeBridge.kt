@@ -360,6 +360,7 @@ class IcarusNativeBridge(
                 args.optString("voiceName", previous.voiceName),
                 if (args.has("rate")) args.optDouble("rate", Double.NaN).toFloat() else previous.rate,
                 if (args.has("pitch")) args.optDouble("pitch", Double.NaN).toFloat() else previous.pitch,
+                args.optString("language", previous.language),
             )
         } catch (e: IllegalArgumentException) {
             return error(requestId, "invalid_voice_settings", e.message)

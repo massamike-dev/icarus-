@@ -9,7 +9,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const bundle=await build({root,logLevel:'silent',build:{write:false,minify:false}});
 const code=bundle.output.find(value=>value.type==='chunk'&&value.isEntry).code;
 const waitFor=async(condition,message='Settings did not reach the expected state')=>{for(let i=0;i<100;i++){if(condition())return;await new Promise(resolve=>setTimeout(resolve,10));}assert.fail(message);};
-const voice={supported:true,available:true,profile:'deep_warm',voiceName:'',rate:.88,pitch:.82,engine:'Test speech',voices:[{name:'en-test',label:'English installed voice',locale:'en-US',networkRequired:false}]};
+const voice={language:'en-US',supported:true,available:true,profile:'deep_warm',voiceName:'',rate:.88,pitch:.82,engine:'Test speech',voices:[{name:'es-test',label:'Casey — Spanish',locale:'es-MX',networkRequired:false},{name:'en-test',label:'English installed voice',locale:'en-US',networkRequired:false}]};
 async function mount({native=true,support=true,reply}={}){
   const dom=new JSDOM('<div id="root"></div>',{url:'https://icarus.test',runScripts:'outside-only'}),w=dom.window,requests=[],errors=[];
   w.scrollTo=()=>{};w.AbortSignal.timeout=()=>new w.AbortController().signal;
@@ -39,7 +39,7 @@ test('Settings restore voice first, save presets before preview and preserve uns
     await app.select('voice-profile','standard');assert.equal(app.w.document.getElementById('voice-rate').value,'1');assert.equal(app.w.document.getElementById('voice-pitch').value,'1');assert.equal(app.button('Preview saved voice').disabled,true);
     await app.click('Memory');await app.click('Settings');await waitFor(()=>app.w.document.getElementById('voice-profile'));assert.equal(app.w.document.getElementById('voice-profile').value,'standard');
     await app.click('Save voice');await waitFor(()=>app.w.document.body.textContent.includes('Voice settings saved on this phone'));
-    assert.deepEqual(app.requests.filter(value=>value.action==='set_voice_settings').map(value=>value.arguments),[{profile:'standard',voiceName:'',rate:1,pitch:1}]);
+    assert.deepEqual(app.requests.filter(value=>value.action==='set_voice_settings').map(value=>value.arguments),[{language:'en-US',profile:'standard',voiceName:'',rate:1,pitch:1}]);
     assert.equal(app.button('Preview saved voice').disabled,false);await app.click('Preview saved voice');await waitFor(()=>app.w.document.body.textContent.includes('Voice preview finished'));
     assert.equal(app.requests.filter(value=>value.action==='preview_voice').length,1);assert.deepEqual(app.errors,[]);
   }finally{app.dom.window.close();}
@@ -69,4 +69,21 @@ test('native settings acknowledgements correlate and timeout without reporting s
   host.ICARUS_NATIVE_RESULT(JSON.stringify({requestId:'unrelated',ok:true,data:{saved:true}}));
   await assert.rejects(result,/did not confirm this request/);
   assert.equal(requests.length,1);assert.equal(host.ICARUS_NATIVE_RESULT,undefined);
+});
+
+test('language filters voices independently from narrator and system settings',async()=>{
+ const app=await mount();
+ try {
+  await app.select('voice-name','en-test');
+  await app.select('voice-language','es-MX');
+  assert.equal(app.w.document.getElementById('voice-profile').value,'deep_warm');
+  assert.equal(app.w.document.getElementById('voice-name').value,'');
+  assert.equal(app.w.document.querySelector('#voice-name option[value="en-test"]'),null);
+  assert.ok(app.w.document.querySelector('#voice-name option[value="es-test"]'));
+  await app.click('Save voice');
+  await waitFor(()=>app.w.document.body.textContent.includes('Voice settings saved on this phone'));
+  assert.equal(app.requests.find(r=>r.action==='set_voice_settings').arguments.language,'es-MX');
+  assert.equal(app.requests.filter(r=>r.action==='open_voice_settings').length,0);
+  assert.deepEqual(app.errors,[]);
+ }finally{app.dom.window.close();}
 });
