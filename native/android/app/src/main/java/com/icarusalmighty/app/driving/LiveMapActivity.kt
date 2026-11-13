@@ -11,6 +11,10 @@ import android.os.Bundle
 import android.os.Looper
 import android.os.SystemClock
 import android.view.WindowManager
+import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -69,12 +73,7 @@ class LiveMapActivity : AppCompatActivity(), LocationListener {
                 if (uri.scheme == "https" && uri.host == "appassets.androidplatform.net" &&
                     uri.path.orEmpty().startsWith("/assets/web/live-map/"))
                     return assets.shouldInterceptRequest(uri) ?: blocked()
-                val tiles = uri.host == "tile.openstreetmap.org" &&
-                    Regex("/\\d{1,2}/\\d+/\\d+\\.png").matches(uri.path.orEmpty()) && uri.query == null
-                val routing = uri.host == "routing.openstreetmap.de" &&
-                    uri.path.orEmpty().startsWith("/routed-car/route/v1/driving/")
-                return if (networkEnabled && request.method == "GET" && uri.scheme == "https" &&
-                    uri.port == -1 && uri.userInfo == null && (tiles || routing)) null else blocked()
+                return if (request.method == "GET" && LiveMapNetworkPolicy.allows(uri.toString(), networkEnabled)) null else blocked()
             }
         }
         web.addJavascriptInterface(object {
@@ -86,7 +85,14 @@ class LiveMapActivity : AppCompatActivity(), LocationListener {
             @JavascriptInterface fun stop() = runOnUiThread { stopSession() }
             @JavascriptInterface fun close() = runOnUiThread { finish() }
         }, "IcarusMapHost")
-        setContentView(web)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        val root = FrameLayout(this).apply { addView(web, FrameLayout.LayoutParams(-1, -1)) }
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        setContentView(root)
         web.loadUrl(URL)
     }
 
