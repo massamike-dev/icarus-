@@ -79,6 +79,11 @@ try{
  const vehicleButtonHeights=await page.locator('.hud-option .settings-actions > button').evaluateAll(buttons=>buttons.map(button=>button.getBoundingClientRect().height));
  assert.ok(vehicleButtonHeights.length>0&&vehicleButtonHeights.every(height=>height>=44&&height<120),'Column-oriented Vehicle actions must retain compact touch targets');
  await shot(page,'vehicle-393x852');await noOverflow(page,'393px Vehicle');
+ await page.getByRole('button',{name:'Preview driving graphics',exact:true}).click();
+ await page.locator('.race-preview').scrollIntoViewIfNeeded();await shot(page,'driving-map-393x852',{top:false});await noOverflow(page,'393px driving preview');
+ await page.getByRole('button',{name:'Glasses HUD layout',exact:true}).click();
+ assert.equal(await page.locator('.race-map').count(),0);await page.locator('.race-preview').scrollIntoViewIfNeeded();await shot(page,'driving-hud-393x852',{top:false});
+ await page.getByRole('button',{name:'Close graphics preview',exact:true}).click();
  await page.locator('.hud-option .settings-actions > button').first().evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));await shot(page,'vehicle-actions-393x852',{top:false});
  await page.getByRole('button',{name:'Home',exact:true}).click();await page.locator('.dashboard-talk:enabled').waitFor();
  await page.getByRole('button',{name:'Talk now from Home',exact:true}).click();
@@ -90,6 +95,10 @@ try{
  for(const [width,height] of [[320,568],[430,932],[1440,1000]]){
   const {context,page}=await setup(width,height);await page.locator('.dashboard-talk:enabled').waitFor();await noOverflow(page,`${width}px Home`);await shot(page,`home-${width}x${height}`);
   if(width<=850){assert.equal(await page.locator('nav button:visible').count(),4);await page.locator('.dashboard-tools summary').scrollIntoViewIfNeeded();await shot(page,`home-controls-${width}x${height}`,{top:false});assert.equal(await page.locator('.dashboard-tools summary').isVisible(),true);}
+  await page.getByRole('button',{name:'Home',exact:true}).click();
+  await page.locator('.dashboard-tools').evaluate(el=>{el.open=true;});await page.getByRole('button',{name:'Open vehicle controls',exact:true}).click();
+  await page.getByRole('button',{name:'Preview driving graphics',exact:true}).click();
+  await noOverflow(page,`${width}px driving preview`);await page.locator('.race-preview').scrollIntoViewIfNeeded();await shot(page,`driving-map-${width}x${height}`,{top:false});
   await page.getByRole('button',{name:'Settings',exact:true}).click();await noOverflow(page,`${width}px Settings`);await shot(page,`settings-${width}x${height}`);
   await context.close();
  }
