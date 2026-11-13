@@ -24,7 +24,7 @@ export function Dashboard({onNavigate,onStartChat,user,Icon}) {
   const prompt=!local&&firstName&&firstName!=='Local'?`What are we working on, ${firstName}?`:'What are we working on?';
   return <section className="command-dashboard" aria-labelledby="dashboard-title">
     <div className="dashboard-home">
-    <div className="dashboard-heading"><div className="dashboard-wordmark">ICARUS</div><span className="workspace-badge"><i aria-hidden="true"/>{local?'On-device mode':'Cloud mode'}</span></div>
+    <div className="dashboard-heading"><div className="dashboard-wordmark">ICARUS</div><div className="dashboard-account"><span className="workspace-badge"><i aria-hidden="true"/>{local?'On-device mode':'Cloud mode'}</span>{local&&<button className="dashboard-signin" onClick={()=>onNavigate('account')}>Sign in to account</button>}</div></div>
     <div className="command-stage">
       <div className="stage-copy"><h1 id="dashboard-title">Speak with ICARUS</h1><p>{prompt}</p></div>
       <div className="dashboard-companion-stage"><IcarusCompanion onNavigate={onNavigate} presentation="dashboard"/></div>

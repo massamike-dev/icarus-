@@ -45,6 +45,10 @@ try{
  const {context,page}=await setup(393,852);
  await page.locator('.dashboard-talk:enabled').waitFor();
  await noOverflow(page,'393px Home');await shot(page,'home-393x852');
+ assert.equal(await page.getByRole('button',{name:'Sign in to account',exact:true}).isVisible(),true);
+ await page.getByRole('button',{name:'Sign in to account',exact:true}).click();
+ await page.getByRole('heading',{name:'Your ICARUS account',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Home',exact:true}).click();
  await page.getByRole('button',{name:'Open ICARUS companion',exact:true}).click();
  await page.locator('.companion-panel').waitFor();await shot(page,'companion-open-393x852');
  await page.keyboard.press('Escape');assert.equal(await page.locator('.companion-panel').count(),0);

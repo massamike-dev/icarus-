@@ -195,3 +195,5 @@ html { font-family: var(--font-body); background: var(--ink); scrollbar-color: v
   .app-shell > aside { background: Canvas; border-color: CanvasText; }
   .app-shell > aside > nav > button.active { color: Highlight; }
 }
+
+.dashboard-account{display:flex;align-items:flex-end;flex-direction:column;gap:5px}.dashboard-signin{border:0;background:transparent;color:#f4d38d;padding:5px 2px;text-decoration:underline;text-underline-offset:3px;font-size:12px;min-height:32px}.dashboard-signin:focus-visible{outline:2px solid #f4d38d;outline-offset:2px}.profile[aria-label="Sign in to ICARUS"]{width:auto;min-width:70px;padding:0 12px;border-radius:22px;white-space:nowrap}
