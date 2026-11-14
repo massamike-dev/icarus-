@@ -84,9 +84,13 @@ def permissions(output):
     receiver = PACKAGE + ".test.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
     if receiver in values:
         declarations = [e for e in manifest if e.tag == "permission" and e.get(android_name) == receiver]
-        require(len(declarations) == 1 and declarations[0].get(
-            "{http://schemas.android.com/apk/res/android}protectionLevel") in ("signature", "0x00000002", "2"),
-            "Test receiver permission must be declared signature-only.")
+        levels = [e.get("{http://schemas.android.com/apk/res/android}protectionLevel", "") for e in declarations]
+        def signature_only(level):
+            if level == "signature": return True
+            try: return int(level, 0) == 2
+            except ValueError: return False
+        require(len(levels) == 1 and signature_only(levels[0]),
+            "Test receiver permission must be declared signature-only; reported levels: " + repr(levels))
     return sorted(set(values))
 
 

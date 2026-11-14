@@ -16,9 +16,9 @@ class Isolation(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 v.verify_upgrade(self.baseline,dict(self.preview,**change))
     def test_receiver_must_be_signature_protected(self):
-        for level in ['normal','dangerous','signature','0x00000002']:
+        for level in ['normal','dangerous','signature','0x00000002','0x2','0x12']:
             xml = f'<manifest xmlns:android="http://schemas.android.com/apk/res/android"><permission android:name="{self.test_receiver}" android:protectionLevel="{level}"/><uses-permission android:name="{self.test_receiver}"/></manifest>'
-            if level in ['signature','0x00000002']: self.assertEqual(v.permissions(xml),[self.test_receiver])
+            if level in ['signature','0x00000002','0x2']: self.assertEqual(v.permissions(xml),[self.test_receiver])
             else:
                 with self.assertRaises(ValueError): v.permissions(xml)
         with self.assertRaises(ValueError):
