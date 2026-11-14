@@ -26,8 +26,8 @@ android {
         applicationId = "com.icarusalmighty.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 51
-        versionName = "1.6.20"
+        versionCode = 52
+        versionName = "1.6.21"
         manifestPlaceholders["mwdat_application_id"] = metaApplicationId
         manifestPlaceholders["mwdat_client_token"] = metaClientToken
         manifestPlaceholders["icarus_link_scheme"] = "icarus"
@@ -72,6 +72,11 @@ android {
             buildConfigField("String", "ICARUS_LINK_SCHEME", javaString("icarus-test"))
             // There is intentionally no public update feed for private installs.
             buildConfigField("String", "UPDATE_NOTES_URL", javaString(""))
+        }
+        // Native/bundled-UI lab delivery; same isolated identity and test-only origin.
+        create("motionTest") {
+            initWith(getByName("privateTest"))
+            matchingFallbacks += listOf("release")
         }
     }
 
@@ -145,10 +150,10 @@ val validatePrivateTestSigning = tasks.register("validatePrivateTestSigning") {
     }
 }
 tasks.configureEach {
-    if (name.contains("PrivateTest") && name != "validatePrivateTestConfiguration") {
+    if ((name.contains("PrivateTest") || name.contains("MotionTest")) && name != "validatePrivateTestConfiguration") {
         dependsOn(validatePrivateTestConfiguration)
     }
-    if (name in setOf("assemblePrivateTest", "bundlePrivateTest", "packagePrivateTest", "packagePrivateTestBundle", "signPrivateTestBundle")) {
+    if (name in setOf("assembleMotionTest", "bundleMotionTest", "packageMotionTest", "packageMotionTestBundle", "signMotionTestBundle", "assemblePrivateTest", "bundlePrivateTest", "packagePrivateTest", "packagePrivateTestBundle", "signPrivateTestBundle")) {
         dependsOn(validatePrivateTestSigning)
     }
 }
