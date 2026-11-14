@@ -209,8 +209,8 @@ jobs:
           path: |
             native/android/app/build/reports/tests/testMotionTestUnitTest/**
             native/android/app/build/reports/lint-results-motionTest.*
-            native/android/xreal/build/reports/tests/testMotionTestUnitTest/**
-            native/android/xreal/build/reports/lint-results-motionTest.*
+            native/android/xreal/build/reports/tests/testReleaseUnitTest/**
+            native/android/xreal/build/reports/lint-results-release.*
           if-no-files-found: ignore
       - name: Always remove signing material and temporary APKs
         if: always()
