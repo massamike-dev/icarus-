@@ -37,6 +37,7 @@ object IntegrationPolicy {
         "obd_disconnect",
         "open_driving_hud",
         "open_live_map",
+        "open_motion_preview",
         "open_navigation_access_settings",
         "find_videos",
         "compose_video_montage",
