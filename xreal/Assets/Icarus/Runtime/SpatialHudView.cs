@@ -13,6 +13,8 @@ namespace Icarus.Spatial
         private Text modeText;
         private Text sourceText;
         private Material volumetricMaterial;
+        private CanvasGroup visibility;
+        private LineRenderer vehicleLine;
         private bool diagnosticsExpanded = true;
 
         private static readonly Color Navy = new(0.01f, 0.03f, 0.08f, 0.80f);
@@ -26,6 +28,8 @@ namespace Icarus.Spatial
             anchor = anchorController;
             var canvasObject = new GameObject("ICARUS World Canvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
             canvasObject.transform.SetParent(transform, false);
+            visibility = canvasObject.AddComponent<CanvasGroup>();
+            visibility.alpha = 0f;
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvas.worldCamera = headCamera;
@@ -57,8 +61,8 @@ namespace Icarus.Spatial
             values["voltage"] = Metric(diagRect, "VOLTAGE", -95f);
 
             var modePanel = CreatePanel(rect, "Mode", new Vector2(615f, 330f), new Vector2(310f, 90f));
-            modeText = CreateText(modePanel, "BODY ANCHOR", Vector2.zero, new Vector2(260f, 50f), 21, Gold, TextAnchor.MiddleCenter, true);
-            AddAction(modePanel.gameObject, HudAction.ToggleFollowMode, new Vector3(310f, 90f, 20f));
+            modeText = CreateText(modePanel, "FORWARD FIXED", Vector2.zero, new Vector2(260f, 50f), 21, Gold, TextAnchor.MiddleCenter, true);
+
 
             var centerPanel = CreatePanel(rect, "Vehicle Scan", new Vector2(0f, -90f), new Vector2(520f, 430f));
             CreateText(centerPanel, "OBD VEHICLE SCAN", new Vector2(0f, -165f), new Vector2(330f, 36f), 18, Cyan, TextAnchor.MiddleCenter, true);
@@ -66,12 +70,25 @@ namespace Icarus.Spatial
             AddAction(centerPanel.gameObject, HudAction.ToggleDiagnostics, new Vector3(520f, 430f, 20f));
             CreateVehicleWireframe();
             CreateVolumetricLayer();
+            SetVisibility(0f);
 
             var recenterPanel = CreatePanel(rect, "Recenter", new Vector2(-10f, -380f), new Vector2(270f, 70f));
             CreateText(recenterPanel, "RECENTER", Vector2.zero, new Vector2(220f, 40f), 18, White, TextAnchor.MiddleCenter, true);
             AddAction(recenterPanel.gameObject, HudAction.Recenter, new Vector3(270f, 70f, 20f));
 
             CreateText(rect, "LIVE DATA ONLY • NO SIMULATED TELEMETRY", new Vector2(-720f, -410f), new Vector2(720f, 35f), 16, Gold, TextAnchor.MiddleLeft, false);
+        }
+
+        public void SetVisibility(float alpha)
+        {
+            if (visibility != null) visibility.alpha = alpha;
+            if (vehicleLine != null)
+            {
+                var color = Cyan; color.a = alpha;
+                vehicleLine.material.color = color;
+            }
+            if (volumetricMaterial != null) volumetricMaterial.SetFloat("_Visibility", alpha);
+            foreach (var collider in GetComponentsInChildren<Collider>(true)) collider.enabled = alpha >= 0.99f;
         }
 
         public void ApplyTelemetry(TelemetrySnapshot snapshot)
@@ -164,6 +181,7 @@ namespace Icarus.Spatial
             go.transform.SetParent(transform, false);
             go.transform.localPosition = new Vector3(0f, -0.08f, 0.03f);
             var line = go.AddComponent<LineRenderer>();
+            vehicleLine = line;
             line.useWorldSpace = false;
             line.loop = true;
             line.widthMultiplier = 0.008f;

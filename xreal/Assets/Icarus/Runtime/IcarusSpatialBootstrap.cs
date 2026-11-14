@@ -18,7 +18,7 @@ namespace Icarus.Spatial
             camera.farClipPlane = 20f;
             camera.stereoTargetEye = StereoTargetEyeMask.Both;
             cameraObject.AddComponent<AudioListener>();
-            cameraObject.AddComponent<XrHeadPoseDriver>();
+            var pose = cameraObject.AddComponent<XrHeadPoseDriver>();
 
             var anchorObject = new GameObject("ICARUS Spatial Anchor");
             anchorObject.transform.SetParent(transform, false);
@@ -27,6 +27,8 @@ namespace Icarus.Spatial
 
             var hud = anchorObject.AddComponent<SpatialHudView>();
             hud.Initialize(anchor, camera);
+            var motion = anchorObject.AddComponent<HeadMotionVisibility>();
+            motion.Initialize(pose, hud, anchor);
 
             var interactor = cameraObject.AddComponent<GazeTapInteractor>();
             interactor.HeadCamera = camera;
