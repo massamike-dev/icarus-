@@ -2,6 +2,7 @@ Shader "ICARUS/VolumetricHUD"
 {
     Properties
     {
+        _Visibility ("Visibility", Range(0,1)) = 0
         _Heat ("Live Coolant Heat", Range(0,1)) = 0
         _Pulse ("Live RPM Pulse", Range(0,1)) = 0
     }
@@ -31,6 +32,7 @@ Shader "ICARUS/VolumetricHUD"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            float _Visibility;
             float _Heat;
             float _Pulse;
 
@@ -82,7 +84,7 @@ Shader "ICARUS/VolumetricHUD"
                     alpha += a * (1.0 - alpha);
                 }
                 float vignette = saturate(1.0 - dot(p, p) * 0.35);
-                return fixed4(accum * vignette, alpha * 0.55 * vignette);
+                return fixed4(accum * vignette, alpha * 0.55 * vignette * _Visibility);
             }
             ENDCG
         }

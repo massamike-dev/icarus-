@@ -66,3 +66,26 @@ For an AAB set environment variable `ICARUS_XREAL_AAB=1` before invoking the sam
 5. If the companion stops polling, the native telemetry service shuts itself down automatically.
 
 The intended XREAL host for this project is Beam Pro. Android phone fallback remains the native ICARUS Driving HUD.
+
+### Head-turn visibility prototype
+
+The Unity companion now defaults to ForwardFixed (no yaw catch-up). It reads
+tracked XR rotation, fades all HUD graphics out over 80 ms at 45 degrees/second
+or 12 degrees from the calibrated forward orientation, and restores over 300 ms
+only after staying within 7 degrees and below 12 degrees/second for 500 ms.
+These are initial tuning values, not validated human-factors limits. Small
+movements below the thresholds do not trigger a fade. Missing tracking, pause,
+focus loss, or a frame gap above 100 ms immediately hides graphics. Hidden HUD
+colliders are disabled. Recenter resets the reference; tracking recovery alone
+does not redefine forward. Voice/audio is not modified by the fade.
+
+This is a stationary Unity prototype, not present in the native Android mirror
+HUD or the downloadable APK. It does not align navigation with road geometry or
+compensate vehicle turns. XREAL manufacturer restrictions and legal review remain
+unresolved. Do not use this prototype as driver guidance.
+
+Device validation: initial acquisition; slow and fast yaw/pitch/roll; staying
+turned away; return and settle; small jitter; tracking loss/recovery while turned;
+background/resume; recenter; verify canvas, wireframe and shader all disappear
+and hidden controls cannot be activated. Requires the accepted XREAL SDK package
+and Unity 2022.3.62f2; source checks alone do not establish runtime behavior.

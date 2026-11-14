@@ -2,12 +2,13 @@ using UnityEngine;
 
 namespace Icarus.Spatial
 {
-    public enum SpatialFollowMode { BodyAnchor, SmoothFollow }
+    public enum SpatialFollowMode { ForwardFixed, BodyAnchor, SmoothFollow }
 
     public sealed class SpatialAnchorController : MonoBehaviour
     {
+        public event System.Action Recentered;
         public Transform Head { get; set; }
-        public SpatialFollowMode Mode { get; private set; } = SpatialFollowMode.BodyAnchor;
+        public SpatialFollowMode Mode { get; private set; } = SpatialFollowMode.ForwardFixed;
         public Vector3 Offset = new Vector3(0f, -0.12f, 2.2f);
         public float BodyCatchupDegrees = 22f;
         public float BodyCatchupSpeed = 3.5f;
@@ -27,7 +28,8 @@ namespace Icarus.Spatial
             }
 
             var delta = Mathf.DeltaAngle(anchorYaw, headYaw);
-            if (Mode == SpatialFollowMode.SmoothFollow || Mathf.Abs(delta) >= BodyCatchupDegrees)
+            if (Mode == SpatialFollowMode.SmoothFollow ||
+                (Mode == SpatialFollowMode.BodyAnchor && Mathf.Abs(delta) >= BodyCatchupDegrees))
             {
                 var speed = Mode == SpatialFollowMode.SmoothFollow ? SmoothFollowSpeed : BodyCatchupSpeed;
                 anchorYaw = Mathf.LerpAngle(anchorYaw, headYaw, 1f - Mathf.Exp(-speed * Time.unscaledDeltaTime));
@@ -39,6 +41,7 @@ namespace Icarus.Spatial
 
         public void ToggleMode()
         {
+            if (Mode == SpatialFollowMode.ForwardFixed) return;
             Mode = Mode == SpatialFollowMode.BodyAnchor ? SpatialFollowMode.SmoothFollow : SpatialFollowMode.BodyAnchor;
             Recenter();
         }
@@ -48,6 +51,7 @@ namespace Icarus.Spatial
             if (Head == null) return;
             anchorYaw = Head.eulerAngles.y;
             initialized = true;
+            Recentered?.Invoke();
         }
     }
 }
