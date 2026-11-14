@@ -33,6 +33,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Verify preview and private delivery boundaries
         run: |
+          python3 .github/scripts/test_motion_test_verification.py
           python3 .github/scripts/test_xreal_preview_verification.py
           python3 .github/scripts/test_private_test_validation.py
       - name: Install web dependencies

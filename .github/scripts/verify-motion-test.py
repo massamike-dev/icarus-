@@ -81,6 +81,12 @@ def permissions(output):
                 "Missing or invalid permission name in APK manifest.")
         values.append(name)
     require(bool(values), "APK permission list is empty or unavailable.")
+    receiver = PACKAGE + ".test.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    if receiver in values:
+        declarations = [e for e in manifest if e.tag == "permission" and e.get(android_name) == receiver]
+        require(len(declarations) == 1 and declarations[0].get(
+            "{http://schemas.android.com/apk/res/android}protectionLevel") in ("signature", "0x00000002", "2"),
+            "Test receiver permission must be declared signature-only.")
     return sorted(set(values))
 
 
@@ -112,7 +118,11 @@ def verify_upgrade(baseline, preview):
             "Only non-debuggable release APKs can be used for upgrade verification.")
     require(preview["signerCertificateSha256"] == baseline["signerCertificateSha256"],
             "Preview signer certificate does not match the published ICARUS APK.")
-    additions = sorted(set(preview["permissions"]) - set(baseline["permissions"]))
+    # AndroidX creates this private permission under each application's identity.
+    receiver = PACKAGE + ".DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    test_receiver = PACKAGE + ".test.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    normalized = {receiver if p == test_receiver else p for p in preview["permissions"]}
+    additions = sorted(normalized - set(baseline["permissions"]))
     require(not additions, "Preview adds Android permissions: " + ", ".join(additions))
 
 
