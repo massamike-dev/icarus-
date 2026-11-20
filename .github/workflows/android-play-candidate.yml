@@ -1,0 +1,209 @@
+name: Build isolated ICARUS Play candidate
+
+on:
+  push:
+    branches: [work/icarus-play-candidate-20261014]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency:
+  group: icarus-play-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CANDIDATE_BRANCH: work/icarus-play-candidate-20261014
+  ICARUS_WEB_URL: ${{ vars.ICARUS_WEB_URL || 'https://icarusassistant.com' }}
+  EXPECTED_UPLOAD_CERTIFICATE: 6b87a7031aa5273d50d0e692875d0d284fd7e9b905bb7dba8e05c3ab67d7e2c6
+  # Pinned official google/bundletool release asset; never resolve latest in CI.
+  # https://api.github.com/repos/google/bundletool/releases/assets/329035725
+  BUNDLETOOL_VERSION: "1.18.3"
+  BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+
+jobs:
+  validate-web:
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-play-candidate-20261014' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Verify candidate and existing delivery boundaries
+        run: |
+          python3 .github/scripts/test-play-candidate-workflow.py
+          python3 .github/scripts/test-play-candidate-verifier.py
+          python3 .github/scripts/test_xreal_preview_verification.py
+          python3 .github/scripts/test_private_test_validation.py
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci --include=dev --no-audit
+      - name: Run complete web tests
+        working-directory: web
+        run: npm test
+      - name: Run complete native source contracts
+        run: node --test tests/*.test.mjs native/android/scripts/*.test.mjs
+      - name: Build bundled offline UI
+        working-directory: web
+        run: npm run build -- --base=./
+
+  build-candidate:
+    needs: validate-web
+    if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-play-candidate-20261014' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install bundled UI dependencies
+        working-directory: web
+        run: npm ci --include=dev --no-audit
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Run verifier regressions with Java 17 before accessing signing secrets
+        run: python3 .github/scripts/test-play-candidate-verifier.py
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+          cache-disabled: true
+      - name: Download and verify pinned official bundletool before signing
+        run: |
+          mkdir -p "$RUNNER_TEMP/play-candidate-tools"
+          curl --fail --show-error --silent --location --proto '=https' --proto-redir '=https' \
+            --retry 3 --connect-timeout 20 --max-time 180 \
+            "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar" \
+            --output "$RUNNER_TEMP/play-candidate-tools/bundletool.jar"
+          printf '%s  %s\n' "$BUNDLETOOL_SHA256" "$RUNNER_TEMP/play-candidate-tools/bundletool.jar" \
+            | sha256sum --check --strict
+      - name: Prepare account-free wake-word engine
+        run: bash native/android/scripts/prepare-sherpa-kws.sh
+      - name: Run native release unit tests and lint before accessing signing secrets
+        id: native_validation
+        working-directory: native/android
+        env:
+          GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
+        run: |
+          gradle --no-daemon :app:testReleaseUnitTest :app:lintRelease \
+            :xreal:testReleaseUnitTest :xreal:lintRelease -PICARUS_WEB_URL="$ICARUS_WEB_URL" --stacktrace
+      - name: Require an open draft PR for this exact source commit
+        id: source_authorization
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$CANDIDATE_BRANCH" \
+            --json number,isDraft,headRefOid,headRefName,headRepositoryOwner,isCrossRepository,state \
+            > "$RUNNER_TEMP/play-candidate-pr.json"
+          python3 - <<'PYPR'
+          import json, os
+          from pathlib import Path
+          prs = json.loads((Path(os.environ["RUNNER_TEMP"]) / "play-candidate-pr.json").read_text())
+          matches = [pr for pr in prs if pr.get("state") == "OPEN"
+              and pr.get("isDraft") is True
+              and pr.get("headRefOid") == os.environ["GITHUB_SHA"]
+              and pr.get("headRefName") == os.environ["CANDIDATE_BRANCH"]
+              and pr.get("isCrossRepository") is False
+              and pr.get("headRepositoryOwner", {}).get("login") == os.environ["GITHUB_REPOSITORY_OWNER"]]
+          if len(matches) != 1:
+              raise SystemExit("Exactly one open draft PR must reference this branch and commit before signing.")
+          PYPR
+      - name: Build release AAB using only the existing ICARUS upload signer
+        id: signing
+        env:
+          GITHUB_TOKEN: ${{ secrets.MW_DAT_GITHUB_TOKEN || github.token }}
+          KEYSTORE_B64: ${{ secrets.ICARUS_KEYSTORE_BASE64 }}
+          SIGNING_PASSWORD_B64: ${{ secrets.ICARUS_SIGNING_PASSWORD_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ICARUS_KEY_ALIAS }}
+        run: |
+          python3 - <<'PYSIGN'
+          import base64, os, subprocess
+          from pathlib import Path
+          if not all(os.environ.get(name) for name in ("KEYSTORE_B64", "SIGNING_PASSWORD_B64", "KEY_ALIAS")):
+              raise SystemExit("Existing ICARUS signing secrets are required; no new signer will be generated.")
+          def decode_secret(name):
+              return base64.b64decode("".join(os.environ[name].split()), validate=True)
+          password = decode_secret("SIGNING_PASSWORD_B64").decode()
+          if not password or any(char in password for char in "\r\n\0"):
+              raise SystemExit("Signing password must be nonempty and contain no line breaks or NUL characters.")
+          print("::add-mask::" + password.replace("%", "%25"), flush=True)
+          signing_file = Path(os.environ["RUNNER_TEMP"]) / "icarus-play-candidate-signing.jks"
+          try:
+              descriptor = os.open(signing_file, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+              with os.fdopen(descriptor, "wb") as output:
+                  output.write(decode_secret("KEYSTORE_B64"))
+              build_env = {key: value for key, value in os.environ.items()
+                           if key not in ("KEYSTORE_B64", "SIGNING_PASSWORD_B64", "KEY_ALIAS")}
+              build_env.update(ICARUS_KEYSTORE_FILE=str(signing_file), ICARUS_KEYSTORE_PASSWORD=password,
+                               ICARUS_KEY_PASSWORD=password, ICARUS_KEY_ALIAS=os.environ["KEY_ALIAS"])
+              subprocess.run(["gradle", "--no-daemon", ":app:bundleRelease",
+                              "-PICARUS_WEB_URL=" + os.environ["ICARUS_WEB_URL"], "--stacktrace"],
+                             cwd="native/android", env=build_env, check=True)
+          finally:
+              signing_file.unlink(missing_ok=True)
+          PYSIGN
+      - name: Verify signed AAB, app identity, offline assets, and native alignment
+        run: |
+          mkdir -p "$RUNNER_TEMP/play-candidate-delivery"
+          cp native/android/app/build/outputs/bundle/release/app-release.aab \
+            "$RUNNER_TEMP/play-candidate-delivery/ICARUS-play-candidate.aab"
+          python3 .github/scripts/verify-play-candidate.py \
+            --aab "$RUNNER_TEMP/play-candidate-delivery/ICARUS-play-candidate.aab" \
+            --bundletool "$RUNNER_TEMP/play-candidate-tools/bundletool.jar" \
+            --source-sha "$GITHUB_SHA" --expected-certificate "$EXPECTED_UPLOAD_CERTIFICATE" \
+            --output "$RUNNER_TEMP/play-candidate-delivery/verification.json"
+          printf '%s\n' "$GITHUB_SHA" > "$RUNNER_TEMP/play-candidate-delivery/SOURCE_COMMIT.txt"
+          (cd "$RUNNER_TEMP/play-candidate-delivery" && sha256sum ICARUS-play-candidate.aab > SHA256SUMS)
+          python3 .github/scripts/verify-play-candidate.py \
+            --check-delivery "$RUNNER_TEMP/play-candidate-delivery" --source-sha "$GITHUB_SHA"
+      - name: Save verified AAB and verification report as a CI artifact only
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-play-candidate-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/play-candidate-delivery/ICARUS-play-candidate.aab
+            ${{ runner.temp }}/play-candidate-delivery/verification.json
+            ${{ runner.temp }}/play-candidate-delivery/SHA256SUMS
+            ${{ runner.temp }}/play-candidate-delivery/SOURCE_COMMIT.txt
+          if-no-files-found: error
+          retention-days: 14
+      - name: Save native validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ICARUS-play-candidate-validation-${{ github.sha }}
+          path: |
+            native/android/app/build/reports/tests/testReleaseUnitTest/**
+            native/android/app/build/reports/lint-results-release.*
+            native/android/xreal/build/reports/tests/testReleaseUnitTest/**
+            native/android/xreal/build/reports/lint-results-release.*
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Always remove signing material and temporary bundles
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/icarus-play-candidate-signing.jks" "$RUNNER_TEMP/play-candidate-pr.json"
+          rm -rf "$RUNNER_TEMP/play-candidate-delivery" "$RUNNER_TEMP/play-candidate-tools"
+          rm -rf native/android/app/build/outputs/bundle/release
