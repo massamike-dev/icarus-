@@ -90,9 +90,16 @@ export function VoiceControls() {
 export function Settings({user,onSignOut}) {
   return <section className="workspace settings-workspace">
     <p className="eyebrow">ICARUS SETTINGS</p><h1>Settings</h1>
+    <div className="workspace-shortcuts settings-shortcuts" role="group" aria-label="Jump to settings">
+      {[['voice-personality-title','Voice'],['intelligence-mode-title','Intelligence'],['privacy-settings','Privacy & support']].map(([id,label])=><button className="secondary" key={id} onClick={()=>{
+        const heading=document.getElementById(id);
+        heading?.focus({preventScroll:true});
+        heading?.scrollIntoView({block:'start'});
+      }}>{label}</button>)}
+    </div>
     <DevicePreferences><VoiceControls/></DevicePreferences>
     {!isLocalMode()&&<section className="settings-section" aria-labelledby="account-settings"><h2 id="account-settings">Your account</h2><p>{user.name}</p><p className="account-email">{user.email}</p><button className="secondary" onClick={onSignOut}>Sign out</button></section>}
     <ReleaseNotes/>
-    <section className="settings-section" aria-labelledby="privacy-settings"><h2 id="privacy-settings">Privacy & support</h2><div className="settings-links"><a href={isLocalMode()?"/assets/web/index.html?view=privacy":"/privacy-policy"}>Privacy policy</a><a href="mailto:wennigworks@gmail.com">Contact support</a>{!isLocalMode()&&<a href="/account-deletion">Account deletion options</a>}</div></section>
+    <section className="settings-section" aria-labelledby="privacy-settings"><h2 id="privacy-settings" tabIndex={-1}>Privacy & support</h2><div className="settings-links"><a href={isLocalMode()?"/assets/web/index.html?view=privacy":"/privacy-policy"}>Privacy policy</a><a href="mailto:wennigworks@gmail.com">Contact support</a>{!isLocalMode()&&<a href="/account-deletion">Account deletion options</a>}</div></section>
   </section>;
 }

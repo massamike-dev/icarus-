@@ -24,7 +24,11 @@ function startSession(){
  if(active)return;
  if(!window.IcarusMapHost){$('intro').querySelector('p').textContent='Open this map in the updated ICARUS Android app to use foreground GPS.';return;}
  active=true;follow=true;tileErrors=0;$('intro').hidden=true;$('session').hidden=false;$('failure').textContent='';
- map=L.map('map',{zoomControl:true,attributionControl:true}).setView([39,-98],3);
+ $('destination').textContent='Tap a road on the map to select your destination.';$('estimate').textContent='';
+ $('map').classList.remove('offroute');
+ // A map session can stop while zooming when Android backgrounds the WebView.
+ // Avoid leaving an animated zoom callback attached to a removed map pane.
+ map=L.map('map',{zoomControl:true,attributionControl:true,zoomAnimation:false}).setView([39,-98],3);
  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,updateWhenIdle:true,keepBuffer:0,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',referrerPolicy:'strict-origin-when-cross-origin'}).on('tileerror',()=>{if(active&&++tileErrors>=3)$('failure').textContent='Map tiles unavailable. Check internet access; the background may be incomplete.';}).addTo(map);
  map.on('dragstart',()=>{follow=false;});
  map.on('click',e=>{if(!fresh()||moving()||pending)return;eraseRoute();goal=[e.latlng.lng,e.latlng.lat];if(goalMarker)map.removeLayer(goalMarker);goalMarker=L.circleMarker(e.latlng,{radius:9,color:'#ecc77e',fillOpacity:.9}).addTo(map);$('destination').textContent=`Destination: ${goal[1].toFixed(5)}, ${goal[0].toFixed(5)}. Review, then calculate.`;update();});

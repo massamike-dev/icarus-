@@ -59,6 +59,7 @@
             android:name="libOpenCL.so"
             android:required="false" />
 
+        <activity android:name=".driving.MotionPreviewActivity" android:exported="false" />
         <activity android:name=".driving.LiveMapActivity" android:configChanges="orientation|screenSize|keyboardHidden" android:exported="false" />
 
         <activity

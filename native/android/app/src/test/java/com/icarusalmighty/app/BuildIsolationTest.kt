@@ -10,7 +10,7 @@ import org.junit.Test
 class BuildIsolationTest {
     @Test fun privateBuildCannotReplaceThePublicPackageOrHandleItsLinks() {
         if (BuildConfig.PRIVATE_TEST) {
-            assertEquals("privateTest", BuildConfig.BUILD_TYPE)
+            assertTrue(BuildConfig.BUILD_TYPE in setOf("privateTest", "motionTest"))
             assertEquals("com.icarusalmighty.app.test", BuildConfig.APPLICATION_ID)
             assertEquals("icarus-test", BuildConfig.ICARUS_LINK_SCHEME)
             assertTrue(BuildConfig.VERSION_NAME.endsWith("-test"))

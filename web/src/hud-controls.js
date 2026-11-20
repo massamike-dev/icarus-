@@ -4,6 +4,7 @@ export function validHudStatus(data) {
 }
 
 export function hudResultMessage(action,args,data) {
+  if(action==='open_motion_preview'&&data?.opened===true)return 'Android opened the seated phone-motion test.';
   if(action==='open_live_map'&&data?.opened===true)return 'Android opened the live map. Start GPS and choose a destination while parked.';
   if(action==='open_driving_hud'&&data?.opened===true)return 'Android accepted the phone HUD launch. Live vehicle readings require a connected OBD adapter.';
   if(action==='open_navigation_access_settings'&&data?.opened===true)return 'Android opened notification access. Choose ICARUS, then return here before starting your drive.';

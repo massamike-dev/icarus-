@@ -8,7 +8,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const output=path.join(root,'ui-qa');await mkdir(output,{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,channel:process.env.PLAYWRIGHT_BROWSER_CHANNEL||undefined});
 const report={fixture:'simulated native responses; no physical phone or live accounts',screenshots:[],checks:[],consoleErrors:[]};
 const origin='https://appassets.androidplatform.net';
 const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml','.glb':'model/gltf-binary'};
@@ -53,6 +53,22 @@ try{
  await page.locator('.companion-panel').waitFor();await shot(page,'companion-open-393x852');
  await page.keyboard.press('Escape');assert.equal(await page.locator('.companion-panel').count(),0);
  assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('aria-label')),'Open ICARUS companion');
+ await page.evaluate(()=>localStorage.setItem('icarus_local_data_v1',JSON.stringify({
+  version:1,memories:[],turns:[],actions:[],conversations:[
+   {id:'demo-trip',title:'Weekend trip',messages:[{role:'user',content:'Plan a weekend trip'}]},
+   {id:'demo-project',title:'Project outline',messages:[]},
+  ],
+ })));
+ await page.getByRole('button',{name:'Open chat history',exact:true}).click();
+ const chatFilter=page.getByRole('textbox',{name:'Search saved chats'});
+ await chatFilter.fill('no match');
+ await page.getByText('No matching chats.',{exact:true}).waitFor();
+ await chatFilter.fill('WEEKEND');
+ assert.equal(await page.getByRole('button',{name:'Project outline',exact:true}).count(),0);
+ await page.getByRole('button',{name:'Weekend trip',exact:true}).click();
+ await page.getByText('Plan a weekend trip',{exact:true}).waitFor();
+ await noOverflow(page,'393px filtered chat history');
+ await page.getByRole('button',{name:'Home',exact:true}).click();
  await page.getByRole('button',{name:'Plan my day',exact:true}).click();
  assert.equal(await page.getByRole('textbox',{name:'Message',exact:true}).inputValue(),'Plan my day');
  assert.equal(await page.evaluate(()=>window.__qaNativeRequests.filter(r=>r.action==='local_chat').length),0);
@@ -65,9 +81,31 @@ try{
  await page.getByRole('button',{name:'Remember',exact:true}).click();
  await page.getByText('Browser QA sample memory',{exact:true}).waitFor();
  await shot(page,'memory-393x852');await noOverflow(page,'393px Memory');
+ const memoryFilter=page.getByRole('textbox',{name:'Search memories'});
+ await memoryFilter.fill('missing fixture');
+ await page.getByText('No matching memories.',{exact:true}).waitFor();
+ await page.getByRole('button',{name:'Clear search',exact:true}).click();
+ assert.equal(await memoryFilter.inputValue(),'');
+ const useMemory=page.getByRole('button',{name:'Use in Chat: Browser QA sample memory',exact:true});
+ await page.locator('.memory-list').getByRole('button',{name:'Use in Chat: Browser QA sample memory',exact:true}).and(page.locator('button:enabled')).waitFor();
+ await useMemory.focus();
+ await page.keyboard.press('Enter');
+ await page.locator('.app-shell[data-page="chat"]').waitFor();
+ assert.equal(await page.getByRole('textbox',{name:'Message',exact:true}).inputValue(),'Browser QA sample memory');
+ assert.equal(await page.evaluate(()=>window.__qaNativeRequests.filter(r=>r.action==='local_chat').length),0);
+ await page.getByRole('textbox',{name:'Message',exact:true}).fill('Review my saved context before answering.');
+ await page.getByRole('button',{name:'Settings',exact:true}).click();
+ await page.getByRole('button',{name:'Chat',exact:true}).click();
+ assert.equal(await page.getByRole('textbox',{name:'Message',exact:true}).inputValue(),'Review my saved context before answering.');
+ await page.getByRole('button',{name:'+ New chat',exact:true}).click();
+ await page.getByRole('button',{name:'Troubleshoot something',exact:true}).click();
+ assert.equal(await page.getByRole('textbox',{name:'Message',exact:true}).inputValue(),'Troubleshoot something');
+ assert.equal(await page.evaluate(()=>document.activeElement?.getAttribute('name')),'message');
  await page.getByRole('button',{name:'Settings',exact:true}).click();
  await page.getByRole('heading',{name:'Settings',exact:true}).waitFor();
  await shot(page,'settings-393x852');
+ await page.getByRole('group',{name:'Jump to settings'}).getByRole('button',{name:'Intelligence',exact:true}).click();
+ assert.equal(await page.evaluate(()=>document.activeElement?.id),'intelligence-mode-title');
  await page.getByRole('button',{name:'Check voice status',exact:true}).evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));
  const statusBounds=await page.getByRole('button',{name:'Check voice status',exact:true}).boundingBox();const dockBounds=await page.locator('.companion-floating').boundingBox();assert.ok(statusBounds.y+statusBounds.height<dockBounds.y,'Scrolled Settings controls must clear the mobile dock');await shot(page,'settings-voice-controls-393x852',{top:false});
  await noOverflow(page,'393px Settings');
@@ -87,6 +125,26 @@ try{
  await page.locator('.race-preview').scrollIntoViewIfNeeded();await shot(page,'driving-map-393x852',{top:false});await noOverflow(page,'393px driving preview');
  await page.getByRole('button',{name:'Glasses HUD layout',exact:true}).click();
  assert.equal(await page.locator('.race-map').count(),0);await page.locator('.race-preview').scrollIntoViewIfNeeded();await shot(page,'driving-hud-393x852',{top:false});
+ const motionStatus=page.locator('.drive-motion [role=status]');
+ const lookLeft=page.getByRole('button',{name:'Look left',exact:true});
+ await lookLeft.focus();
+ await page.keyboard.press('Enter');
+ await page.locator('.race-instruments[data-hidden=true]').waitFor();
+ assert.match(await motionStatus.textContent(),/Looking left/);
+ await page.getByRole('button',{name:'Simulate tracking loss',exact:true}).click();
+ assert.equal(await page.locator('.race-instruments').evaluate(el=>getComputedStyle(el).opacity),'0');
+ await page.getByRole('button',{name:'Restore tracking',exact:true}).click();
+ assert.match(await motionStatus.textContent(),/Looking left/);
+ await page.getByRole('button',{name:'Look forward',exact:true}).click();
+ assert.match(await motionStatus.textContent(),/Waiting/);
+ await page.getByRole('button',{name:'Look right',exact:true}).click();
+ await page.waitForFunction(()=>document.querySelector('.race-instruments').dataset.hidden==='true');
+ assert.match(await motionStatus.textContent(),/Looking right/);
+ await page.getByRole('button',{name:'Look forward',exact:true}).click();
+ await page.locator('.race-instruments[data-hidden=false]').waitFor();
+ assert.match(await motionStatus.textContent(),/HUD visible/);
+ await noOverflow(page,'393px glasses simulation');
+ report.checks.push('Glasses simulation hides on turns and tracking loss, and recovers when facing forward');
  await page.getByRole('button',{name:'Close graphics preview',exact:true}).click();
  await page.locator('.hud-option .settings-actions > button').first().evaluate(element=>element.scrollIntoView({block:'center',behavior:'instant'}));await shot(page,'vehicle-actions-393x852',{top:false});
  await page.getByRole('button',{name:'Home',exact:true}).click();await page.locator('.dashboard-talk:enabled').waitFor();
@@ -141,3 +199,4 @@ try{
  report.result='passed';
 }catch(error){report.result='failed';report.error=String(error);throw error;}
 finally{await writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));await browser.close();}
+
