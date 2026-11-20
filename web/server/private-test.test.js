@@ -115,3 +115,32 @@ test('public mode retains account registration and login', () => fixture(async (
   assert.equal((await request('/auth/login', { method: 'POST', data: { email: 'public@example.test', password } })).status, 200);
   assert.equal((await store.read()).privateTest, undefined);
 }, { NODE_ENV: 'test' }));
+
+test('checklist is private, persists completion, reopens and is erased with account', () => fixture(async ({store,request})=>{
+  const {body:{token}}=await login(request);
+  assert.equal((await request('/me',{token})).body.user.testingChecklist,true);
+  assert.equal((await request('/testing-checklist')).status,401);
+  const first=await request('/testing-checklist',{token});
+  assert.equal(first.status,200);assert.equal(first.body.items.length,10);
+  assert.deepEqual((await request('/testing-checklist',{token})).body,first.body);
+  const id=first.body.items[0].id;
+  assert.equal((await request('/testing-checklist/'+id,{token,method:'PATCH',data:{status:'done'}})).body.item.status,'done');
+  assert.ok((await request('/testing-checklist',{token})).body.items.find(x=>x.id===id).completedAt);
+  assert.equal((await request('/testing-checklist/'+id,{token,method:'PATCH',data:{status:'todo'}})).body.item.completedAt,null);
+  assert.equal((await request('/testing-checklist/'+id,{token,method:'PATCH',data:{status:'invalid'}})).status,400);
+  assert.equal((await request('/testing-checklist',{token,method:'POST',data:{title:' '}})).status,400);
+  assert.equal((await request('/testing-checklist',{token,method:'POST',data:{title:'My next improvement',notes:'Verify on device'}})).status,201);
+  // Even an otherwise valid private credential cannot access another bootstrap identity.
+  await store.update(d=>{d.users.push({...d.users[0],id:'impostor'})});
+  const wrong=issueToken('impostor',privateSessionSecret(secret,privateTestConfig(env)));
+  assert.equal((await request('/testing-checklist',{token:wrong})).status,404);
+  assert.equal((await request('/me',{token:wrong})).body.user.testingChecklist,undefined);
+  await request('/account',{token,method:'DELETE'});
+  assert.equal((await store.read()).testingChecklist.length,0);
+}));
+
+test('public accounts never receive checklist capability or API access',()=>fixture(async({request})=>{
+  const {body:{token}}=await request('/auth/register',{method:'POST',data:{email:'public@example.test',password}});
+  assert.equal((await request('/me',{token})).body.user.testingChecklist,undefined);
+  for(const method of ['GET','POST','PATCH'])assert.equal((await request('/testing-checklist',{token,method,data:method==='GET'?undefined:{title:'Private',status:'done'}})).status,404);
+},{NODE_ENV:'test'}));
