@@ -170,9 +170,9 @@
 .chat-layout { align-items: start; }
 .history-panel { padding: 12px; }
 .history-panel > b { color: var(--gold); }
-.history-panel > div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; min-width: 0; }
+.history-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; min-width: 0; }
 .history-panel button { min-height: 44px; min-width: 0; border-radius: 9px; line-height: 1.4; }
-.history-panel > div > button:first-child {
+.history-row > button:first-child {
   display: block;
   width: 100%;
   overflow: hidden;
@@ -350,7 +350,7 @@
   .workspace h1 { font-size: clamp(28px, 6.7vw, 38px); }
   .chat-actions { margin-top: 0; }
   .history-panel { width: 100%; padding: 8px; align-items: stretch; }
-  .history-panel > div { flex: 0 0 240px; }
+  .history-row { flex: 0 0 240px; }
   .history-panel button { flex: initial; }
   .composer textarea { min-height: 120px; }
   .settings-section, .voice-workspace > .voice-controls { padding: 20px; }
@@ -411,4 +411,41 @@
     outline-offset: 3px;
   }
   .settings-dialog::backdrop { background: Canvas; opacity: .8; }
+}
+
+.workspace-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.command-stage > .workspace-shortcuts { margin-top: 16px; justify-content: center; }
+.settings-shortcuts { margin: 16px 0 24px; }
+.settings-workspace h2[tabindex="-1"] { scroll-margin-top: 24px; }
+.workspace-shortcuts > button, .workspace-filter > button { min-height: 44px; }
+.workspace-filter, .history-panel > .workspace-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.workspace-filter input {
+  flex: 1 1 9rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #0b1e36;
+  color: var(--white);
+}
+.workspace-filter button { flex: 0 0 auto; }
+.memory-list article .workspace-shortcuts { flex: 0 1 auto; }
+
+.history-results { display: grid; gap: 4px; min-width: 0; }
+@media (max-width: 850px) {
+  .history-panel { flex-direction: column; overflow: visible; }
+  .history-results { display: flex; overflow-x: auto; }
+  .history-panel > p[role="status"] { display: block; }
 }

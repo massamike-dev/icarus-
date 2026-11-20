@@ -1,6 +1,8 @@
-# ICARUS Test 1.6.21 (build 52)
+# ICARUS Test 1.6.22 (build 53)
 
 Install ICARUS-Test.apk. Package com.icarusalmighty.app.test uses the existing signer and stays separate from regular ICARUS. No production release, feed, server or Play deployment is changed.
+
+Home, Chat, and Memory now provide shortcuts, search, and editable drafts. Settings has shortcuts to Voice, Intelligence, and Privacy. Vehicle includes a playable sample route and simulated glasses HUD fade.
 
 Vehicle → Open live map & route line: explicitly start GPS, tap a destination while parked and calculate the cyan road route. Uses online OpenStreetMap tiles and FOSSGIS routing, with disclosure before Start.
 

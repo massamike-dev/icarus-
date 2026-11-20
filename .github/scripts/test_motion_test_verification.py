@@ -8,7 +8,7 @@ class Isolation(unittest.TestCase):
         self.receiver = v.PACKAGE + '.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
         self.test_receiver = v.PACKAGE + '.test.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'
         self.baseline = dict(package=v.PACKAGE, versionCode=46, versionName='1.6.15', debuggable='false', permissions=[self.receiver], signerCertificateSha256=['existing'])
-        self.preview = dict(self.baseline, package=v.PACKAGE+'.test', versionCode=52, versionName='1.6.21-test', permissions=[self.test_receiver])
+        self.preview = dict(self.baseline, package=v.PACKAGE+'.test', versionCode=53, versionName='1.6.22-test', permissions=[self.test_receiver])
     def test_private_receiver_rename(self):
         v.verify_upgrade(self.baseline, self.preview)
     def test_rejects_other_permissions_and_identity_changes(self):

@@ -3,6 +3,7 @@ import {IcarusCompanion} from './icarus-companion.jsx';
 import {readDeviceStatus} from './device-actions.js';
 import {getNativeTransport} from './native-transport.js';
 import {isLocalMode} from './local-core.js';
+import {conversationStarters} from './conversation-starters.js';
 
 // The dashboard links into the existing, permission-aware feature screens.
 // It never starts a device action or claims a connection just by being visible.
@@ -37,8 +38,12 @@ export function Dashboard({onNavigate,onStartChat,user,Icon}) {
       </form>
       <p className="dashboard-draft-help" id="dashboard-draft-help">Opens in Chat for review</p>
       <div className="dashboard-ideas"><p className="ideas-label">Start with an idea</p><div className="dashboard-suggestions" aria-label="Conversation starters">
-        {[['calendar','Plan my day'],['project','Help with a project'],['tools','Troubleshoot something']].map(([icon,text])=><button key={text} onClick={()=>onStartChat(text)}><Icon name={icon}/><span>{text}</span>{icon==='tools'&&<Icon name="arrow"/>}</button>)}
+        {conversationStarters.map(([icon,text])=><button key={text} onClick={()=>onStartChat(text)}><Icon name={icon}/><span>{text}</span>{icon==='tools'&&<Icon name="arrow"/>}</button>)}
       </div></div>
+      <div className="workspace-shortcuts" role="group" aria-label="Workspace shortcuts">
+        <button className="secondary" onClick={()=>onNavigate('chat')}>Open chat history</button>
+        <button className="secondary" onClick={()=>onNavigate('memory')}>Browse saved memories</button>
+      </div>
     </div>
     </div>
     <details className="dashboard-tools"><summary><Icon name="controls"/><span>Driving, voice & device controls</span><Icon name="chevron"/></summary>

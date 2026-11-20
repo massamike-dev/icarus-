@@ -58,7 +58,7 @@ export function VoicePreferences({device}){
   const languages=[...new Set(allVoices.map(v=>v.locale).filter(Boolean))];
   if(!languages.includes(draft?.language||'en-US'))languages.unshift(draft?.language||'en-US');
   return <section className="settings-section settings-preferences" aria-labelledby="voice-personality-title">
-    <h2 id="voice-personality-title">ICARUS voice</h2>
+    <h2 id="voice-personality-title" tabIndex={-1}>ICARUS voice</h2>
     <p>Choose ICARUS’s speaking language and voice separately. These preferences do not change Android’s system settings. Morgan is a warm narrator style, not a celebrity recording or clone.</p>
     <DeviceNotice {...device} supported={supported}/>
     {supported&&<>

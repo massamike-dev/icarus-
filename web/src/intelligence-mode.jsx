@@ -24,7 +24,7 @@ export function IntelligenceMode(){
     finally{lock.current=false;if(mounted.current)setBusy(false);}
   }
   return <section className="settings-section intelligence-mode" aria-labelledby="intelligence-mode-title">
-    <h2 id="intelligence-mode-title">Account & intelligence</h2>
+    <h2 id="intelligence-mode-title" tabIndex={-1}>Account & intelligence</h2>
     <p>{local?'On-device core · No account or per-message AI payment required.':'Cloud workspace · Optional online intelligence and connected services.'}</p>
     <p>Local Chat runs on this phone after a one-time model download (about 2.6 GB). Saved chats and Memory stay in this app’s device storage. Device controls retain Android permissions and action confirmations.</p>
     <p>Offline voice capture depends on Android’s installed speech-recognition support. Navigation, connected services and downloads may still need internet.</p>

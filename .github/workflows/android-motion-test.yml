@@ -14,7 +14,7 @@ concurrency:
 
 env:
   PREVIEW_BRANCH: work/icarus-motion-test-release
-  PREVIEW_TAG: v1.6.21-motion-test
+  PREVIEW_TAG: v1.6.22-motion-test
   ICARUS_TEST_WEB_URL: https://icarus-private-test.onrender.com
 
 jobs:
@@ -272,7 +272,7 @@ jobs:
           PY
           gh release create "$PREVIEW_TAG" \
             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "ICARUS Test 1.6.21 — live maps and phone-motion fade" \
+            --title "ICARUS Test 1.6.22 — workspace interactions and HUD preview" \
             --notes-file docs/MOTION_TEST_RELEASE.md --prerelease --latest=false \
             "$RUNNER_TEMP/preview-delivery/ICARUS-Test.apk" \
             "$RUNNER_TEMP/preview-delivery/SHA256SUMS" \

@@ -104,7 +104,9 @@ test('driving design preview is opt-in and does not start navigation',async()=>{
   await app.click('Preview driving graphics');
   assert.match(app.w.document.querySelector('.race-preview').textContent,/NOT LIVE NAVIGATION/);
   await app.click('Glasses HUD layout');assert.equal(app.w.document.querySelector('.race-map'),null);
-  assert.match(app.w.document.querySelector('.race-preview').textContent,/FORWARD VIEW KEPT CLEAR/);
+  assert.match(app.w.document.querySelector('.race-preview').textContent,/GLASSES SIMULATION/);
+  await app.click('Look left');
+  assert.equal(app.w.document.querySelector('.race-instruments').dataset.hidden,'true');
   assert.equal(app.requests.filter(x=>['navigate_to','open_driving_hud','open_xreal_hud'].includes(x.action)).length,0);
  }finally{app.dom.window.close();}
 });
