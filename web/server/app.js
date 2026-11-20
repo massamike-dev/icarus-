@@ -10,6 +10,7 @@ import { isPrivateTester, privateSessionSecret, privateTestConfig } from './priv
 import { privateApkService } from './private-apk.js';
 import { entitlementFor } from './entitlements.js';
 import { integrationService } from './integration-service.js';
+import {canUseChecklist, testingChecklist} from './testing-checklist.js';
 
 const json = (res, status, body) => { res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }); res.end(JSON.stringify(body)); };
 const body = async req => { const chunks=[]; for await (const chunk of req) chunks.push(chunk); if (Buffer.concat(chunks).length > 1_000_000) throw new Error('Request too large'); return JSON.parse(Buffer.concat(chunks).toString() || '{}'); };
@@ -19,6 +20,7 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
   const conversations=conversationService(store);
   const integrations=integrationService({store,env,fetchImpl});
   const privateTest = privateTestConfig(env);
+  const checklist = testingChecklist(store);
   const privateApk = privateApkService({ env, fetchImpl });
   const configuredSecret = env.ICARUS_SESSION_SECRET || (!privateTest && env.NODE_ENV === 'test' ? 'test-secret-at-least-32-characters' : '');
   if (configuredSecret.length < 32) throw new Error('ICARUS_SESSION_SECRET must be at least 32 characters.');
@@ -44,7 +46,12 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
       }
       const user=await authenticated(req); if(path.startsWith('/api/')&&!user) return json(res,401,{error:'authentication_required'});
       if(path==='/api/capabilities') return json(res,200,capabilities(env));
-      if(path==='/api/me') return json(res,200,{user:safeUser(user,env)});
+      if(path==='/api/me') return json(res,200,{user:{...safeUser(user,env),...(canUseChecklist(user,privateTest,await store.read())?{testingChecklist:true}:{})}});
+      const checklistRoute=path.match(/^\/api\/testing-checklist(?:\/([^/]+))?$/);
+      if(checklistRoute){
+        if(!privateTest)return json(res,404,{error:'not_found'});
+        return json(res,req.method==='POST'?201:200,await checklist(user,privateTest,req.method,checklistRoute[1],['POST','PATCH'].includes(req.method)?await body(req):{}));
+      }
       if(path==='/api/entitlement'&&req.method==='GET') return json(res,200,{entitlement:entitlementFor(user,env)});
       if(path==='/api/integrations'&&req.method==='GET') return json(res,200,{integrations:await integrations.status(user.id)});
       const integrationRoute=path.match(/^\/api\/integrations\/([a-z-]+)(?:\/(connect|callback|query))?$/);
@@ -73,7 +80,7 @@ export function createHandler({ store, env=process.env, publicDir, fetchImpl=fet
         return json(res,200,turn);
       }
       if(/^\/api\/actions\/[^/]+\/result$/.test(path)&&req.method==='POST')return json(res,200,await conversations.reportResult(user.id,path.split('/')[3],await body(req)));
-      if(path==='/api/account'&&req.method==='DELETE') { await store.update(d=>{d.users=d.users.filter(x=>x.id!==user.id);d.conversations=d.conversations.filter(x=>x.userId!==user.id);d.messages=d.messages.filter(x=>x.userId!==user.id);d.memories=d.memories.filter(x=>x.userId!==user.id);d.turns=(d.turns||[]).filter(x=>x.userId!==user.id);d.actionRequests=(d.actionRequests||[]).filter(x=>x.userId!==user.id);d.integrationCredentials=(d.integrationCredentials||[]).filter(x=>x.userId!==user.id);d.integrationOAuthStates=(d.integrationOAuthStates||[]).filter(x=>x.userId!==user.id);d.integrationVerification=(d.integrationVerification||[]).filter(x=>x.userId!==user.id)}); return json(res,200,{ok:true,deleted:true}); }
+      if(path==='/api/account'&&req.method==='DELETE') { await store.update(d=>{d.users=d.users.filter(x=>x.id!==user.id);d.testingChecklist=(d.testingChecklist||[]).filter(x=>x.userId!==user.id);d.conversations=d.conversations.filter(x=>x.userId!==user.id);d.messages=d.messages.filter(x=>x.userId!==user.id);d.memories=d.memories.filter(x=>x.userId!==user.id);d.turns=(d.turns||[]).filter(x=>x.userId!==user.id);d.actionRequests=(d.actionRequests||[]).filter(x=>x.userId!==user.id);d.integrationCredentials=(d.integrationCredentials||[]).filter(x=>x.userId!==user.id);d.integrationOAuthStates=(d.integrationOAuthStates||[]).filter(x=>x.userId!==user.id);d.integrationVerification=(d.integrationVerification||[]).filter(x=>x.userId!==user.id)}); return json(res,200,{ok:true,deleted:true}); }
       if(path==='/api/memories'&&req.method==='GET') return json(res,200,{memories:(await store.read()).memories.filter(x=>x.userId===user.id)});
       if(path==='/api/memories'&&req.method==='POST') { const input=await body(req); const content=String(input.content||'').trim().slice(0,4000); if(!content)return json(res,400,{error:'content_required'}); const memory={id:randomUUID(),userId:user.id,content,createdAt:new Date().toISOString()}; await store.update(d=>d.memories.push(memory)); return json(res,201,{memory}); }
       if(path.startsWith('/api/memories/')&&req.method==='DELETE') { const id=path.split('/').pop(); await store.update(d=>{d.memories=d.memories.filter(x=>x.userId!==user.id||x.id!==id)}); return json(res,200,{ok:true}); }
