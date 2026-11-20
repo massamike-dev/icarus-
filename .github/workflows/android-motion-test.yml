@@ -20,7 +20,7 @@ env:
 jobs:
   validate-web:
     if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-motion-test-release'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -66,7 +66,7 @@ jobs:
     needs: validate-web
     # A source-only visual review push never signs or publishes an APK.
     if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-motion-test-release' && !contains(github.event.head_commit.message, '[visual-qa]')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
       contents: read
@@ -223,7 +223,7 @@ jobs:
   publish-preview:
     needs: [validate-web, build-preview]
     if: github.repository == 'massamike-dev/icarus-' && github.ref == 'refs/heads/work/icarus-motion-test-release'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write
@@ -278,3 +278,4 @@ jobs:
             "$RUNNER_TEMP/preview-delivery/SHA256SUMS" \
             "$RUNNER_TEMP/preview-delivery/verification.json" \
             "$RUNNER_TEMP/preview-delivery/SOURCE_COMMIT.txt"
+
