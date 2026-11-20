@@ -86,7 +86,11 @@ try{
  await page.getByText('No matching memories.',{exact:true}).waitFor();
  await page.getByRole('button',{name:'Clear search',exact:true}).click();
  assert.equal(await memoryFilter.inputValue(),'');
- await page.getByRole('button',{name:'Use in Chat: Browser QA sample memory',exact:true}).click();
+ const useMemory=page.getByRole('button',{name:'Use in Chat: Browser QA sample memory',exact:true});
+ await page.locator('.memory-list').getByRole('button',{name:'Use in Chat: Browser QA sample memory',exact:true}).and(page.locator('button:enabled')).waitFor();
+ await useMemory.focus();
+ await page.keyboard.press('Enter');
+ await page.locator('.app-shell[data-page="chat"]').waitFor();
  assert.equal(await page.getByRole('textbox',{name:'Message',exact:true}).inputValue(),'Browser QA sample memory');
  assert.equal(await page.evaluate(()=>window.__qaNativeRequests.filter(r=>r.action==='local_chat').length),0);
  await page.getByRole('textbox',{name:'Message',exact:true}).fill('Review my saved context before answering.');
@@ -195,3 +199,4 @@ try{
  report.result='passed';
 }catch(error){report.result='failed';report.error=String(error);throw error;}
 finally{await writeFile(path.join(output,'report.json'),JSON.stringify(report,null,2));await browser.close();}
+
